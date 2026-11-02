@@ -1,0 +1,21 @@
+{
+  "dataset": "sklearn.datasets.load_diabetes",
+  "n_samples": 442,
+  "n_features": 10,
+  "outer_split": "80% training / 20% held-out test",
+  "neural_validation": "20% of the outer training partition",
+  "random_state": 42,
+  "neural_training_samples": 282,
+  "neural_validation_samples": 71,
+  "test_samples": 89,
+  "architecture": [10, 16, 8, 1],
+  "hidden_activation": "ReLU",
+  "optimizer": "Adam",
+  "loss": "Mean Squared Error",
+  "early_stopping": {"monitor": "validation loss", "patience": 12},
+  "maximum_epochs": 100,
+  "batch_size": 32,
+  "pytorch_version": "2.15.0+cpu",
+  "tensorflow_version": "2.21.0",
+  "test_set_used_for_training_or_early_stopping": false
+}

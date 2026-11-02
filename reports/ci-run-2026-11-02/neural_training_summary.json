@@ -1,0 +1,17 @@
+{
+  "PyTorch": {
+    "epochs_completed": 100,
+    "best_validation_epoch": 100,
+    "first_epoch_validation_mse": 34112.29296875,
+    "final_training_mse": 3782.427699745124,
+    "final_validation_mse": 4450.36279296875
+  },
+  "TensorFlow/Keras": {
+    "epochs_completed": 100,
+    "best_validation_epoch": 100,
+    "first_epoch_validation_mse": 34118.26171875,
+    "final_training_mse": 3604.886962890625,
+    "final_validation_mse": 4669.47509765625
+  },
+  "interpretation": "Both validation losses decreased through the 100-epoch limit. The early-stopping criterion did not terminate either run before the configured maximum epoch."
+}

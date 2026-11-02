@@ -1,0 +1,12 @@
+{
+  "dataset": "sklearn.datasets.load_diabetes",
+  "n_samples": 442,
+  "n_features": 10,
+  "train_samples": 353,
+  "test_samples": 89,
+  "random_state": 42,
+  "cv": "5-fold shuffled KFold on training partition",
+  "selection_metric": "mean cross-validation MAE",
+  "test_set_used_for_model_selection": false,
+  "target": "continuous one-year disease-progression measure"
+}
