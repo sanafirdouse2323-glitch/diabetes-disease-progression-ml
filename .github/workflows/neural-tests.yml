@@ -1,0 +1,44 @@
+name: Neural framework checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  neural-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TF_CPP_MIN_LOG_LEVEL: "2"
+      TF_NUM_INTRAOP_THREADS: "1"
+      TF_NUM_INTEROP_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Upgrade pip and install base dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Install CPU PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install CPU TensorFlow
+        run: pip install tensorflow-cpu
+      - name: Install this project
+        run: pip install -e .
+      - name: Run full test suite
+        run: pytest -q
+      - name: Run end-to-end conventional and neural comparison
+        run: python -m diabetes_ml.neural.neural_experiment --output neural-ci-results --epochs 100 --patience 12
+      - name: Upload measured metrics and trained weights
+        uses: actions/upload-artifact@v4
+        with:
+          name: diabetes-neural-experiment-results
+          path: neural-ci-results/
+          if-no-files-found: error
+          retention-days: 14

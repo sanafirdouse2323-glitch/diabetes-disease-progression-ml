@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+results/
+neural-ci-results/
+ci-results/
+notebook-results/
+*.keras
+*.pt

@@ -1,99 +1,105 @@
-# Diabetes Disease Progression: Classical Machine Learning
+# Diabetes Disease Progression: Classical and Neural Machine Learning
 
-A small, reproducible Python project that compares baseline and conventional regression models on scikit-learn's Diabetes dataset.
+A reproducible Python study comparing conventional regression models with small multilayer perceptrons implemented independently in PyTorch and TensorFlow/Keras.
 
-> **Scope:** This is an educational machine-learning experiment using a public, preprocessed benchmark dataset. It is not a clinical study, diagnostic tool, treatment recommendation system, or validated model for individual patient care.
+> **Scope:** This is an educational experiment using scikit-learn's public, preprocessed Diabetes benchmark. It is not a clinical study, diagnostic tool, treatment recommendation system, or validated model for individual patient care.
 
-## Research question
+## Dataset and research question
 
-How do simple baseline and conventional regression models compare when predicting the dataset's one-year disease-progression measure from ten baseline variables?
-
-## Dataset
-
-The project loads `sklearn.datasets.load_diabetes` directly. The dataset contains 442 observations, ten baseline variables and a quantitative target measured one year after baseline. The features are already preprocessed by scikit-learn; this project does not claim access to raw clinical records, medical images, wearable signals or repeated patient visits.
+The project loads sklearn.datasets.load_diabetes: 442 observations, ten baseline variables and a continuous target measured one year after baseline. The features are already preprocessed. There are no raw images, wearable signals or repeated patient visits in this dataset.
 
 Dataset documentation: https://scikit-learn.org/stable/datasets/toy_dataset.html#diabetes-dataset
 
+The research question is how a mean baseline, conventional regression models and small neural networks compare when predicting the benchmark's one-year disease-progression measure.
+
 ## Models
 
-- DummyRegressor (mean baseline)
-- LinearRegression
-- Ridge regression
-- Lasso regression
-- RandomForestRegressor
+**Conventional scikit-learn:** DummyRegressor, LinearRegression, Ridge, Lasso and RandomForestRegressor.
 
-All learned preprocessing is placed inside scikit-learn pipelines. Model selection uses cross-validation on the training partition. The held-out test partition is used only for final evaluation.
+**Neural networks:** two independently implemented MLPs with the same architecture:
+- 10 input features
+- Dense layer with 16 ReLU units
+- Dense layer with 8 ReLU units
+- One linear output
 
-## Evaluation
+The PyTorch and TensorFlow/Keras versions use Adam, mean-squared-error loss, validation-loss early stopping and the same train/validation/test rows.
 
-The experiment reports MAE, RMSE and R-squared. It records cross-validation results, test-set predictions and residual diagnostics. Metrics are calculated from the actual run; no performance values are asserted in advance.
+## Evaluation design
 
-## Repository layout
+- Create an 80% training / 20% held-out test split.
+- Run conventional model cross-validation only inside the training partition.
+- Split the training partition again into a neural training subset and validation subset.
+- Fit the neural feature scaler on the neural training subset only.
+- Give both frameworks the exact same scaled arrays.
+- Do not use the held-out test partition for neural training, early stopping or model selection.
+- Report held-out MAE, RMSE and R-squared.
 
-```text
-diabetes-disease-progression-ml/
-├── notebooks/
-│   ├── 01_exploration.ipynb
-│   └── 02_model_comparison.ipynb
-├── src/
-│   └── diabetes_ml/
-│       ├── __init__.py
-│       ├── data.py
-│       ├── models.py
-│       ├── evaluation.py
-│       └── experiment.py
-├── tests/
-│   ├── test_data.py
-│   ├── test_models.py
-│   └── test_evaluation.py
-├── .github/workflows/tests.yml
-├── RESULTS.md
-├── requirements.txt
-└── README.md
-```
+The same test-row indices are used for conventional and neural comparisons when the default seed is retained.
 
 ## Setup
 
-Python 3.10 or newer is recommended.
+Python 3.11 is recommended for the combined framework workflow. The classical project supports Python 3.10 or newer.
 
-```bash
+~~~bash
 python -m venv .venv
 # Windows:
-.venv\\Scripts\\activate
+.venv\Scripts\activate
 # macOS/Linux:
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+pip install -r requirements-neural.txt
 pip install -e .
-```
+~~~
 
-## Run the experiment
+The neural requirements install CPU-capable packages. GPU acceleration is not required for this small experiment.
 
-```bash
+## Run experiments
+
+Conventional models:
+
+~~~bash
 python -m diabetes_ml.experiment --output results
-```
+~~~
 
-The command writes machine-readable metrics and test predictions to the chosen output directory. Update `RESULTS.md` with the results from your own run; do not copy unverified numbers into a CV or application.
+Both neural implementations and the full comparison:
 
-## Run tests
+~~~bash
+python -m diabetes_ml.neural.neural_experiment --output results
+~~~
 
-```bash
+Optional controls:
+
+~~~bash
+python -m diabetes_ml.neural.neural_experiment --output results --seed 42 --epochs 200 --patience 20 --batch-size 32
+~~~
+
+The combined command writes model_metrics.csv, neural_metrics.csv, model_comparison.csv, neural_training_history.csv, neural_test_predictions.csv, neural_run_metadata.json, neural_feature_scaler.json, pytorch_mlp_state_dict.pt and tensorflow_mlp.keras.
+
+## Tests
+
+~~~bash
 pytest
-```
+~~~
+
+Tests for optional frameworks are skipped when a framework is not installed. Install requirements-neural.txt to run both framework tests.
+
+## What this project demonstrates
+
+The code demonstrates Python data handling, scikit-learn pipelines and conventional regression, neural-network architecture definition, PyTorch autograd and optimisation, Keras training, validation-based early stopping and quantitative evaluation. A successful neural CI run verifies that both implementations train and evaluate in the CI environment.
+
+The repository alone does not establish expert-level mastery. Be prepared to explain the layers, loss, optimiser, backpropagation, validation split, early stopping and observed results.
 
 ## Limitations
 
 - The dataset is small and is a classic benchmark.
 - The target is a continuous one-year progression measure; this is regression, not classification.
-- The supplied features are processed numerical variables, not raw multimodal clinical data.
-- There are no longitudinal visit sequences, image files or wearable streams in this dataset.
-- The experiment does not establish clinical utility, causal effects, fairness, external validity or suitability for patient-level decisions.
-- Results depend on the split and model configuration; compare models using the recorded protocol rather than selecting a favourable random run.
+- Features are processed numerical variables, not raw multimodal clinical data.
+- There are no longitudinal visit sequences, image files or wearable streams.
+- Neural models may perform worse than simpler models; that result must be reported honestly.
+- This experiment does not establish clinical utility, causal effects, fairness, external validity or patient-level suitability.
+- This tabular dataset does **not** demonstrate multimodal learning. Any multimodal claim needs separate evidence from a project that processes and combines distinct modalities.
 
-## What this project demonstrates
+## Dataset attribution
 
-It provides inspectable evidence of Python implementation, data inspection, train/test separation, scikit-learn pipelines, conventional regression models, cross-validation and quantitative evaluation. It does **not** by itself demonstrate PyTorch, TensorFlow, neural networks or multimodal learning.
-
-## License and attribution
-
-The dataset is distributed through scikit-learn. Consult the dataset documentation and the scikit-learn project licence for attribution and reuse details.
+The dataset is distributed through scikit-learn. Consult the dataset documentation and scikit-learn licence for attribution and reuse details.

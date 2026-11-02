@@ -1,44 +1,42 @@
 # Experimental results
 
-This file is intentionally a results template until the experiment has actually been run in a Python environment.
+This file is a reporting template. Populate it only from a completed run; do not insert estimated performance values.
 
-## Protocol
+## Data and protocol
 
-- Dataset: `sklearn.datasets.load_diabetes`
-- Split: 80% training / 20% held-out test, random state 42
-- Cross-validation: shuffled 5-fold KFold on the training partition only
-- Model selection comparison: mean cross-validation MAE
-- Final held-out metrics: MAE, RMSE and R-squared
-- Models: mean DummyRegressor, Linear Regression, Ridge, Lasso and Random Forest
+- Dataset: sklearn.datasets.load_diabetes (442 observations; 10 processed numerical features)
+- Outer split: 80% training / 20% held-out test, random state 42
+- Classical models: five-fold shuffled cross-validation on outer training data; final metrics on the held-out test set
+- Neural split: 20% of the outer training partition is reserved for validation
+- Neural preprocessing: StandardScaler is fitted on the neural training subset only
+- Both neural frameworks use identical arrays and the same held-out test rows
+- Neural architecture: input → 16 ReLU → 8 ReLU → 1 linear output
+- Neural optimiser/loss: Adam / mean-squared error
+- Neural stopping: validation-loss early stopping with best weights restored
 
-## Results
+## Run commands
 
-Run:
-
-```bash
+~~~bash
 python -m diabetes_ml.experiment --output results
-```
+python -m diabetes_ml.neural.neural_experiment --output results
+~~~
 
-Then transfer the observed model metrics from `results/model_metrics.csv` into this table. Do not enter estimated or invented performance values.
+## Combined held-out test results
 
-| Model | CV MAE (mean ± SD) | Test MAE | Test RMSE | Test R² |
-|---|---:|---:|---:|---:|
-| Mean baseline | — | — | — | — |
-| Linear Regression | — | — | — | — |
-| Ridge | — | — | — | — |
-| Lasso | — | — | — | — |
-| Random Forest | — | — | — | — |
+Copy values from results/model_comparison.csv after a completed run.
+
+| Model | Framework | Test MAE | Test RMSE | Test R² |
+|---|---|---:|---:|---:|
+| Mean baseline | scikit-learn | — | — | — |
+| Linear Regression | scikit-learn | — | — | — |
+| Ridge | scikit-learn | — | — | — |
+| Lasso | scikit-learn | — | — | — |
+| Random Forest | scikit-learn | — | — | — |
+| MLP (16, 8) | PyTorch | — | — | — |
+| MLP (16, 8) | TensorFlow/Keras | — | — | — |
 
 ## Interpretation
 
-Complete after reviewing the measured output:
+After a completed run, inspect training and validation loss, selected epochs, held-out predictions and errors. Record whether neural models outperform conventional models; do not assume that they will. Keep the run metadata with any reported results.
 
-- Which model had the lowest cross-validation MAE?
-- Did the same model perform best on the held-out test set?
-- How much did models improve over the mean baseline?
-- What do residuals suggest about prediction errors?
-- Are differences large enough to be practically meaningful?
-
-## Reproducibility
-
-The command writes `model_metrics.csv`, `test_predictions.csv` and `run_metadata.json`. The held-out test set is not used to select hyperparameters.
+The experiment writes model metrics, neural metrics, predictions, training histories, framework versions, scaler statistics and trained model files to the output directory.
