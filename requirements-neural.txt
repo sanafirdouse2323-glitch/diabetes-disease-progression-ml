@@ -1,6 +1,5 @@
--r requirements.txt
-
-# CPU-capable PyTorch and TensorFlow/Keras implementations.
-# GPU-specific installation is optional and hardware-dependent.
-torch>=2.2
-tensorflow-cpu>=2.16
+torch>=2.0.0
+tensorflow>=2.15.0
+shap>=0.42.0
+streamlit>=1.30.0
+altair>=5.0.0

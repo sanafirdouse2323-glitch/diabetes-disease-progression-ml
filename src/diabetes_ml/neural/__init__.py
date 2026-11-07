@@ -1,1 +1,1 @@
-"""Neural-network implementations for the diabetes benchmark experiment."""
+"""Neural network modeling subpackage (PyTorch and TensorFlow implementations)."""

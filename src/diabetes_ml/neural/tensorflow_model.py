@@ -1,104 +1,96 @@
-"""An equivalent TensorFlow/Keras multilayer perceptron."""
+"""TensorFlow / Keras MLP implementation with Early Stopping."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
-
+from typing import Dict, List
 import numpy as np
-import tensorflow as tf
 
-from diabetes_ml.evaluation import regression_metrics
-from diabetes_ml.neural.neural_data import NeuralData
+try:
+    import tensorflow as tf
+    from tensorflow import keras
+    from tensorflow.keras import layers
 
-
-@dataclass
-class TensorFlowTrainingResult:
-    model: tf.keras.Model
-    history: list[dict[str, float]]
-    predictions: np.ndarray
-    metrics: dict[str, float]
-    best_epoch: int
+    TF_AVAILABLE = True
+except ImportError:
+    TF_AVAILABLE = False
 
 
-def build_tensorflow_model(
-    input_dim: int = 10,
-    learning_rate: float = 1e-3,
-) -> tf.keras.Model:
-    """Build and compile the same 16/8 ReLU MLP used in the PyTorch version."""
-    if input_dim < 1:
-        raise ValueError("input_dim must be positive.")
-    if learning_rate <= 0:
-        raise ValueError("learning_rate must be positive.")
-    model = tf.keras.Sequential(
-        [
-            tf.keras.layers.Input(shape=(input_dim,)),
-            tf.keras.layers.Dense(16, activation="relu"),
-            tf.keras.layers.Dense(8, activation="relu"),
-            tf.keras.layers.Dense(1),
-        ],
-        name="diabetes_mlp",
-    )
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-        loss=tf.keras.losses.MeanSquaredError(),
-    )
-    return model
+class TensorFlowTrainer:
+    """Manages TensorFlow/Keras model training and evaluation."""
 
+    def __init__(
+        self,
+        in_features: int = 10,
+        lr: float = 1e-3,
+        batch_size: int = 32,
+        epochs: int = 200,
+        patience: int = 15,
+        dropout_p: float = 0.1,
+        random_state: int = 42,
+    ):
+        if not TF_AVAILABLE:
+            raise ImportError("TensorFlow is not installed. Install tensorflow to use TensorFlowTrainer.")
 
-def train_tensorflow_model(
-    data: NeuralData,
-    *,
-    epochs: int = 200,
-    batch_size: int = 32,
-    learning_rate: float = 1e-3,
-    patience: int = 20,
-    seed: int = 42,
-) -> TensorFlowTrainingResult:
-    """Train with Adam/MSE, validation early stopping and best-weight restore."""
-    if epochs < 1 or batch_size < 1 or patience < 1:
-        raise ValueError("epochs, batch_size and patience must be positive.")
-    if learning_rate <= 0:
-        raise ValueError("learning_rate must be positive.")
+        self.in_features = in_features
+        self.lr = lr
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.patience = patience
+        self.dropout_p = dropout_p
+        self.random_state = random_state
 
-    tf.keras.backend.clear_session()
-    tf.keras.utils.set_random_seed(seed)
-    model = build_tensorflow_model(
-        input_dim=data.X_train.shape[1], learning_rate=learning_rate
-    )
-    early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor="val_loss",
-        patience=patience,
-        min_delta=1e-4,
-        restore_best_weights=True,
-    )
-    fit_history = model.fit(
-        data.X_train,
-        data.y_train,
-        validation_data=(data.X_validation, data.y_validation),
-        epochs=epochs,
-        batch_size=min(batch_size, len(data.X_train)),
-        shuffle=True,
-        callbacks=[early_stopping],
-        verbose=0,
-    )
+        tf.keras.utils.set_random_seed(random_state)
+        self.model = self._build_model()
+        self.history_records: List[Dict[str, float]] = []
 
-    training_losses = fit_history.history["loss"]
-    validation_losses = fit_history.history["val_loss"]
-    history = [
-        {
-            "epoch": float(index + 1),
-            "train_loss": float(training_losses[index]),
-            "validation_loss": float(validation_losses[index]),
-        }
-        for index in range(len(training_losses))
-    ]
-    best_epoch = int(np.argmin(validation_losses)) + 1
-    predictions = model.predict(data.X_test, verbose=0).reshape(-1)
-    metrics = regression_metrics(data.y_test.reshape(-1), predictions)
+    def _build_model(self) -> keras.Model:
+        model = keras.Sequential([
+            layers.Input(shape=(self.in_features,)),
+            layers.Dense(16, activation="relu"),
+            layers.Dropout(self.dropout_p),
+            layers.Dense(8, activation="relu"),
+            layers.Dropout(self.dropout_p),
+            layers.Dense(1, activation="linear"),
+        ])
+        model.compile(
+            optimizer=keras.optimizers.Adam(learning_rate=self.lr),
+            loss="mean_squared_error",
+        )
+        return model
 
-    return TensorFlowTrainingResult(
-        model=model,
-        history=history,
-        predictions=predictions,
-        metrics=metrics,
-        best_epoch=best_epoch,
-    )
+    def fit(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        X_val: np.ndarray,
+        y_val: np.ndarray,
+    ) -> TensorFlowTrainer:
+        early_stopping = keras.callbacks.EarlyStopping(
+            monitor="val_loss",
+            patience=self.patience,
+            restore_best_weights=True,
+            mode="min",
+        )
+
+        hist = self.model.fit(
+            X_train,
+            y_train,
+            validation_data=(X_val, y_val),
+            epochs=self.epochs,
+            batch_size=self.batch_size,
+            callbacks=[early_stopping],
+            verbose=0,
+        )
+
+        for ep, (tr, val) in enumerate(zip(hist.history["loss"], hist.history["val_loss"]), start=1):
+            self.history_records.append({
+                "epoch": ep,
+                "train_mse": float(tr),
+                "val_mse": float(val),
+            })
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        preds = self.model.predict(X, verbose=0)
+        return np.asarray(preds, dtype=np.float64).ravel()

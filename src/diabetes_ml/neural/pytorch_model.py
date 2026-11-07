@@ -1,130 +1,164 @@
-"""A small PyTorch multilayer perceptron for continuous-value prediction."""
+"""PyTorch MLP implementation with Early Stopping and Monte Carlo Dropout uncertainty."""
+
 from __future__ import annotations
 
-from copy import deepcopy
-from dataclasses import dataclass
-
+import copy
+from typing import Dict, List, Tuple
 import numpy as np
-import torch
-from torch import nn
-from torch.utils.data import DataLoader, TensorDataset
 
-from diabetes_ml.evaluation import regression_metrics
-from diabetes_ml.neural.neural_data import NeuralData
+try:
+    import torch
+    import torch.nn as nn
+    from torch.utils.data import DataLoader, TensorDataset
+
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 
 
-class DiabetesMLP(nn.Module):
-    """Feed-forward network: input -> 16 ReLU -> 8 ReLU -> one output."""
+if TORCH_AVAILABLE:
 
-    def __init__(self, input_dim: int = 10) -> None:
-        super().__init__()
-        if input_dim < 1:
-            raise ValueError("input_dim must be positive.")
-        self.network = nn.Sequential(
-            nn.Linear(input_dim, 16),
-            nn.ReLU(),
-            nn.Linear(16, 8),
-            nn.ReLU(),
-            nn.Linear(8, 1),
+    class DiabetesMLP(nn.Module):
+        """Multilayer Perceptron with Dropout for tabular regression."""
+
+        def __init__(self, in_features: int = 10, dropout_p: float = 0.1):
+            super().__init__()
+            self.net = nn.Sequential(
+                nn.Linear(in_features, 16),
+                nn.ReLU(),
+                nn.Dropout(p=dropout_p),
+                nn.Linear(16, 8),
+                nn.ReLU(),
+                nn.Dropout(p=dropout_p),
+                nn.Linear(8, 1),
+            )
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.net(x)
+
+
+class PyTorchTrainer:
+    """Manages PyTorch model training, early stopping, and MC-Dropout inference."""
+
+    def __init__(
+        self,
+        in_features: int = 10,
+        lr: float = 1e-3,
+        batch_size: int = 32,
+        epochs: int = 200,
+        patience: int = 15,
+        dropout_p: float = 0.1,
+        random_state: int = 42,
+    ):
+        if not TORCH_AVAILABLE:
+            raise ImportError("PyTorch is not installed. Install torch to use PyTorchTrainer.")
+
+        self.in_features = in_features
+        self.lr = lr
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.patience = patience
+        self.dropout_p = dropout_p
+        self.random_state = random_state
+
+        torch.manual_seed(random_state)
+        self.model = DiabetesMLP(in_features=in_features, dropout_p=dropout_p)
+        self.best_state_dict = None
+        self.history: List[Dict[str, float]] = []
+
+    def fit(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        X_val: np.ndarray,
+        y_val: np.ndarray,
+    ) -> PyTorchTrainer:
+        """Train model with validation early stopping."""
+        criterion = nn.MSELoss()
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+
+        train_ds = TensorDataset(
+            torch.from_numpy(X_train).float(),
+            torch.from_numpy(y_train).float(),
         )
+        train_loader = DataLoader(train_ds, batch_size=self.batch_size, shuffle=True)
 
-    def forward(self, features: torch.Tensor) -> torch.Tensor:
-        return self.network(features)
+        X_val_t = torch.from_numpy(X_val).float()
+        y_val_t = torch.from_numpy(y_val).float()
 
+        best_val_loss = float("inf")
+        patience_counter = 0
 
-@dataclass
-class PyTorchTrainingResult:
-    model: DiabetesMLP
-    history: list[dict[str, float]]
-    predictions: np.ndarray
-    metrics: dict[str, float]
-    best_epoch: int
+        for epoch in range(1, self.epochs + 1):
+            self.model.train()
+            train_loss_sum = 0.0
+            n_train = 0
 
+            for batch_x, batch_y in train_loader:
+                optimizer.zero_grad()
+                preds = self.model(batch_x)
+                loss = criterion(preds, batch_y)
+                loss.backward()
+                optimizer.step()
 
-def train_pytorch_model(
-    data: NeuralData,
-    *,
-    epochs: int = 200,
-    batch_size: int = 32,
-    learning_rate: float = 1e-3,
-    patience: int = 20,
-    seed: int = 42,
-) -> PyTorchTrainingResult:
-    """Train with Adam/MSE, monitor validation loss and restore best weights."""
-    if epochs < 1 or batch_size < 1 or patience < 1:
-        raise ValueError("epochs, batch_size and patience must be positive.")
-    if learning_rate <= 0:
-        raise ValueError("learning_rate must be positive.")
+                train_loss_sum += float(loss.item()) * len(batch_x)
+                n_train += len(batch_x)
 
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    model = DiabetesMLP(input_dim=data.X_train.shape[1])
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+            epoch_train_loss = train_loss_sum / n_train
 
-    X_train = torch.from_numpy(data.X_train)
-    y_train = torch.from_numpy(data.y_train)
-    train_loader = DataLoader(
-        TensorDataset(X_train, y_train),
-        batch_size=min(batch_size, len(X_train)),
-        shuffle=True,
-        generator=torch.Generator().manual_seed(seed),
-        num_workers=0,
-    )
-    X_validation = torch.from_numpy(data.X_validation)
-    y_validation = torch.from_numpy(data.y_validation)
-    X_test = torch.from_numpy(data.X_test)
+            # Validation phase
+            self.model.eval()
+            with torch.no_grad():
+                val_preds = self.model(X_val_t)
+                val_loss = float(criterion(val_preds, y_val_t).item())
 
-    history: list[dict[str, float]] = []
-    best_validation_loss = float("inf")
-    best_state = deepcopy(model.state_dict())
-    best_epoch = 0
-    epochs_without_improvement = 0
+            self.history.append({
+                "epoch": epoch,
+                "train_mse": epoch_train_loss,
+                "val_mse": val_loss,
+            })
 
-    for epoch in range(1, epochs + 1):
-        model.train()
-        total_train_loss = 0.0
-        seen = 0
-        for batch_features, batch_targets in train_loader:
-            optimizer.zero_grad(set_to_none=True)
-            predictions = model(batch_features)
-            loss = criterion(predictions, batch_targets)
-            loss.backward()
-            optimizer.step()
-            total_train_loss += float(loss.detach()) * len(batch_features)
-            seen += len(batch_features)
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                self.best_state_dict = copy.deepcopy(self.model.state_dict())
+            else:
+                patience_counter += 1
+                if patience_counter >= self.patience:
+                    break
 
-        model.eval()
+        if self.best_state_dict is not None:
+            self.model.load_state_dict(self.best_state_dict)
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Deterministic inference (evaluation mode)."""
+        self.model.eval()
+        X_t = torch.from_numpy(X).float()
         with torch.no_grad():
-            validation_predictions = model(X_validation)
-            validation_loss = float(criterion(validation_predictions, y_validation))
+            preds = self.model(X_t).cpu().numpy().ravel()
+        return preds
 
-        history.append({
-            "epoch": float(epoch),
-            "train_loss": total_train_loss / max(seen, 1),
-            "validation_loss": validation_loss,
-        })
+    def predict_mc_dropout(
+        self,
+        X: np.ndarray,
+        n_samples: int = 100,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Stochastic forward passes for epistemic uncertainty quantification.
 
-        if validation_loss < best_validation_loss - 1e-4:
-            best_validation_loss = validation_loss
-            best_state = deepcopy(model.state_dict())
-            best_epoch = epoch
-            epochs_without_improvement = 0
-        else:
-            epochs_without_improvement += 1
-            if epochs_without_improvement >= patience:
-                break
+        Keeps dropout layers active at inference time. Returns predictive mean and standard deviation.
+        """
+        self.model.train()  # Keep dropout active
+        X_t = torch.from_numpy(X).float()
 
-    model.load_state_dict(best_state)
-    model.eval()
-    with torch.no_grad():
-        test_predictions = model(X_test).cpu().numpy().reshape(-1)
+        samples = []
+        with torch.no_grad():
+            for _ in range(n_samples):
+                pred = self.model(X_t).cpu().numpy().ravel()
+                samples.append(pred)
 
-    metrics = regression_metrics(data.y_test.reshape(-1), test_predictions)
-    return PyTorchTrainingResult(
-        model=model,
-        history=history,
-        predictions=test_predictions,
-        metrics=metrics,
-        best_epoch=best_epoch,
-    )
+        samples_arr = np.array(samples)  # (n_samples, N)
+        mean_pred = np.mean(samples_arr, axis=0)
+        std_pred = np.std(samples_arr, axis=0)
+        return mean_pred, std_pred

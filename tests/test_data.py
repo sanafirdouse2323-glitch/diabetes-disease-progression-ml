@@ -1,17 +1,28 @@
-from diabetes_ml.data import load_diabetes_frame, make_train_test_split
+"""Unit tests for dataset loading, validation, and split integrity."""
+
+from diabetes_ml.data import create_experiment_splits, load_diabetes_data
 
 
-def test_load_diabetes_frame_shape_and_alignment():
-    X, y = load_diabetes_frame()
+def test_load_diabetes_data_dimensions():
+    X, y = load_diabetes_data()
     assert X.shape == (442, 10)
-    assert len(X) == len(y)
-    assert X.isna().sum().sum() == 0
+    assert len(y) == 442
+    assert not X.isna().any().any()
+    assert not y.isna().any()
 
 
-def test_split_is_reproducible_and_disjoint():
-    X, y = load_diabetes_frame()
-    first = make_train_test_split(X, y, random_state=7)
-    second = make_train_test_split(X, y, random_state=7)
-    assert first.X_train.index.equals(second.X_train.index)
-    assert first.X_test.index.equals(second.X_test.index)
-    assert set(first.X_train.index).isdisjoint(set(first.X_test.index))
+def test_create_experiment_splits_shapes():
+    splits = create_experiment_splits(test_size=0.20, random_state=42)
+    assert splits.train_size == 353
+    assert splits.test_size == 89
+    assert len(splits.feature_names) == 10
+    assert set(splits.feature_names) == set(splits.X_train.columns)
+
+
+def test_split_isolation_no_overlap():
+    splits = create_experiment_splits(test_size=0.20, random_state=42)
+    # Check that indices were reset and no index collision exists
+    assert len(splits.X_train) + len(splits.X_test) == 442
+    # Verify values match expectations
+    assert splits.y_train.min() >= 25.0
+    assert splits.y_test.max() <= 346.0

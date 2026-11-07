@@ -1,86 +1,78 @@
-"""Create one leakage-conscious data split shared by both neural frameworks."""
+"""Neural dataset preparation, inner split, and isolated feature scaling."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-
+from typing import Tuple
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from diabetes_ml.data import DiabetesSplit
-
 
 @dataclass(frozen=True)
-class NeuralData:
-    """Scaled arrays and row identifiers for neural-network training."""
+class NeuralArrays:
+    """Scaled numpy arrays for neural network training and evaluation."""
 
     X_train: np.ndarray
-    X_validation: np.ndarray
-    X_test: np.ndarray
     y_train: np.ndarray
-    y_validation: np.ndarray
+    X_val: np.ndarray
+    y_val: np.ndarray
+    X_test: np.ndarray
     y_test: np.ndarray
-    train_indices: np.ndarray
-    validation_indices: np.ndarray
-    test_indices: np.ndarray
-    feature_names: tuple[str, ...]
-    scaler: StandardScaler
+    scaler_mean: np.ndarray
+    scaler_scale: np.ndarray
 
 
-def prepare_neural_data(
-    split: DiabetesSplit,
-    *,
-    validation_size: float = 0.2,
+def prepare_neural_datasets(
+    X_train_df,
+    y_train_series,
+    X_test_df,
+    y_test_series,
+    val_fraction: float = 0.20,
     random_state: int = 42,
-) -> NeuralData:
-    """Split outer training data and fit the scaler on the neural train subset only."""
-    if not 0 < validation_size < 1:
-        raise ValueError("validation_size must be strictly between 0 and 1.")
-    if len(split.X_train) != len(split.y_train):
-        raise ValueError("Training features and targets are misaligned.")
-    if len(split.X_test) != len(split.y_test):
-        raise ValueError("Test features and targets are misaligned.")
-    if split.X_train.empty or split.X_test.empty:
-        raise ValueError("Training and test partitions must not be empty.")
+) -> NeuralArrays:
+    """Split training partition into neural train/val subsets and fit scaler strictly on train.
 
-    X_fit, X_validation, y_fit, y_validation = train_test_split(
-        split.X_train,
-        split.y_train,
-        test_size=validation_size,
+    Ensures zero data leakage:
+    1. Validation subset is carved out of the training partition only.
+    2. StandardScaler is fitted ONLY on the neural training subset.
+    3. Neural validation and outer test sets are transformed using the fitted training statistics.
+
+    Args:
+        X_train_df: Outer training feature DataFrame.
+        y_train_series: Outer training targets.
+        X_test_df: Outer test feature DataFrame.
+        y_test_series: Outer test targets.
+        val_fraction: Fraction of outer training partition reserved for validation early stopping.
+        random_state: Seed for inner split.
+
+    Returns:
+        NeuralArrays container with scaled arrays and scaler statistics.
+    """
+    X_tr_raw, X_val_raw, y_tr_raw, y_val_raw = train_test_split(
+        X_train_df,
+        y_train_series,
+        test_size=val_fraction,
         random_state=random_state,
+        shuffle=True,
     )
 
     scaler = StandardScaler()
-    X_fit_scaled = scaler.fit_transform(X_fit).astype(np.float32)
-    X_validation_scaled = scaler.transform(X_validation).astype(np.float32)
-    X_test_scaled = scaler.transform(split.X_test).astype(np.float32)
+    X_tr_scaled = scaler.fit_transform(X_tr_raw).astype(np.float32)
+    X_val_scaled = scaler.transform(X_val_raw).astype(np.float32)
+    X_test_scaled = scaler.transform(X_test_df).astype(np.float32)
 
-    # A column target matches the one-output tensor produced by each framework.
-    y_fit_array = y_fit.to_numpy(dtype=np.float32).reshape(-1, 1)
-    y_validation_array = y_validation.to_numpy(dtype=np.float32).reshape(-1, 1)
-    y_test_array = split.y_test.to_numpy(dtype=np.float32).reshape(-1, 1)
+    y_tr_arr = np.asarray(y_tr_raw, dtype=np.float32).reshape(-1, 1)
+    y_val_arr = np.asarray(y_val_raw, dtype=np.float32).reshape(-1, 1)
+    y_test_arr = np.asarray(y_test_series, dtype=np.float32).reshape(-1, 1)
 
-    arrays = (
-        X_fit_scaled,
-        X_validation_scaled,
-        X_test_scaled,
-        y_fit_array,
-        y_validation_array,
-        y_test_array,
-    )
-    if any(not np.isfinite(array).all() for array in arrays):
-        raise ValueError("Prepared neural data contains non-finite values.")
-
-    return NeuralData(
-        X_train=X_fit_scaled,
-        X_validation=X_validation_scaled,
+    return NeuralArrays(
+        X_train=X_tr_scaled,
+        y_train=y_tr_arr,
+        X_val=X_val_scaled,
+        y_val=y_val_arr,
         X_test=X_test_scaled,
-        y_train=y_fit_array,
-        y_validation=y_validation_array,
-        y_test=y_test_array,
-        train_indices=X_fit.index.to_numpy(),
-        validation_indices=X_validation.index.to_numpy(),
-        test_indices=split.X_test.index.to_numpy(),
-        feature_names=tuple(str(name) for name in split.X_train.columns),
-        scaler=scaler,
+        y_test=y_test_arr,
+        scaler_mean=scaler.mean_,
+        scaler_scale=scaler.scale_,
     )
