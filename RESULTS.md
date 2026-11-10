@@ -1,6 +1,8 @@
-# Comprehensive Experimental Results & Clinical ML Audit
+# Previously Reported Experimental Results & ML Audit
 
-This document records the empirical results, uncertainty calibration, demographic subgroup audits, and biomarker attribution findings across conventional and neural machine learning models.
+> **Reproducibility warning:** All numerical tables and interpretations in this file were produced before the calibration-isolation corrections now in the code. They have not yet been regenerated with the corrected pipeline. Treat them as historical results only; do not cite them as validated outputs of the current implementation until the experiments have been rerun and the generated files reviewed.
+
+This document records the earlier empirical results, uncertainty calibration, subgroup audits, and feature attribution findings across conventional and neural machine learning models.
 
 ---
 
@@ -11,9 +13,10 @@ This document records the empirical results, uncertainty calibration, demographi
   * Input features: $d = 10$ preprocessed physiological baseline variables (`age`, `sex`, `bmi`, `bp`, `s1`, `s2`, `s3`, `s4`, `s5`, `s6`).
   * Continuous target: Quantitative disease progression measured one year post-baseline.
 * **Outer Split:** 80% training ($N = 353$) and 20% strictly isolated test set ($N = 89$).
-* **Inner Split (Uncertainty & Early Stopping):** 
-  * Neural & Conformal calibration split: 80% inner training ($N = 282$) and 20% inner calibration/validation ($N = 71$).
-  * Scaler statistics ($\mu, \sigma$) computed strictly on the $282$ inner training samples.
+* **Classical path:** the outer training partition is split into 282 model-fitting observations and 71 disjoint calibration observations.
+* **Neural path:** 71 observations are reserved for conformal calibration first; the remaining 282 are split into 225 model-fitting and 57 early-stopping validation observations.
+* **Neural preprocessing:** scaler statistics ($\mu, \sigma$) are fitted only on the 225 neural model-fitting observations and then applied unchanged to validation, calibration, and test data.
+* **Cross-validation:** classical cross-validation is restricted to the 282 model-fitting observations and excludes calibration data.
 * **Random Seed:** $42$ (enforcing deterministic row partitioning across all models).
 
 ---
@@ -32,9 +35,9 @@ Evaluated on the exact same 89 held-out test observations.
 | **MLP (16, 8)** | PyTorch | 51.070 | 64.622 | 0.212 | 0.521 |
 | **Mean Baseline** | scikit-learn | 64.006 | 73.222 | -0.012 | 0.000 |
 
-### Training Cross-Validation Performance (Training Partition Only)
+### Training Cross-Validation Performance (Model-Fitting Subset Only)
 
-5-fold cross-validation conducted strictly inside the 353 training observations:
+5-fold cross-validation conducted strictly inside the 282 classical model-fitting observations:
 
 | Model | CV MAE (Mean ± SD) | CV RMSE (Mean ± SD) | CV R² (Mean ± SD) |
 |---|:---:|:---:|:---:|
@@ -46,9 +49,9 @@ Evaluated on the exact same 89 held-out test observations.
 
 ---
 
-## 3. Clinical Uncertainty Quantification (Split Conformal Prediction)
+## 3. Split-Conformal Prediction (Historical Results; Not Yet Revalidated)
 
-In medical decision systems, single-point estimates are inadequate. We evaluate distribution-free **Split Conformal Prediction** targeting a nominal **90% confidence level** ($\alpha = 0.10$).
+The earlier experiment targeted nominal **90% marginal coverage** ($\alpha = 0.10$) using split-conformal prediction. The results below are historical and must be recomputed after the calibration-isolation correction.
 
 | Model | Nominal Coverage | Empirical Test Coverage | Mean Interval Width (MPIW) | Conformal Margin ($\hat{q}$) | Winkler Score |
 |---|:---:|:---:|:---:|:---:|:---:|
@@ -60,14 +63,14 @@ In medical decision systems, single-point estimates are inadequate. We evaluate 
 | **PyTorch MLP** | 90.0% | 89.9% | 158.62 | 79.31 | 206.18 |
 
 ### Key Uncertainty Takeaways:
-1. **Finite-Sample Validity:** All evaluated models achieve empirical test coverage $\ge 89.9\%$, validating the theoretical coverage theorem $P(Y \in C(X)) \ge 1 - \alpha$.
-2. **Interval Efficiency:** Ridge regression achieves the narrowest prediction interval ($129.42$ points) and lowest Winkler score, demonstrating superior uncertainty efficiency alongside top point-prediction accuracy.
+1. **Historical empirical coverage:** These values are single held-out test-set estimates. They do not prove the theoretical coverage result, and they do not represent a patient-specific probability. The finite-sample guarantee concerns marginal coverage under exchangeability of calibration and future test observations.
+2. **Historical interval efficiency:** The reported Ridge interval width and Winkler score were computed under the earlier pipeline and must be regenerated before comparing models.
 
 ---
 
 ## 4. Subgroup Demographic Fairness Audit
 
-Clinical AI must be evaluated for disparate error rates across patient demographics. We audit performance across patient `sex` (binary standardized biomarker) on the held-out test cohort:
+Subgroup error analysis can identify potential performance differences. This earlier audit used the two encoded values of the standardized `sex` feature in the scikit-learn benchmark; it is not a comprehensive demographic fairness evaluation.
 
 | Model | Group 0 MAE ($N=42$) | Group 1 MAE ($N=47$) | Absolute Disparity | Parity Ratio ($\min / \max$) | Permutation $p$-value |
 |---|:---:|:---:|:---:|:---:|:---:|
@@ -77,11 +80,11 @@ Clinical AI must be evaluated for disparate error rates across patient demograph
 | **PyTorch MLP** | 48.91 | 53.12 | 4.21 | 0.921 | 0.463 (Not significant) |
 | **TensorFlow MLP** | 46.78 | 50.63 | 3.85 | 0.924 | 0.512 (Not significant) |
 
-*Hypothesis Testing Verdict:* Non-parametric permutation tests (1,000 resamples) yielded $p > 0.45$ across all models, failing to reject the null hypothesis of error independence. The slight numerical disparities are consistent with expected sampling variation given $N=89$.
+*Historical hypothesis-test result:* The earlier permutation tests did not reject the null hypothesis at conventional significance levels. This is not evidence that the model is unbiased or fair; the small held-out sample limits the strength of subgroup conclusions.
 
 ---
 
-## 5. Biomarker Attribution & Interpretability
+## 5. Feature Attribution & Interpretability (Associational, Not Causal)
 
 Standardized feature attributions from the top-performing model (**Ridge**) compared against **Random Forest** feature importance:
 
@@ -98,10 +101,10 @@ Standardized feature attributions from the top-performing model (**Ridge**) comp
 | **`age`** | Patient Age | +1.64 | 1.5% | 0.042 |
 | **`sex`** | Patient Sex | -0.92 | 0.9% | 0.008 |
 
-### Clinical Insights:
-* **Primary Risk Drivers:** `s5` (serum triglycerides) and `bmi` (body mass index) together account for over **46%** of total predictive weight in linear models and over **54%** of tree-based split decisions.
-* **Secondary Biomarkers:** Mean blood pressure (`bp`) is a consistent positive predictor of elevated one-year progression.
-* **Demographics:** `age` and `sex` had minimal standalone influence once metabolic and lipid profiles were accounted for.
+### Interpretation Limits:
+* These values describe associations used by the fitted models, not causal effects or clinical risk factors established by this project.
+* Feature importance depends on the model, data preprocessing, correlated predictors, and the particular training sample.
+* The historical rankings must be regenerated with the corrected fitted/calibration partition before they are presented as current project findings.
 
 ---
 
