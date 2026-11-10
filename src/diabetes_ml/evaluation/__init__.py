@@ -1,6 +1,10 @@
 """Evaluation subpackage: metrics, conformal uncertainty, subgroup fairness, and explainability."""
 
-from diabetes_ml.evaluation.metrics import calculate_regression_metrics
+from diabetes_ml.evaluation.metrics import (
+    calculate_regression_metrics,
+    regression_metrics,
+    residual_summary,
+)
 from diabetes_ml.evaluation.uncertainty import (
     ConformalRegressor,
     PredictionInterval,
@@ -18,6 +22,8 @@ from diabetes_ml.evaluation.explainability import (
 
 __all__ = [
     "calculate_regression_metrics",
+    "regression_metrics",
+    "residual_summary",
     "ConformalRegressor",
     "PredictionInterval",
     "evaluate_conformal_coverage",
