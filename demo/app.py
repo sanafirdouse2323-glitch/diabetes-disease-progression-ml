@@ -1,28 +1,27 @@
-"""Interactive Clinical Decision Support Dashboard for Diabetes Disease Progression.
+"""Educational ML research demo for diabetes disease-progression regression.
 
 Features:
-- Real-time prediction with Conformal Prediction Intervals (guaranteed 90% coverage).
-- Patient-level local biomarker attribution (why the model made this prediction).
-- Subgroup demographic fairness audit tab.
+- Point predictions with split-conformal marginal prediction intervals.
+- Local feature attribution relative to the model-fitting subset.
+- Exploratory subgroup error audit on the held-out benchmark test partition.
+
+This application is not a diagnostic or clinical decision-support system.
 """
 
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
 import streamlit as st
 
-from diabetes_ml.data import create_experiment_splits, load_diabetes_data
+from sklearn.model_selection import train_test_split
+
+from diabetes_ml.data import create_experiment_splits
 from diabetes_ml.evaluation import (
     ConformalRegressor,
     compute_patient_explanation,
     evaluate_subgroup_disparity,
-    get_linear_attribution,
 )
 from diabetes_ml.models import get_classical_models
-from sklearn.model_selection import train_test_split
-
-
 @st.cache_resource
 def load_trained_models():
     """Cache models and data splits for rapid interactive evaluation."""
@@ -54,7 +53,7 @@ def load_trained_models():
 
 def main():
     st.set_page_config(
-        page_title="Diabetes Progression Decision Support",
+        page_title="Diabetes Progression Research Demo",
         page_icon="🩺",
         layout="wide",
     )
