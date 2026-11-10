@@ -20,6 +20,7 @@ from diabetes_ml.evaluation import (
     get_linear_attribution,
 )
 from diabetes_ml.models import get_classical_models
+from sklearn.model_selection import train_test_split
 
 
 @st.cache_resource
@@ -28,19 +29,27 @@ def load_trained_models():
     splits = create_experiment_splits(random_state=42)
     models = get_classical_models(random_state=42)
 
-    # Fit and calibrate Conformal Predictors
+    # Keep calibration observations disjoint from model fitting.
+    X_fit, X_cal, y_fit, y_cal = train_test_split(
+        splits.X_train,
+        splits.y_train,
+        test_size=0.20,
+        random_state=42,
+        shuffle=True,
+    )
+
     conformal_models = {}
     for name, model in models.items():
         cr = ConformalRegressor(model, alpha=0.10)
         cr.fit_and_calibrate(
-            splits.X_train.values,
-            splits.y_train.values,
-            splits.X_train.values[-70:],  # inner calibration partition
-            splits.y_train.values[-70:],
+            X_fit.values,
+            y_fit.values,
+            X_cal.values,
+            y_cal.values,
         )
         conformal_models[name] = cr
 
-    return splits, models, conformal_models
+    return splits, models, conformal_models, X_fit
 
 
 def main():
@@ -50,17 +59,18 @@ def main():
         layout="wide",
     )
 
-    st.title("🩺 Diabetes Disease Progression: Clinical AI Decision Support")
+    st.title("🩺 Diabetes Disease Progression: Educational ML Research Demo")
     st.markdown(
         """
-        An educational clinical machine learning interface demonstrating **Distribution-Free Uncertainty Quantification**
-        (Split Conformal Prediction) and **Patient-Level Biomarker Attribution**.
+        An educational machine learning demonstration of **Split Conformal Prediction**
+        and **local feature attribution** on a public, preprocessed benchmark dataset.
+        This is not a diagnostic tool or a validated clinical decision system.
         """
     )
 
-    splits, models, conformal_models = load_trained_models()
+    splits, models, conformal_models, X_fit = load_trained_models()
     feature_names = splits.feature_names
-    ref_baseline = splits.X_train.mean().values
+    ref_baseline = X_fit.mean().values
 
     # Sidebar: Model and Patient Controls
     st.sidebar.header("⚙️ Configuration")
@@ -68,7 +78,7 @@ def main():
         "Select Model",
         ["Ridge", "Linear Regression", "Lasso", "Random Forest"],
         index=0,
-        help="Ridge regression is the top-performing model on this benchmark.",
+        help="Select a regression model for the benchmark demonstration.",
     )
 
     st.sidebar.subheader("👤 Patient Biomarker Profile")
@@ -125,18 +135,22 @@ def main():
         c3.metric("90% Conformal Upper Bound", f"{upper_bound:.1f}")
 
         st.info(
-            f"**Guaranteed Uncertainty Interval:** With 90% finite-sample statistical confidence, "
-            f"the patient's true one-year disease progression is bounded between **{lower_bound:.1f}** and **{upper_bound:.1f}** "
-            f"(margin: ±{margin:.1f})."
+            f"**90% split-conformal prediction interval:** **{lower_bound:.1f}** to "
+            f"**{upper_bound:.1f}** (margin: ±{margin:.1f}). Under exchangeability, "
+            "the procedure targets at least 90% marginal coverage across future observations. "
+            "This is not a 90% probability statement about this individual patient."
         )
 
-        # Risk stratification indicator
-        if pred_val < 100:
-            st.success("🟢 **Risk Category: Mild Progression** (Below cohort 25th percentile)")
-        elif pred_val < 180:
-            st.warning("🟡 **Risk Category: Moderate Progression** (Cohort mid-range)")
+        # Describe the prediction against the benchmark target distribution only;
+        # these labels are not clinical risk categories or treatment thresholds.
+        q25, q75 = np.quantile(splits.y_train.to_numpy(dtype=float), [0.25, 0.75])
+        st.caption("Position within the benchmark target distribution; not a clinical risk category.")
+        if pred_val < q25:
+            st.info("Prediction is below the benchmark training-set 25th percentile.")
+        elif pred_val > q75:
+            st.warning("Prediction is above the benchmark training-set 75th percentile.")
         else:
-            st.error("🔴 **Risk Category: Rapid Progression** (Upper quartile risk trajectory)")
+            st.success("Prediction is within the benchmark training-set interquartile range.")
 
     with tab2:
         st.subheader("🔍 Local Biomarker Attribution Breakdown")
