@@ -3,25 +3,36 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from diabetes_ml.data import load_diabetes_frame, make_train_test_split
-from diabetes_ml.neural.neural_data import prepare_neural_data
-from diabetes_ml.neural.pytorch_model import DiabetesMLP, train_pytorch_model
+from diabetes_ml.data import create_experiment_splits
+from diabetes_ml.neural.neural_data import prepare_neural_datasets
+from diabetes_ml.neural.pytorch_model import DiabetesMLP, PyTorchTrainer
 
 
 def test_pytorch_mlp_forward_shape():
-    model = DiabetesMLP(input_dim=10)
+    model = DiabetesMLP(in_features=10)
     output = model(torch.zeros((4, 10), dtype=torch.float32))
     assert tuple(output.shape) == (4, 1)
 
 
-def test_pytorch_training_produces_finite_test_metrics():
-    X, y = load_diabetes_frame()
-    split = make_train_test_split(X, y, random_state=42)
-    data = prepare_neural_data(split, random_state=42)
-    result = train_pytorch_model(data, epochs=5, patience=3, seed=11)
+def test_pytorch_training_produces_finite_predictions_and_mc_uncertainty():
+    splits = create_experiment_splits(random_state=42)
+    data = prepare_neural_datasets(
+        splits.X_train, splits.y_train, splits.X_test, splits.y_test,
+        random_state=42,
+    )
+    trainer = PyTorchTrainer(
+        in_features=10, epochs=5, patience=3, random_state=11,
+    )
+    trainer.fit(data.X_train, data.y_train, data.X_val, data.y_val)
 
-    assert result.predictions.shape == (len(data.X_test),)
-    assert np.isfinite(result.predictions).all()
-    assert set(result.metrics) == {"mae", "rmse", "r2"}
-    assert all(np.isfinite(value) for value in result.metrics.values())
-    assert 1 <= result.best_epoch <= len(result.history) <= 5
+    predictions = trainer.predict(data.X_test)
+    mc_mean, mc_std = trainer.predict_mc_dropout(data.X_test, n_samples=20)
+
+    assert predictions.shape == (len(data.X_test),)
+    assert mc_mean.shape == predictions.shape
+    assert mc_std.shape == predictions.shape
+    assert np.isfinite(predictions).all()
+    assert np.isfinite(mc_mean).all()
+    assert np.isfinite(mc_std).all()
+    assert np.all(mc_std >= 0)
+    assert 1 <= len(trainer.history) <= 5
