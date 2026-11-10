@@ -35,9 +35,9 @@ Evaluated on the exact same 89 held-out test observations.
 | **MLP (16, 8)** | PyTorch | 51.070 | 64.622 | 0.212 | 0.521 |
 | **Mean Baseline** | scikit-learn | 64.006 | 73.222 | -0.012 | 0.000 |
 
-### Training Cross-Validation Performance (Model-Fitting Subset Only)
+### Previously Reported Cross-Validation (Legacy 353-Observation Protocol)
 
-5-fold cross-validation conducted strictly inside the 282 classical model-fitting observations:
+The following CV values were generated under the earlier protocol, which used all 353 outer-training observations. They are historical and do not represent the current code's cross-validation on the 282-observation model-fitting subset:
 
 | Model | CV MAE (Mean ± SD) | CV RMSE (Mean ± SD) | CV R² (Mean ± SD) |
 |---|:---:|:---:|:---:|
@@ -68,7 +68,7 @@ The earlier experiment targeted nominal **90% marginal coverage** ($\alpha = 0.1
 
 ---
 
-## 4. Subgroup Demographic Fairness Audit
+## 4. Exploratory Sex-Feature Subgroup Error Analysis
 
 Subgroup error analysis can identify potential performance differences. This earlier audit used the two encoded values of the standardized `sex` feature in the scikit-learn benchmark; it is not a comprehensive demographic fairness evaluation.
 
