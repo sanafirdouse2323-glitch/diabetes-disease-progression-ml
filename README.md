@@ -33,37 +33,40 @@ A rigorous clinical machine learning study comparing conventional regularised re
                                   │                   │
                  ┌────────────────┴──────────────┐    │
                  │ Outer Training Split (N = 353)│    │ Held-Out Test Set (N = 89)
-                 └────────┬──────────────────────┘    │ (Strictly isolated until
-                          │                           │  final evaluation)
-         ┌────────────────┴───────────────┐           │
-         │  Inner 80/20 Train/Cal Split   │           │
-         ├────────────────┬───────────────┤           │
-         │ Inner Train    │ Inner Cal     │           │
-         │ (N = 282)      │ (N = 71)      │           │
-         │ Model Fitting  │ Conformal Cal │           │
-         └────────┬───────┴───────┬───────┘           │
-                  │               │                   │
-                  ▼               ▼                   ▼
-         ┌────────────────────────────────────────────────────────┐
-         │ 1. Model Training: Ridge, Lasso, RF, PyTorch, Keras    │
-         │ 2. Uncertainty: Calibrate Conformal Quantile (q_hat)   │
-         │ 3. Held-Out Evaluation: MAE, RMSE, R², Coverage, MPIW  │
-         │ 4. Subgroup Audit: Sex & Age disparity permutation test│
-         │ 5. Clinical Explainability: SHAP & Local Attributions  │
-         └────────────────────────────────────────────────────────┘
+                 └────────┬──────────────────────┘    │
+                          │                           │
+              ┌───────────┴─────────────┐             │
+              │ Calibration only (N=71)│             │
+              └───────────┬─────────────┘             │
+                          │                           │
+                  Development (N=282)                 │
+                          │                           │
+             ┌────────────┴────────────┐               │
+             │                        │               │
+      Classical model path     Neural model path       │
+      Fit: N=282               Fit: N=225              │
+      Cal: N=71                Early stop: N=57        │
+                              Cal: N=71               │
+             │                        │               │
+             └────────────────────────┴───────────────┘
+                                      │
+                                      ▼
+                    Final evaluation on untouched N=89
 ```
 
 ### 1. Data Isolation & Leakage Prevention
-* Feature scalers (`StandardScaler`) are fitted **strictly** on the inner training partition ($N=282$).
-* Cross-validation is conducted **solely** within the training partition.
-* The held-out test partition ($N=89$) is locked until post-calibration inference.
+* Classical estimators are fitted on 282 observations and calibrated on a disjoint 71-observation subset.
+* Neural models use 225 observations for fitting, 57 for early-stopping validation, and a separate 71 for conformal calibration.
+* Neural feature scalers (`StandardScaler`) are fitted **only** on the 225-observation model-fitting subset.
+* Classical cross-validation and neural early stopping do not use conformal calibration observations.
+* The outer test partition ($N=89$) remains untouched until final evaluation.
 
 ### 2. Distribution-Free Conformal Prediction
 Standard Gaussian error assumptions often fail in clinical telemetry. We apply **Split Conformal Prediction**:
 * Non-conformity score: $s_i = |y_i - \hat{y}(x_i)|$.
-* Calibrated quantile: $\hat{q} = \text{Quantile}\left(\{s_i\}_{i=1}^{n}, \frac{\lceil (n+1)(1-\alpha) \rceil}{n}\right)$.
+* Finite-sample rank: $k = \lceil (n_{cal}+1)(1-\alpha) \rceil$; set $\hat{q}$ to the $k$-th sorted calibration score. If $k > n_{cal}$, set $\hat{q}=+\infty$.
 * Calibrated prediction interval: $C(x) = [\hat{y}(x) - \hat{q}, \; \hat{y}(x) + \hat{q}]$.
-* **Mathematical Guarantee:** $P(Y_{test} \in C(X_{test})) \ge 1 - \alpha$ under mild exchangeability.
+* **Coverage interpretation:** at least $1-\alpha$ marginal coverage over exchangeable future observations; this is not a patient-specific probability statement.
 
 ### 3. Subgroup Demographic Disparity Audit
 * Stratifies absolute prediction errors and conformal coverage by patient demographic cohorts (`sex`, `age`).
@@ -72,7 +75,9 @@ Standard Gaussian error assumptions often fail in clinical telemetry. We apply *
 
 ---
 
-## 📊 Summary of Benchmark Findings
+## 📊 Previously Reported Benchmark Snapshot
+
+> **Reproducibility warning:** The table below was recorded before the calibration-isolation corrections in this branch. Its values have not yet been regenerated with the corrected pipeline. Do not cite these numbers as results of the corrected methodology until the full experiments are rerun and the output files are checked.
 
 | Model | Framework | Test MAE | Test RMSE | Test R² | 90% Conformal Coverage | Interval Width | Sex Disparity ($p$-value) |
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -84,7 +89,7 @@ Standard Gaussian error assumptions often fail in clinical telemetry. We apply *
 | **MLP (16, 8)** | TensorFlow | 48.75 | 62.34 | 0.267 | 91.0% | 152.1 | 3.85 ($p=0.51$) |
 | **Mean Baseline** | scikit-learn | 64.01 | 73.22 | -0.012 | 87.6% | 178.4 | 5.40 ($p=0.39$) |
 
-*Key Takeaway:* Regularised linear models outperform deep neural networks on this low-sample tabular dataset ($R^2 \approx 0.45$ vs $0.21-0.27$). Split Conformal Prediction achieves valid nominal coverage ($\ge 90\%$) across all models. Disparities across sex cohorts show no statistically significant bias ($p > 0.45$).
+*Previously reported interpretation (not yet revalidated):* The numerical comparison and subgroup findings require regeneration after the corrected data partitioning. The small benchmark supports a methodological demonstration only; it does not establish clinical validity or demographic fairness.
 
 For in-depth analysis, biomarker rankings, and training curves, see [RESULTS.md](RESULTS.md).
 
