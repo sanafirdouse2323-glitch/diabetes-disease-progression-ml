@@ -50,8 +50,9 @@ def run_classical_experiment(
     fairness_records: Dict[str, Any] = {}
 
     for name, model in models.items():
-        # 1. 5-fold Cross-validation on training partition
-        cv_scores = evaluate_cv(model, splits.X_train, splits.y_train, cv_folds=5, random_state=random_state)
+        # 1. Cross-validation stays inside the model-fitting subset; calibration
+        # observations are not used for model assessment or selection.
+        cv_scores = evaluate_cv(model, X_tr_fit, y_tr_fit, cv_folds=5, random_state=random_state)
 
         # 2. Conformal Prediction calibration
         conformal_wrapper = ConformalRegressor(model, alpha=0.10)  # 90% target coverage
@@ -107,13 +108,13 @@ def run_classical_experiment(
         json.dump(fairness_records, f, indent=2)
 
     # 5. Extract Feature Attribution from best linear (Ridge) and non-linear (Random Forest)
+    # These estimators were fitted on X_tr_fit above and are the same
+    # estimators used for conformal calibration. Do not refit them on calibration data.
     ridge_model = models["Ridge"]
-    ridge_model.fit(splits.X_train, splits.y_train)
     ridge_attr = get_linear_attribution(ridge_model, splits.feature_names)
     ridge_attr.to_csv(out_path / "ridge_feature_attribution.csv", index=False)
 
     rf_model = models["Random Forest"]
-    rf_model.fit(splits.X_train, splits.y_train)
     rf_attr = get_tree_feature_importance(rf_model, splits.feature_names)
     rf_attr.to_csv(out_path / "rf_feature_importance.csv", index=False)
 
