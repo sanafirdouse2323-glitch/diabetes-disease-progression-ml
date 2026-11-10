@@ -1,10 +1,10 @@
-# Diabetes Disease Progression: Clinical ML Benchmark with Conformal Uncertainty & Fairness
+# Diabetes Disease Progression: Tabular ML Benchmark with Conformal Uncertainty & Fairness
 
 [![CI](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A rigorous clinical machine learning study comparing conventional regularised regression with neural network architectures (PyTorch & TensorFlow) on diabetes progression, enhanced with **Distribution-Free Uncertainty Quantification** (Split Conformal Prediction), **Subgroup Demographic Fairness Analysis**, and **Local Biomarker Attribution**.
+An educational tabular regression benchmark comparing regularised classical models with PyTorch and TensorFlow neural networks on the scikit-learn diabetes dataset. It demonstrates split-conformal prediction intervals, exploratory subgroup error analysis, and model-based feature attribution.
 
 > **Clinical Scope Disclaimer:** This is an academic study using scikit-learn's public, preprocessed Diabetes benchmark (Efron et al., 2004). It is designed to demonstrate rigorous clinical ML evaluation methodology and uncertainty estimation. It is not an approved clinical diagnostic tool or medical decision system for direct patient management.
 
@@ -13,9 +13,9 @@ A rigorous clinical machine learning study comparing conventional regularised re
 ## 🎯 Research Questions & Medical Data Science Objectives
 
 1. **Model Complexity vs. Tabular Generalisation:** How do regularised linear models (Ridge, Lasso) compare with non-linear tree ensembles (Random Forest) and deep neural architectures (PyTorch & TensorFlow MLPs) on low-sample tabular clinical biomarkers ($N=442$)?
-2. **Clinical Uncertainty Quantification:** Can we compute mathematically guaranteed, finite-sample prediction intervals ($\ge 90\%$ coverage) using **Split Conformal Prediction** without making unrealistic Gaussian error assumptions?
-3. **Algorithmic Fairness & Subgroup Parity:** Are predictive errors and coverage rates equally distributed across demographic cohorts (e.g., sex and age brackets), or do models exhibit hidden performance disparities?
-4. **Transparent Interpretability:** Which physiological biomarkers (`bmi`, `s5` serum triglycerides, `bp`) drive one-year disease progression across different model representations?
+2. **Prediction Uncertainty:** Can split-conformal prediction provide finite-sample marginal coverage under exchangeability without assuming Gaussian residuals?
+3. **Exploratory Subgroup Error Analysis:** Does prediction error differ across the two encoded values of the benchmark's standardized sex feature? This is a limited audit, not a comprehensive fairness evaluation.
+4. **Model Interpretation:** Which input features contribute most to the predictions of the fitted linear and tree-based models? These attributions are associational, not causal.
 
 ---
 
@@ -69,7 +69,7 @@ Standard Gaussian error assumptions often fail in clinical telemetry. We apply *
 * **Coverage interpretation:** at least $1-\alpha$ marginal coverage over exchangeable future observations; this is not a patient-specific probability statement.
 
 ### 3. Subgroup Demographic Disparity Audit
-* Stratifies absolute prediction errors and conformal coverage by patient demographic cohorts (`sex`, `age`).
+* Compares absolute prediction errors across the two encoded values of the standardized `sex` feature; this is exploratory and does not establish fairness.
 * Computes Max Disparity: $|MAE_{group1} - MAE_{group2}|$.
 * Evaluates statistical significance via a non-parametric **Permutation Test** (1,000 resamples) under $H_0: \text{Error} \perp \text{Group}$.
 
@@ -127,7 +127,7 @@ python -m diabetes_ml.experiment --output results
 python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --patience 20
 ```
 
-### 3. Launch Interactive Clinical Decision Support Demo
+### 3. Launch the Educational Research Demo
 ```bash
 streamlit run demo/app.py
 ```
@@ -148,7 +148,7 @@ docker run -p 8501:8501 diabetes-clinical-ml
 ## 🔬 Limitations & Future Horizons in Medical AI
 
 1. **Tabular Benchmark vs. Multimodal EHR:** This project uses an anonymized, 10-feature benchmark from 2004. Real-world medical data science (such as research in Medical Data Science groups) integrates **multimodal** streams: EHR temporal notes, ICU telemetry, medical imaging (MRI/CT), and genomics.
-2. **Sample Size Constraints:** Deep neural networks underperform linear baselines on $N=442$. Advanced tabular architectures (e.g., TabNet, FT-Transformers) or transfer learning from large biomedical foundation models (e.g., Med-BERT) are necessary when scaling to larger cohorts (such as MIMIC-IV or UK Biobank).
+2. **Sample Size Constraints:** The previously reported results show weaker neural-network performance than regularised linear baselines, but those metrics must be regenerated after the calibration and split corrections before drawing a current model-comparison conclusion.
 
 ---
 
