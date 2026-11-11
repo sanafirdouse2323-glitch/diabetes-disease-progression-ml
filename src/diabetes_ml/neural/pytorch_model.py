@@ -149,16 +149,22 @@ class PyTorchTrainer:
 
         Keeps dropout layers active at inference time. Returns predictive mean and standard deviation.
         """
-        self.model.train()  # Keep dropout active
+        if isinstance(n_samples, (bool, np.bool_)) or not isinstance(n_samples, (int, np.integer)) or n_samples < 1:
+            raise ValueError("n_samples must be a positive integer.")
+
         X_t = torch.from_numpy(X).float()
-
+        was_training = self.model.training
         samples = []
-        with torch.no_grad():
-            for _ in range(n_samples):
-                pred = self.model(X_t).cpu().numpy().ravel()
-                samples.append(pred)
+        try:
+            self.model.train()  # Keep dropout active for stochastic predictions.
+            with torch.no_grad():
+                for _ in range(int(n_samples)):
+                    pred = self.model(X_t).cpu().numpy().ravel()
+                    samples.append(pred)
+        finally:
+            self.model.train(was_training)
 
-        samples_arr = np.array(samples)  # (n_samples, N)
+        samples_arr = np.asarray(samples)  # (n_samples, N)
         mean_pred = np.mean(samples_arr, axis=0)
         std_pred = np.std(samples_arr, axis=0)
         return mean_pred, std_pred
