@@ -137,6 +137,8 @@ python -m diabetes_ml.experiment --output results
 python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --patience 20
 ```
 
+This convenience run is not a matched-sample comparison: the classical models fit 282 rows, while each neural model fits 225 rows and uses 57 separate early-stopping validation rows. Use the ten-seed matched-sample workflows below when comparing classical and neural performance directly.
+
 **Repeated-seed robustness analysis (classical models):**
 ```bash
 python -m diabetes_ml.repeated_validation --output repeated-validation
@@ -165,7 +167,11 @@ pytest -v --cov=diabetes_ml tests/
 # The test suite also checks that every notebook's Python imports match the current package API.
 ```
 
-### 5. Docker Deployment
+### 5. Notebooks
+
+The three notebooks cover dataset exploration, the classical benchmark, and the PyTorch/TensorFlow baselines. Run them from the repository root after installing the relevant dependencies. The automated test suite checks notebook JSON, Python syntax, and imports against the current package API; it does not execute the full notebooks.
+
+### 6. Docker Deployment
 
 Build and run the lightweight Streamlit research demo image:
 
@@ -174,7 +180,7 @@ docker build -t diabetes-progression-demo .
 docker run --rm -p 8501:8501 diabetes-progression-demo
 ```
 
-The Docker image installs the project's core dependencies plus the Streamlit demo extra. It intentionally excludes PyTorch, TensorFlow, SHAP, and test-only packages; install `requirements-neural.txt` separately when running the neural experiments outside this container. The runtime runs as an unprivileged UID (10001), not root. The Docker CI workflow drops Linux capabilities, enables `no-new-privileges`, verifies the runtime UID, exercises the Streamlit script, and checks the health and HTTP endpoints.
+The Docker image installs the project's core dependencies plus the Streamlit demo extra. It intentionally excludes PyTorch, TensorFlow, SHAP, and test-only packages; install the neural extra with `pip install -e ".[neural]"` when running the neural experiments outside this container. The runtime runs as an unprivileged UID (10001), not root. The Docker CI workflow drops Linux capabilities, enables `no-new-privileges`, verifies the runtime UID, exercises the Streamlit script, and checks the health and HTTP endpoints.
 
 ---
 
