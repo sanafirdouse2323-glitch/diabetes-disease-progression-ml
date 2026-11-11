@@ -142,7 +142,7 @@ python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --p
 python -m diabetes_ml.repeated_validation --output repeated-validation
 ```
 
-The default runs 10 outer splits (seeds 42–51), with a separate calibration partition inside each training split. It writes `per_seed_metrics.csv`, `summary_metrics.csv`, and `validation_metadata.json`. The summary reports means, sample standard deviations, medians, and ranges for point-prediction and conformal metrics. Because repeated hold-out test sets overlap, these standard deviations describe split sensitivity; they are not independent-sample confidence intervals or external validation. This repeated-seed command covers the classical models; the neural frameworks are evaluated by the separate repeated-seed neural command below.
+The default runs 10 outer splits (seeds 42–51), with a separate calibration partition inside each training split. It writes `per_seed_metrics.csv`, `summary_metrics.csv`, and `validation_metadata.json`. The summary reports means, sample standard deviations, medians, and ranges for point-prediction and conformal metrics. Because repeated hold-out test sets overlap, these standard deviations describe split sensitivity; they are not independent-sample confidence intervals or external validation. To match the neural models' 225-row fitting sample, also run `python -m diabetes_ml.repeated_validation --output matched-validation --val-fraction 0.20`; this reserves 57 rows from the development subset as unused data while keeping the same calibration and test partitions. The neural frameworks are evaluated by the separate repeated-seed neural command below.
 
 **Repeated-seed neural validation (PyTorch and TensorFlow):**
 ```bash
