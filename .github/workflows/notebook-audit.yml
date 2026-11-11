@@ -30,7 +30,8 @@ jobs:
       - name: Install CPU PyTorch
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Install CPU TensorFlow and notebook executor
-        run: pip install tensorflow-cpu nbconvert ipykernel
+        run: |
+          pip install tensorflow-cpu nbconvert ipykernel
           python -m ipykernel install --user --name python3 --display-name "Python 3"
       - name: Install project
         run: pip install -e .
