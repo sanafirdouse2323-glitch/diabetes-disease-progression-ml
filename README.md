@@ -62,7 +62,7 @@ An educational tabular regression benchmark comparing regularised classical mode
 * The outer test partition ($N=89$) remains untouched until final evaluation.
 
 ### 2. Distribution-Free Conformal Prediction
-Standard Gaussian error assumptions often fail in clinical telemetry. We apply **Split Conformal Prediction**:
+We apply **Split Conformal Prediction** to regression without assuming Gaussian residuals:
 * Non-conformity score: $s_i = |y_i - \hat{y}(x_i)|$.
 * Finite-sample rank: $k = \lceil (n_{cal}+1)(1-\alpha) \rceil$; set $\hat{q}$ to the $k$-th sorted calibration score. If $k > n_{cal}$, set $\hat{q}=+\infty$.
 * Calibrated prediction interval: $C(x) = [\hat{y}(x) - \hat{q}, \; \hat{y}(x) + \hat{q}]$.
@@ -149,8 +149,9 @@ docker run -p 8501:8501 diabetes-clinical-ml
 
 ## 🔬 Limitations & Future Horizons in Medical AI
 
-1. **Tabular Benchmark vs. Multimodal EHR:** This project uses an anonymized, 10-feature benchmark from 2004. Real-world medical data science (such as research in Medical Data Science groups) integrates **multimodal** streams: EHR temporal notes, ICU telemetry, medical imaging (MRI/CT), and genomics.
-2. **Sample Size Constraints:** The previously reported results show weaker neural-network performance than regularised linear baselines, but those metrics must be regenerated after the calibration and split corrections before drawing a current model-comparison conclusion.
+1. **Tabular benchmark scope:** This project uses a small, public, preprocessed 10-feature dataset. It does not contain multimodal imaging, longitudinal EHR, raw physiological signals, or genomic measurements.
+2. **Single-split evaluation:** The published metrics are from one seeded split and should be complemented with repeated nested validation and, ideally, external validation.
+3. **No clinical validation:** This is a research/educational benchmark and not a diagnostic or clinical decision-support system.
 
 ---
 
