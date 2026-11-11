@@ -1,0 +1,37 @@
+name: Nested tabular benchmark
+
+on:
+  pull_request:
+    paths:
+      - "src/diabetes_ml/nested_tabular_benchmark.py"
+      - "src/diabetes_ml/data.py"
+      - "tests/test_nested_tabular_benchmark.py"
+      - ".github/workflows/nested-tabular-benchmark.yml"
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Run nested repeated-CV benchmark
+        run: |
+          python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: nested-tabular-benchmark-results
+          path: nested-tabular-benchmark/
+          if-no-files-found: error
+          retention-days: 30

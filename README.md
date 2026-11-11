@@ -8,6 +8,8 @@ An educational tabular regression benchmark comparing classical regression model
 
 > **Scope disclaimer:** This is an educational research benchmark using scikit-learn's public, preprocessed diabetes dataset (Efron et al., 2004). It demonstrates tabular regression, split-conformal uncertainty estimation, exploratory subgroup error analysis, and model-based feature attribution. It is not a clinical diagnostic tool or a validated medical decision system.
 
+**Research application brief:** [Project question, methods, evidence, limitations, and a reproducible demonstration guide](docs/RESEARCH_BRIEF.md).
+
 ---
 
 ## 🎯 Research Questions & Benchmark Objectives
@@ -194,10 +196,47 @@ The Docker image installs the project's core dependencies plus the Streamlit dem
 
 ---
 
+
+## Nested tabular model benchmark
+
+A separate nested repeated-cross-validation experiment compares seven predeclared
+tabular regression families on all 442 rows. Each family is tuned on the same
+inner folds drawn only from each outer training partition. In addition to
+per-family comparisons, the experiment now selects a family using inner-fold
+MAE within each outer training partition and evaluates that complete selection
+procedure on the untouched outer fold. A mean-prediction baseline is included.
+
+The default experiment uses 5 outer folds × 3 repeats and 3 inner folds. The
+scale-sensitive estimators use a pipeline so feature scaling is learned within
+the inner training folds. The per-family table is a descriptive comparison;
+the separate family-selection output is the appropriate result to discuss
+when describing a model chosen from the candidate families.
+
+Run it with:
+
+```bash
+python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
+```
+
+The output includes:
+
+- `outer_fold_metrics.csv` and `model_summary.csv`: per-family outer-fold
+  results and descriptive summaries.
+- `family_selection_metrics.csv`: one model family selected by inner-CV MAE
+  within each outer training partition, evaluated on that outer test fold.
+- `family_selection_summary.csv` and `selected_family_frequency.csv`:
+  overall selection-procedure metrics and how often each family was selected.
+- `benchmark_metadata.json`: dataset, split, selection, and limitation details.
+
+The outer-fold results do not use outer-test labels for fitting or selection.
+Repeated folds overlap across repeats, so standard deviations are descriptive
+and are not independent-sample confidence intervals. The candidate grids are
+compact rather than exhaustive. [Measured nested benchmark results and selection-aware interpretation](RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
+This benchmark does not establish external validity, clinical utility, or clinical readiness.
 ## Limitations and Next Steps
 
 1. **Tabular benchmark scope:** This project uses a small, public, preprocessed 10-feature dataset. It does not contain multimodal imaging, longitudinal EHR, raw physiological signals, or genomic measurements.
-2. **Published results and repeated splits:** The headline table in this document is from one seeded split. Separate ten-seed workflows report classical and neural results; their overlapping hold-out sets provide descriptive split-sensitivity summaries, not independent-sample confidence intervals. Repeated nested validation and, ideally, external validation are still needed.
+2. **Published results and repeated splits:** The headline table in this document is from one seeded split. Separate ten-seed workflows report classical and neural results; their overlapping hold-out sets provide descriptive split-sensitivity summaries, not independent-sample confidence intervals. A nested repeated-cross-validation model-family benchmark is now included below and in RESULTS.md. External validation on an independent cohort is still needed.
 3. **No clinical validation:** This is a research/educational benchmark and not a diagnostic or clinical decision-support system.
 
 ---

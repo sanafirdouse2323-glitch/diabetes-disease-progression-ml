@@ -232,7 +232,7 @@ This paired result supports the narrower conclusion that the original PyTorch ML
 
 
 1. **Small, preprocessed benchmark:** 442 observations and 10 preprocessed features are insufficient to establish clinical utility, transportability, or robust subgroup fairness.
-2. **Repeated hold-out limitations:** The ten-seed analyses use overlapping random test partitions. Their standard deviations are descriptive split-sensitivity measures, not independent-sample confidence intervals. Repeated nested validation and external validation are still needed.
+2. **Repeated hold-out limitations:** The ten-seed analyses use overlapping random test partitions. Their standard deviations are descriptive split-sensitivity measures, not independent-sample confidence intervals. A nested repeated-cross-validation benchmark is now included in Section 11; external validation on an independent cohort is still needed.
 3. **No clinical validation:** This work is an educational/research software demonstration, not a diagnostic or clinical decision-support system.
 4. **Subgroup analysis is narrow:** Only the two encoded values of the standardized `sex` feature are compared. Age-group analyses and broader fairness evaluations are not included in this measured run.
 5. **Interpretability scope:** The implemented methods are coefficients, Random Forest impurity importances, and local perturbation-style explanations. This run does not implement SHAP or causal inference.
@@ -246,3 +246,49 @@ This paired result supports the narrower conclusion that the original PyTorch ML
 
 The workflow artifacts include per-seed CSVs, summary CSVs, and JSON metadata. They are generated from the commands documented in the README and are retained by GitHub Actions according to the workflow artifact-retention setting.
 
+## 11. Nested repeated-CV comparison and inner-fold family selection
+
+A dedicated benchmark compares seven regression model families plus a mean-prediction baseline on the full `sklearn.datasets.load_diabetes` dataset (442 observations; 10 preprocessed features). It uses five outer folds repeated three times and three shuffled inner folds within each outer training partition. This produces 15 outer-fold evaluations per candidate. Each outer training partition contains 353 or 354 observations; the corresponding outer test fold contains 89 or 88 observations.
+
+For each family, hyperparameters are selected using inner-fold mean absolute error (MAE), and the selected estimator is refitted on the full outer training partition. Scale-sensitive estimators use a `StandardScaler` inside a scikit-learn `Pipeline`, ensuring that each scaler is learned only from the relevant inner training fold. The outer-fold targets are not used for hyperparameter or family selection.
+
+- Workflow run: [Nested tabular benchmark](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43006717716)
+- Source commit tested: `0fb5463f88f3bff4855f0977b6f4d33aef20fb3d`
+- The workflow artifact contains per-fold scores, per-family summaries, selected-family results and frequencies, and benchmark metadata.
+
+### Per-family outer-fold results
+
+| Model family | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+|---|---:|---:|---:|
+| Mean Baseline | 65.896 ± 3.771 | 77.074 ± 3.863 | -0.012 ± 0.012 |
+| Linear Regression | 44.483 ± 2.626 | 54.962 ± 3.077 | 0.480 ± 0.079 |
+| Ridge | 44.565 ± 2.606 | 54.967 ± 3.041 | 0.480 ± 0.077 |
+| ElasticNet | 44.548 ± 2.601 | 54.890 ± 3.067 | 0.482 ± 0.077 |
+| RBF-SVR | 44.414 ± 3.270 | 55.218 ± 3.906 | 0.476 ± 0.077 |
+| Random Forest | 46.437 ± 2.848 | 56.841 ± 3.091 | 0.445 ± 0.077 |
+| Extra Trees | 45.584 ± 3.105 | 56.046 ± 3.672 | 0.461 ± 0.073 |
+| Histogram Gradient Boosting | 46.552 ± 3.208 | 57.328 ± 3.952 | 0.435 ± 0.088 |
+
+The RBF-SVR had the lowest per-family mean MAE, but its advantage over Linear Regression was only 0.069 target units in this run. The per-family means compare predeclared tuning procedures; they are not a formal test of statistical superiority. The repeated outer folds reuse observations across repeats, so the reported standard deviations are descriptive split-sensitivity measures, not independent-sample confidence intervals.
+
+### Evaluation of selecting a model family
+
+To avoid declaring a winner by inspecting the outer-fold results, the experiment separately evaluates the *family-selection procedure*. In each outer training partition, it selects the candidate family with the lowest inner-CV MAE, then evaluates that family’s refitted estimator on the untouched outer fold.
+
+| Selection-procedure metric | Mean ± SD across 15 outer folds |
+|---|---:|
+| Test MAE | 44.854 ± 3.105 |
+| Test RMSE | 55.565 ± 3.677 |
+| Test R² | 0.469 ± 0.079 |
+
+The selected-family frequencies were: RBF-SVR 10/15 folds (66.7%), Ridge 2/15 (13.3%), Extra Trees 1/15 (6.7%), ElasticNet 1/15 (6.7%), and Linear Regression 1/15 (6.7%). The mean baseline, Random Forest, and Histogram Gradient Boosting were not selected.
+
+The selector's mean outer-fold MAE (44.854) was not lower than the fixed Linear Regression strategy's per-family mean (44.483). This does not mean inner-fold selection is invalid; it shows that, for this candidate set and dataset, adding a model-family selection step did not demonstrate an improvement over using the simple linear strategy. The selector's performance and the per-family summaries answer different questions and should be reported separately.
+
+### Interpretation and limits
+
+- The experiment uses a single small, public, preprocessed benchmark. It is not external validation and does not establish performance on a new hospital, population, or clinical workflow.
+- The candidate grids are compact and predeclared, not exhaustive.
+- The repeated outer-fold results are dependent because observations recur across repeats. No inferential claim is made from their standard deviations, and no formal significance test is reported.
+- This nested benchmark does not fit conformal prediction intervals. Split-conformal results in earlier sections belong to separate experiments and should not be conflated with this nested model comparison.
+- Predictive results do not establish clinical utility, fairness, causal explanation, or readiness for patient-level use.
