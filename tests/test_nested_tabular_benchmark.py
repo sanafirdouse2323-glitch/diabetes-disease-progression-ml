@@ -1,10 +1,13 @@
 """Tests for nested repeated-CV model benchmarking."""
 
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from diabetes_ml.nested_tabular_benchmark import (
+    _model_specs,
     _summarize,
     run_nested_tabular_benchmark,
 )
@@ -66,6 +69,12 @@ def test_nested_benchmark_tunes_inside_outer_training_folds(tmp_path):
     assert (tmp_path / "outer_fold_metrics.csv").exists()
     assert (tmp_path / "model_summary.csv").exists()
     assert (tmp_path / "benchmark_metadata.json").exists()
+    metadata = json.loads((tmp_path / "benchmark_metadata.json").read_text(encoding="utf-8"))
+    assert metadata["outer_test_use"] == (
+        "Each outer split is evaluated once and its targets are not used for fitting or selection; "
+        "because outer cross-validation is repeated, an observation can appear in test partitions "
+        "in more than one repeat."
+    )
     assert (tmp_path / "family_selection_metrics.csv").exists()
     assert (tmp_path / "family_selection_summary.csv").exists()
     assert (tmp_path / "selected_family_frequency.csv").exists()
@@ -121,3 +130,9 @@ def test_nested_benchmark_rejects_unknown_models(tmp_path):
             output_dir=tmp_path, outer_folds=2, outer_repeats=2,
             inner_folds=2, model_names=["Made-up model"],
         )
+
+
+def test_model_specs_use_the_same_svr_label_as_published_results():
+    specs = _model_specs(random_state=42)
+    assert "SVR-RBF" in specs
+    assert "RBF-SVR" not in specs
