@@ -232,7 +232,7 @@ This paired result supports the narrower conclusion that the original PyTorch ML
 
 
 1. **Small, preprocessed benchmark:** 442 observations and 10 preprocessed features are insufficient to establish clinical utility, transportability, or robust subgroup fairness.
-2. **Repeated hold-out limitations:** The ten-seed analyses use overlapping random test partitions. Their standard deviations are descriptive split-sensitivity measures, not independent-sample confidence intervals. Repeated nested validation and external validation are still needed.
+2. **Repeated hold-out limitations:** The ten-seed analyses use overlapping random test partitions. Their standard deviations are descriptive split-sensitivity measures, not independent-sample confidence intervals. A nested repeated-cross-validation benchmark is now included in Section 11; external validation on an independent cohort is still needed.
 3. **No clinical validation:** This work is an educational/research software demonstration, not a diagnostic or clinical decision-support system.
 4. **Subgroup analysis is narrow:** Only the two encoded values of the standardized `sex` feature are compared. Age-group analyses and broader fairness evaluations are not included in this measured run.
 5. **Interpretability scope:** The implemented methods are coefficients, Random Forest impurity importances, and local perturbation-style explanations. This run does not implement SHAP or causal inference.
