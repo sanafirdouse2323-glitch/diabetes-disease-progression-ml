@@ -25,22 +25,27 @@ from diabetes_ml.neural.pytorch_model import TORCH_AVAILABLE, PyTorchTrainer
 from diabetes_ml.repeated_validation import DEFAULT_SEEDS, _validated_seeds, summarize_seed_metrics
 
 
-# The default configuration is included as a control. Only these five
-# predeclared configurations are considered; no test result influences choice.
-CANDIDATE_CONFIGS = (
+# Predeclared settings are compared on validation MSE in original target units.
+_BASE_CONFIGS = (
     {"config": "baseline_default", "learning_rate": 0.001, "dropout_p": 0.10, "batch_size": 32},
     {"config": "lower_learning_rate", "learning_rate": 0.0003, "dropout_p": 0.10, "batch_size": 32},
     {"config": "higher_learning_rate", "learning_rate": 0.003, "dropout_p": 0.10, "batch_size": 32},
     {"config": "higher_dropout", "learning_rate": 0.001, "dropout_p": 0.30, "batch_size": 32},
     {"config": "no_dropout", "learning_rate": 0.001, "dropout_p": 0.00, "batch_size": 32},
 )
+CANDIDATE_CONFIGS = tuple(
+    {**cfg, "standardize_target": False} for cfg in _BASE_CONFIGS
+) + tuple(
+    {**cfg, "config": cfg["config"] + "_target_scaled", "standardize_target": True}
+    for cfg in _BASE_CONFIGS
+)
 
 
 def run_repeated_neural_tuning(
     output_dir: str | Path = "repeated-neural-tuning",
     seeds=DEFAULT_SEEDS,
-    epochs: int = 100,
-    patience: int = 12,
+    epochs: int = 300,
+    patience: int = 25,
     alpha: float = 0.10,
 ):
     """Select one predeclared PyTorch configuration per seed on validation MSE."""
@@ -76,6 +81,7 @@ def run_repeated_neural_tuning(
                 patience=patience,
                 dropout_p=cfg["dropout_p"],
                 random_state=seed,
+                standardize_target=cfg["standardize_target"],
             )
             trainer.fit(data.X_train, data.y_train, data.X_val, data.y_val)
             if not trainer.history:
@@ -118,6 +124,7 @@ def run_repeated_neural_tuning(
             "learning_rate": best["config"]["learning_rate"],
             "dropout_p": best["config"]["dropout_p"],
             "batch_size": best["config"]["batch_size"],
+            "standardize_target": best["config"]["standardize_target"],
             "best_validation_epoch": best["best_epoch"],
             "selected_validation_mse": best["validation_mse"],
             "fit_n": len(data.X_train), "validation_n": len(data.X_val),
@@ -151,9 +158,10 @@ def run_repeated_neural_tuning(
         "calibration_use": "only after configuration selection; not used for selection or fitting",
         "test_use": "final evaluation only; not used for configuration selection",
         "epochs": epochs, "patience": patience, "alpha": alpha,
+        "target_scaling": "optional; when enabled, mean and standard deviation are fitted on model-fitting targets only; validation MSE is recorded in original target units",
         "summary_sd": "sample standard deviation across overlapping repeated hold-out splits; descriptive, not a confidence interval",
         "limitations": [
-            "Only five predeclared settings for one fixed MLP architecture were tested.",
+            "The search tests a limited set of optimizer/dropout settings and target-scaling variants for one fixed MLP architecture.",
             "Validation-based selection can be noisy with a small validation subset; the outer test comparison estimates the full selection procedure.",
             "The default baseline is also evaluated on each same outer test subset for a paired descriptive comparison; its test metrics do not influence selection.",
             "Repeated outer test partitions overlap and are not external validation.",
@@ -168,8 +176,8 @@ def main():
     parser = argparse.ArgumentParser(description="Run validation-selected repeated-seed PyTorch tuning.")
     parser.add_argument("--output", default="repeated-neural-tuning-results")
     parser.add_argument("--seeds", nargs="+", type=int, default=list(DEFAULT_SEEDS))
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--patience", type=int, default=12)
+    parser.add_argument("--epochs", type=int, default=300)
+    parser.add_argument("--patience", type=int, default=25)
     parser.add_argument("--alpha", type=float, default=0.10)
     args = parser.parse_args()
     candidates, selected, summary = run_repeated_neural_tuning(
