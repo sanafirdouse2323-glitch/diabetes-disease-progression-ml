@@ -23,6 +23,9 @@ jobs:
       - name: Verify non-root runtime identity
         run: test "$(docker exec diabetes-progression-demo id -u)" = "10001"
 
+      - name: Exercise the Streamlit app script
+        run: docker exec diabetes-progression-demo python -c "from streamlit.testing.v1 import AppTest; app = AppTest.from_file('demo/app.py').run(); assert not app.exception, app.exception"
+
       - name: Wait for Streamlit health endpoint
         run: |
           for attempt in $(seq 1 30); do
