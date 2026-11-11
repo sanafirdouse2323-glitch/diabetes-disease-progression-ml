@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import ExtraTreesRegressor, HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import ElasticNet, LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -31,6 +32,7 @@ def _model_specs(random_state: int) -> dict[str, tuple[Any, list[dict[str, list[
         return Pipeline([("scale", StandardScaler()), ("model", estimator)])
 
     return {
+        "Mean Baseline": (DummyRegressor(strategy="mean"), [{}]),
         "Linear Regression": (
             scaled(LinearRegression()), [{}]
         ),
@@ -115,6 +117,11 @@ def run_nested_tabular_benchmark(
         raise ValueError("random_state must be a non-negative integer.")
 
     X, y = load_diabetes_data()
+    if outer_folds > len(X):
+        raise ValueError("outer_folds cannot exceed the number of observations.")
+    smallest_outer_train = len(X) - int(np.ceil(len(X) / outer_folds))
+    if inner_folds > smallest_outer_train:
+        raise ValueError("inner_folds cannot exceed the smallest outer training partition.")
     specs = _model_specs(random_state)
     selected_names = list(specs) if model_names is None else list(model_names)
     if not selected_names or len(set(selected_names)) != len(selected_names):
@@ -127,6 +134,7 @@ def run_nested_tabular_benchmark(
         n_splits=outer_folds, n_repeats=outer_repeats, random_state=random_state
     )
     records: list[dict[str, Any]] = []
+    family_selection_records: list[dict[str, Any]] = []
     for fold_index, (train_index, test_index) in enumerate(outer_cv.split(X, y)):
         X_outer_train, X_outer_test = X.iloc[train_index], X.iloc[test_index]
         y_outer_train, y_outer_test = y.iloc[train_index], y.iloc[test_index]
@@ -134,6 +142,7 @@ def run_nested_tabular_benchmark(
             n_splits=inner_folds, shuffle=True,
             random_state=random_state + fold_index + 1,
         )
+        outer_searches: dict[str, GridSearchCV] = {}
         for model_name in selected_names:
             estimator, param_grid = specs[model_name]
             search = GridSearchCV(
@@ -147,6 +156,7 @@ def run_nested_tabular_benchmark(
                 return_train_score=False,
             )
             search.fit(X_outer_train, y_outer_train)
+            outer_searches[model_name] = search
             prediction = search.predict(X_outer_test)
             records.append({
                 "outer_fold": fold_index,
@@ -162,8 +172,40 @@ def run_nested_tabular_benchmark(
                 "outer_test_n": int(len(test_index)),
             })
 
+        # Select the model family using inner-CV MAE only, then evaluate that
+        # complete selection procedure once on the untouched outer fold.
+        selected_name = min(selected_names, key=lambda name: -outer_searches[name].best_score_)
+        selected_search = outer_searches[selected_name]
+        selected_prediction = selected_search.predict(X_outer_test)
+        family_selection_records.append({
+            "outer_fold": fold_index,
+            "repeat": fold_index // outer_folds,
+            "fold_within_repeat": fold_index % outer_folds,
+            "selected_model": selected_name,
+            "inner_best_mae": float(-selected_search.best_score_),
+            "test_mae": float(mean_absolute_error(y_outer_test, selected_prediction)),
+            "test_rmse": float(np.sqrt(mean_squared_error(y_outer_test, selected_prediction))),
+            "test_r2": float(r2_score(y_outer_test, selected_prediction)),
+            "best_params": json.dumps(selected_search.best_params_, sort_keys=True, default=str),
+            "outer_train_n": int(len(train_index)),
+            "outer_test_n": int(len(test_index)),
+        })
+
     per_fold = pd.DataFrame.from_records(records)
     summary = _summarize(per_fold)
+    family_selection = pd.DataFrame.from_records(family_selection_records)
+    selector_summary = family_selection[["test_mae", "test_rmse", "test_r2"]].agg(
+        ["count", "mean", "std", "median", "min", "max"]
+    ).transpose()
+    selector_summary.insert(0, "metric", selector_summary.index)
+    selector_summary = selector_summary.reset_index(drop=True)
+    selector_frequency = (
+        family_selection["selected_model"].value_counts()
+        .rename_axis("model").reset_index(name="selected_outer_folds")
+    )
+    selector_frequency["selection_rate"] = (
+        selector_frequency["selected_outer_folds"] / len(family_selection)
+    )
 
     # Paired fold-wise comparison to ordinary least squares; descriptive only.
     linear = per_fold.loc[per_fold["model"] == "Linear Regression",
@@ -184,6 +226,9 @@ def run_nested_tabular_benchmark(
     out.mkdir(parents=True, exist_ok=True)
     per_fold.to_csv(out / "outer_fold_metrics.csv", index=False)
     summary.to_csv(out / "model_summary.csv", index=False)
+    family_selection.to_csv(out / "family_selection_metrics.csv", index=False)
+    selector_summary.to_csv(out / "family_selection_summary.csv", index=False)
+    selector_frequency.to_csv(out / "selected_family_frequency.csv", index=False)
     metadata = {
         "dataset": "sklearn.datasets.load_diabetes",
         "observations": int(len(X)),
@@ -195,7 +240,9 @@ def run_nested_tabular_benchmark(
         "inner_method": "shuffled KFold within each outer training fold",
         "inner_folds": inner_folds,
         "selection_metric": "negative mean absolute error",
-        "selection_boundary": "all hyperparameter selection occurs inside each outer training fold",
+        "selection_boundary": "all hyperparameter and model-family selection occurs using inner folds drawn only from each outer training partition",
+        "family_selection_procedure": "For each outer fold, tune each included model family on the same predeclared inner folds; choose the family with the lowest inner-CV MAE; use that family's refitted best estimator for the outer-fold evaluation.",
+        "family_comparison_interpretation": "Per-family outer-fold summaries compare the predeclared family-specific tuning procedures. The separate family_selection_metrics.csv evaluates the procedure that chooses a family using inner-CV MAE; use this file when discussing performance after family selection.",
         "outer_test_use": "one-time evaluation only; never used for fitting or tuning",
         "preprocessing": "StandardScaler is fitted inside the pipeline on each inner training fold for scale-sensitive models; tree models are not scaled",
         "uncertainty": "This benchmark does not fit conformal intervals; conformal calibration remains a separate experiment.",
@@ -203,6 +250,7 @@ def run_nested_tabular_benchmark(
         "limitations": [
             "One small, preprocessed benchmark dataset; no external validation.",
             "The model grids are intentionally compact and do not constitute exhaustive optimization.",
+            "The per-family summary ranks families descriptively; the family-selection estimate is reported separately because choosing the smallest outer-fold mean after inspecting results would introduce selection optimism.",
             "Repeated cross-validation folds are dependent because observations recur across repeats.",
             "Predictive performance does not establish clinical validity or utility.",
         ],
