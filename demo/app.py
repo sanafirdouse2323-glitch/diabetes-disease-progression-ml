@@ -78,8 +78,8 @@ def main():
     selected_model_name = st.sidebar.selectbox(
         "Select Model",
         ["Ridge", "Linear Regression", "Lasso", "Random Forest"],
-        index=0,
-        help="Select a regression model for the benchmark demonstration.",
+        index=2,
+        help="Select a regression model for the benchmark demonstration; Lasso had the strongest point metrics in the recorded split.",
     )
 
     st.sidebar.subheader("Synthetic Feature Profile")
@@ -188,7 +188,7 @@ def main():
             """
         )
 
-        test_preds = models[selected_model_name].predict(splits.X_test)
+        test_preds = models[selected_model_name].predict(splits.X_test.values)
         sex_fairness = evaluate_subgroup_disparity(
             splits.y_test,
             test_preds,
