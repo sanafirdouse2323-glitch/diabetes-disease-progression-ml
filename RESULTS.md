@@ -192,7 +192,7 @@ Both neural models trained for the full 100-epoch budget. The mean best-validati
 
 ### Matched-sample comparison and interpretation
 
-With the fitting sample size held at 225 observations, the best classical models had mean test MAE around 42.9, compared with 53.964 for PyTorch and 57.204 for TensorFlow. The classical models also had lower mean RMSE and higher mean R². The neural models performed better than the mean baseline, but did not outperform Linear Regression, Lasso, or Random Forest under these fixed settings.
+With the fitting sample size held at 225 observations, the best classical models had mean test MAE around 42.9, compared with 53.964 for PyTorch and 57.204 for TensorFlow. The classical models also had lower mean RMSE and higher mean R². The neural models performed better than the mean baseline, but did not outperform any of the four classical regressors (Linear Regression, Lasso, Ridge, or Random Forest) on the mean point-prediction metrics under these fixed settings.
 
 These results do not establish that classical models are universally superior. No formal significance tests or neural hyperparameter search were performed. The repeated outer test partitions overlap, so the across-seed standard deviations describe split sensitivity rather than independent-sample confidence intervals. The MLPs' results also reflect the selected architecture and training budget, not all possible neural configurations.
 
