@@ -50,7 +50,7 @@ def load_trained_models():
         )
         conformal_models[name] = cr
 
-    return splits, models, conformal_models, X_fit
+    return splits, models, conformal_models, X_fit, y_fit
 
 
 def main():
@@ -69,7 +69,7 @@ def main():
         """
     )
 
-    splits, models, conformal_models, X_fit = load_trained_models()
+    splits, models, conformal_models, X_fit, y_fit = load_trained_models()
     feature_names = splits.feature_names
     ref_baseline = X_fit.mean().values
 
@@ -144,7 +144,7 @@ def main():
 
         # Describe the prediction against the benchmark target distribution only;
         # these labels are not clinical risk categories or treatment thresholds.
-        q25, q75 = np.quantile(splits.y_train.to_numpy(dtype=float), [0.25, 0.75])
+        q25, q75 = np.quantile(y_fit.to_numpy(dtype=float), [0.25, 0.75])
         st.caption("Position within the benchmark target distribution; not a clinical risk category.")
         if pred_val < q25:
             st.info("Prediction is below the benchmark training-set 25th percentile.")
