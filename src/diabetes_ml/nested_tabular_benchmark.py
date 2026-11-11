@@ -78,6 +78,10 @@ def _summarize(per_fold: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("per_fold must contain model, outer_fold and finite test metrics.")
     if per_fold.duplicated(["model", "outer_fold"]).any():
         raise ValueError("Each model/outer-fold combination must occur once.")
+    fold_sets = per_fold.groupby("model", sort=False)["outer_fold"].apply(set)
+    expected_folds = set(per_fold["outer_fold"])
+    if any(folds != expected_folds for folds in fold_sets):
+        raise ValueError("Every model must be evaluated on the same outer folds.")
     values = per_fold[["test_mae", "test_rmse", "test_r2"]].to_numpy(dtype=float)
     if not np.isfinite(values).all():
         raise ValueError("Outer-fold metrics must all be finite.")
