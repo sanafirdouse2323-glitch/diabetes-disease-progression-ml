@@ -33,3 +33,7 @@ reports/*.png
 *.keras
 *.pt
 .DS_Store
+
+# Notebook outputs
+notebook-results/
+.ipynb_checkpoints/
