@@ -36,3 +36,11 @@ def test_notebook_json_code_and_package_imports_are_current(notebook_path):
                         f"{notebook_path.name}, cell {index}: "
                         f"{node.module} does not expose {imported.name}"
                     )
+
+
+def test_notebook_cells_have_unique_stable_ids():
+    for notebook_path in NOTEBOOKS:
+        notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+        ids = [cell.get("id") for cell in notebook["cells"]]
+        assert all(isinstance(cell_id, str) and cell_id for cell_id in ids)
+        assert len(ids) == len(set(ids))
