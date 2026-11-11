@@ -6,6 +6,7 @@ import pytest
 
 from diabetes_ml.repeated_validation import (
     _validated_seeds,
+    run_repeated_seed_validation,
     summarize_seed_metrics,
 )
 
@@ -52,3 +53,17 @@ def test_summary_reports_mean_sample_standard_deviation_and_range():
 def test_invalid_seed_metric_frames_are_rejected(frame):
     with pytest.raises(ValueError):
         summarize_seed_metrics(frame)
+
+def test_matched_sample_partition_sizes_match_neural_pipeline(tmp_path):
+    per_seed, _ = run_repeated_seed_validation(
+        output_dir=tmp_path,
+        seeds=[42, 43],
+        val_fraction=0.20,
+        cv_folds=3,
+    )
+
+    assert set(per_seed["fit_n"]) == {225}
+    assert set(per_seed["validation_n"]) == {57}
+    assert set(per_seed["calibration_n"]) == {71}
+    assert set(per_seed["test_n"]) == {89}
+\n
