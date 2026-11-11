@@ -18,7 +18,10 @@ jobs:
         run: docker build --pull --tag diabetes-progression-demo:ci .
 
       - name: Start demo container
-        run: docker run --detach --name diabetes-progression-demo --publish 8501:8501 diabetes-progression-demo:ci
+        run: docker run --detach --name diabetes-progression-demo --publish 8501:8501 --cap-drop=ALL --security-opt=no-new-privileges diabetes-progression-demo:ci
+
+      - name: Verify non-root runtime identity
+        run: test "$(docker exec diabetes-progression-demo id -u)" = "10001"
 
       - name: Wait for Streamlit health endpoint
         run: |
