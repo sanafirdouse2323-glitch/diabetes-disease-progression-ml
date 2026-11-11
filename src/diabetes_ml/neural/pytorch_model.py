@@ -145,11 +145,17 @@ class PyTorchTrainer:
         X: np.ndarray,
         n_samples: int = 100,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """Stochastic forward passes for epistemic uncertainty quantification.
+        """Estimate predictive variability with Monte Carlo dropout.
 
-        Keeps dropout layers active at inference time. Returns predictive mean and standard deviation.
+        Dropout stays active during repeated inference passes. The returned
+        standard deviation is an approximate uncertainty measure, not a
+        calibrated prediction interval.
         """
-        if isinstance(n_samples, (bool, np.bool_)) or not isinstance(n_samples, (int, np.integer)) or n_samples < 1:
+        if (
+            isinstance(n_samples, (bool, np.bool_))
+            or not isinstance(n_samples, (int, np.integer))
+            or n_samples < 1
+        ):
             raise ValueError("n_samples must be a positive integer.")
 
         X_t = torch.from_numpy(X).float()
