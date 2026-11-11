@@ -27,10 +27,14 @@ jobs:
           pip install -e .
       - name: Run ten-seed classical validation
         run: python -m diabetes_ml.repeated_validation --output repeated-validation-results
+      - name: Run ten-seed matched-sample classical validation
+        run: python -m diabetes_ml.repeated_validation --output repeated-validation-matched-results --val-fraction 0.20
       - name: Upload repeated-seed metrics
         uses: actions/upload-artifact@v4
         with:
           name: repeated-seed-classical-validation
-          path: repeated-validation-results/
+          path: |
+            repeated-validation-results/
+            repeated-validation-matched-results/
           if-no-files-found: error
           retention-days: 30
