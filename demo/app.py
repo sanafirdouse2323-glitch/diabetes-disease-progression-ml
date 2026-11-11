@@ -117,7 +117,7 @@ def main():
     tab1, tab2, tab3 = st.tabs([
         "📊 Prediction & Conformal Interval",
         "🔍 Local Feature Attribution",
-        "⚖️ Benchmark & Fairness Audit",
+        "⚖️ Subgroup Error Audit",
     ])
 
     with tab1:
