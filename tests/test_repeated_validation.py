@@ -14,7 +14,10 @@ def test_validated_seeds_preserves_order_and_normalizes_integer_types():
     assert _validated_seeds([42, np.int64(43)]) == (42, 43)
 
 
-@pytest.mark.parametrize("seeds", [[42], [], [42, 42], [42, True], "42 43"])
+@pytest.mark.parametrize(
+    "seeds",
+    [[42], [], [42, 42], [42, True], "42 43", [42, -1], [42, 2**32]],
+)
 def test_invalid_seed_sequences_are_rejected(seeds):
     with pytest.raises(ValueError):
         _validated_seeds(seeds)
