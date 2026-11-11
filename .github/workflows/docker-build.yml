@@ -18,7 +18,13 @@ jobs:
         run: docker build --pull --tag diabetes-progression-demo:ci .
 
       - name: Start demo container
-        run: docker run --detach --name diabetes-progression-demo --publish 8501:8501 diabetes-progression-demo:ci
+        run: docker run --detach --name diabetes-progression-demo --publish 8501:8501 --cap-drop=ALL --security-opt=no-new-privileges diabetes-progression-demo:ci
+
+      - name: Verify non-root runtime identity
+        run: test "$(docker exec diabetes-progression-demo id -u)" = "10001"
+
+      - name: Exercise the Streamlit app script
+        run: docker exec diabetes-progression-demo python -c "from streamlit.testing.v1 import AppTest; app = AppTest.from_file('demo/app.py').run(timeout=60); assert not app.exception, app.exception"
 
       - name: Wait for Streamlit health endpoint
         run: |

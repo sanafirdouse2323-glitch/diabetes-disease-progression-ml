@@ -79,7 +79,7 @@ def main():
         "Select Model",
         ["Ridge", "Linear Regression", "Lasso", "Random Forest"],
         index=2,
-        help="Select a regression model for the benchmark demonstration; Lasso had the strongest point metrics in the recorded split.",
+        help="Select a regression model. Linear Regression and Lasso were closely matched across repeated splits.",
     )
 
     st.sidebar.subheader("Synthetic Feature Profile")
@@ -156,6 +156,10 @@ def main():
     with tab2:
         st.subheader("🔍 Local Feature Attribution Breakdown")
         st.caption("How each input feature shifts this synthetic profile's prediction relative to the model-fitting reference baseline.")
+        if selected_model_name == "Random Forest":
+            st.caption("Random Forest values are one-feature-at-a-time perturbations; they can overlap and do not have to sum to the total prediction difference.")
+        else:
+            st.caption("For these linear models, the signed feature contributions sum to the difference from the reference-baseline prediction.")
 
         explanation_df = compute_patient_explanation(
             models[selected_model_name],
