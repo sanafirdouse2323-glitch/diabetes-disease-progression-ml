@@ -22,15 +22,24 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     STREAMLIT_SERVER_HEADLESS=true \
-    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
+    HOME=/home/app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Run Streamlit as an unprivileged account with writable app and home directories.
+RUN groupadd --system --gid 10001 app \
+    && useradd --system --uid 10001 --gid app --create-home --home-dir /home/app --shell /usr/sbin/nologin app \
+    && mkdir -p /home/app/.streamlit \
+    && chown -R 10001:10001 /app /home/app
+
 COPY --from=builder /opt/venv /opt/venv
-COPY demo/ ./demo/
+COPY --chown=10001:10001 demo/ ./demo/
+
+USER 10001:10001
 
 EXPOSE 8501
 
