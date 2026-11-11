@@ -6,11 +6,11 @@
 
 An educational tabular regression benchmark comparing regularised classical models with PyTorch and TensorFlow neural networks on the scikit-learn diabetes dataset. It demonstrates split-conformal prediction intervals, exploratory subgroup error analysis, and model-based feature attribution.
 
-> **Clinical Scope Disclaimer:** This is an academic study using scikit-learn's public, preprocessed Diabetes benchmark (Efron et al., 2004). It is designed to demonstrate rigorous clinical ML evaluation methodology and uncertainty estimation. It is not an approved clinical diagnostic tool or medical decision system for direct patient management.
+> **Scope disclaimer:** This is an educational research benchmark using scikit-learn's public, preprocessed diabetes dataset (Efron et al., 2004). It demonstrates tabular regression, split-conformal uncertainty estimation, exploratory subgroup error analysis, and model-based feature attribution. It is not a clinical diagnostic tool or a validated medical decision system.
 
 ---
 
-## 🎯 Research Questions & Medical Data Science Objectives
+## 🎯 Research Questions & Benchmark Objectives
 
 1. **Model Complexity vs. Tabular Generalisation:** How do regularised linear models (Ridge, Lasso) compare with non-linear tree ensembles (Random Forest) and deep neural architectures (PyTorch & TensorFlow MLPs) on a small tabular benchmark with 10 preprocessed features ($N=442$)?
 2. **Prediction Uncertainty:** Can split-conformal prediction provide finite-sample marginal coverage under exchangeability without assuming Gaussian residuals?
@@ -24,7 +24,7 @@ An educational tabular regression benchmark comparing regularised classical mode
 ```
                     ┌──────────────────────────────────────────────┐
                     │ sklearn.datasets.load_diabetes (N = 442)     │
-                    │ 10 preprocessed physiological biomarkers     │
+                    │ 10 preprocessed baseline features     │
                     └──────────────────────┬───────────────────────┘
                                            │
                         ┌──────────────────┴──────────────────┐
@@ -68,17 +68,17 @@ We apply **Split Conformal Prediction** to regression without assuming Gaussian 
 * Calibrated prediction interval: $C(x) = [\hat{y}(x) - \hat{q}, \; \hat{y}(x) + \hat{q}]$.
 * **Coverage interpretation:** at least $1-\alpha$ marginal coverage over exchangeable future observations; this is not a patient-specific probability statement.
 
-### 4. Model-based Feature Attribution
-* Linear-model coefficients summarize the direction and magnitude of fitted associations.
-* For a linear model, baseline-relative feature contributions are coefficient × feature deviation from the model-fitting reference mean; these contributions sum to the prediction difference from that reference.
-* For non-linear models, the demo replaces one feature at a time with its reference value and records the prediction change. These perturbation values may overlap and are not guaranteed to sum to the total prediction change.
-* These methods are not SHAP, neural input-gradient attribution, causal inference, or a validated clinical explanation method.
-
 ### 3. Exploratory Subgroup Error Analysis
 * Compares absolute prediction errors across the two encoded values of the standardized `sex` feature; this is exploratory and does not establish fairness.
 * Computes Max Disparity: $|MAE_{group1} - MAE_{group2}|$.
 * Uses an exploratory two-group permutation test (1,000 resamples) for mean absolute-error disparity, preserving group sizes and applying a plus-one Monte Carlo p-value correction. A p-value does not establish fairness or prove the absence of bias.
 
+
+### 4. Model-based Feature Attribution
+* Linear-model coefficients summarize the direction and magnitude of fitted associations.
+* For a linear model, baseline-relative feature contributions are coefficient × feature deviation from the model-fitting reference mean; these contributions sum to the prediction difference from that reference.
+* For non-linear models, the demo replaces one feature at a time with its reference value and records the prediction change. These perturbation values may overlap and are not guaranteed to sum to the total prediction change.
+* These methods are not SHAP, neural input-gradient attribution, causal inference, or a validated clinical explanation method.
 ---
 
 ## 📊 Regenerated Benchmark Results
@@ -99,7 +99,7 @@ Lasso had the strongest point-prediction metrics on this particular split. The e
 
 The end-to-end run and its generated CSV/JSON artifact are documented in [RESULTS.md](RESULTS.md). The workflow also completed the test suite and conventional/neural experiment successfully.
  
-For in-depth analysis, biomarker rankings, and training curves, see [RESULTS.md](RESULTS.md).
+For in-depth analysis, feature rankings, and training curves, see [RESULTS.md](RESULTS.md).
 
 ---
 
@@ -125,7 +125,7 @@ pip install -r requirements-neural.txt
 
 ### 2. Run Experiments
 
-**Classical Benchmark with Conformal Uncertainty & Fairness:**
+**Classical benchmark with conformal uncertainty and subgroup error analysis:**
 ```bash
 python -m diabetes_ml.experiment --output results
 ```
