@@ -206,3 +206,26 @@ The Docker image installs the project's core dependencies plus the Streamlit dem
 
 This project is licensed under the MIT License.
 Dataset attribution: Efron, Hastie, Johnstone, and Tibshirani (2004), *Least Angle Regression*, Annals of Statistics.
+
+## Nested tabular model benchmark
+
+A separate nested repeated-cross-validation experiment compares tuned model
+families on the full 442-row scikit-learn diabetes progression benchmark.
+Each model family is tuned using inner folds drawn only from the corresponding
+outer training fold; the outer fold is reserved for evaluation. The compact,
+predeclared search covers linear and regularised models, RBF-SVR, Random Forest,
+Extra Trees, and histogram gradient boosting. Scale-sensitive estimators use
+a pipeline so scaling is fitted within each inner training fold.
+
+Run it with:
+
+```bash
+python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
+```
+
+The output includes per-outer-fold metrics, model-level descriptive summaries,
+selected hyperparameters, and metadata describing the evaluation boundary.
+Repeated outer folds overlap across repeats, so the reported standard
+deviations are descriptive and are not independent-sample confidence
+intervals. This benchmark is separate from split-conformal calibration and
+does not establish external validity, clinical utility, or clinical readiness.
