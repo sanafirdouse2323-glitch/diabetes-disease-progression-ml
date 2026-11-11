@@ -135,6 +135,13 @@ python -m diabetes_ml.experiment --output results
 python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --patience 20
 ```
 
+**Repeated-seed robustness analysis (classical models):**
+```bash
+python -m diabetes_ml.repeated_validation --output repeated-validation
+```
+
+The default runs 10 outer splits (seeds 42–51), with a separate calibration partition inside each training split. It writes `per_seed_metrics.csv`, `summary_metrics.csv`, and `validation_metadata.json`. The summary reports means, sample standard deviations, medians, and ranges for point-prediction and conformal metrics. Because repeated hold-out test sets overlap, these standard deviations describe split sensitivity; they are not independent-sample confidence intervals or external validation. This repeated-seed command currently covers the classical models; the neural models remain in the separately documented single-seed full-comparison workflow.
+
 ### 3. Launch the Educational Research Demo
 ```bash
 streamlit run demo/app.py
@@ -161,7 +168,7 @@ The Docker image installs the project's core dependencies plus the Streamlit dem
 ## 🔬 Limitations & Future Horizons in Medical AI
 
 1. **Tabular benchmark scope:** This project uses a small, public, preprocessed 10-feature dataset. It does not contain multimodal imaging, longitudinal EHR, raw physiological signals, or genomic measurements.
-2. **Single-split evaluation:** The published metrics are from one seeded split and should be complemented with repeated nested validation and, ideally, external validation.
+2. **Published results and repeated splits:** The headline metrics in this document remain from one seeded split. The repeated-seed command provides descriptive split-sensitivity summaries for classical models, but overlapping hold-out sets do not provide independent-sample confidence intervals. Repeated nested validation and, ideally, external validation are still needed.
 3. **No clinical validation:** This is a research/educational benchmark and not a diagnostic or clinical decision-support system.
 
 ---

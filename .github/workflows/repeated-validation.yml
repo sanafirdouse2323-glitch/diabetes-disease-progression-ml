@@ -1,0 +1,36 @@
+name: Repeated-seed classical validation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repeated-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Run ten-seed classical validation
+        run: python -m diabetes_ml.repeated_validation --output repeated-validation-results
+      - name: Upload repeated-seed metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: repeated-seed-classical-validation
+          path: repeated-validation-results/
+          if-no-files-found: error
+          retention-days: 30
