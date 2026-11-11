@@ -172,7 +172,7 @@ docker build -t diabetes-progression-demo .
 docker run --rm -p 8501:8501 diabetes-progression-demo
 ```
 
-The Docker image installs the project's core dependencies plus the Streamlit demo extra. It intentionally excludes PyTorch, TensorFlow, SHAP, and test-only packages; install `requirements-neural.txt` separately when running the neural experiments outside this container. A GitHub Actions workflow builds the image and checks the Streamlit health and HTTP endpoints.
+The Docker image installs the project's core dependencies plus the Streamlit demo extra. It intentionally excludes PyTorch, TensorFlow, SHAP, and test-only packages; install `requirements-neural.txt` separately when running the neural experiments outside this container. The runtime runs as an unprivileged UID (10001), not root. The Docker CI workflow drops Linux capabilities, enables `no-new-privileges`, verifies the runtime UID, exercises the Streamlit script, and checks the health and HTTP endpoints.
 
 ---
 
