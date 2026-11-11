@@ -26,8 +26,10 @@ def test_pytorch_training_produces_finite_predictions_and_mc_uncertainty():
     trainer.fit(data.X_train, data.y_train, data.X_val, data.y_val)
 
     predictions = trainer.predict(data.X_test)
+    previous_mode = trainer.model.training
     mc_mean, mc_std = trainer.predict_mc_dropout(data.X_test, n_samples=20)
 
+    assert trainer.model.training is previous_mode
     assert predictions.shape == (len(data.X_test),)
     assert mc_mean.shape == predictions.shape
     assert mc_std.shape == predictions.shape
@@ -36,3 +38,10 @@ def test_pytorch_training_produces_finite_predictions_and_mc_uncertainty():
     assert np.isfinite(mc_std).all()
     assert np.all(mc_std >= 0)
     assert 1 <= len(trainer.history) <= 5
+
+
+@pytest.mark.parametrize("n_samples", [0, -1, 1.5, True])
+def test_mc_dropout_rejects_invalid_sample_counts(n_samples):
+    trainer = PyTorchTrainer(in_features=10, epochs=2, patience=1, random_state=11)
+    with pytest.raises(ValueError, match="positive integer"):
+        trainer.predict_mc_dropout(np.zeros((2, 10), dtype=np.float32), n_samples=n_samples)
