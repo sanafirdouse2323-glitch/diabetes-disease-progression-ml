@@ -116,13 +116,15 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install --upgrade pip
-pip install -r requirements.txt
 pip install -e .
+
+# Optional: install the neural frameworks when running the neural experiments
+pip install -e ".[neural]"
 ```
 
 To include PyTorch, TensorFlow, and Streamlit:
 ```bash
-pip install -r requirements-neural.txt
+pip install -e ".[neural]"
 ```
 
 ### 2. Run Experiments
@@ -161,6 +163,8 @@ streamlit run demo/app.py
 ### 4. Run Automated Test Suite
 ```bash
 pytest -v --cov=diabetes_ml tests/
+
+# The test suite also checks that every notebook's Python imports match the current package API.
 ```
 
 ### 5. Docker Deployment
