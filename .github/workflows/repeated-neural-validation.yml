@@ -1,0 +1,46 @@
+name: Repeated-seed neural validation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repeated-neural-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      TF_CPP_MIN_LOG_LEVEL: "2"
+      TF_NUM_INTRAOP_THREADS: "1"
+      TF_NUM_INTEROP_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install base dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Install CPU PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install CPU TensorFlow
+        run: pip install tensorflow-cpu
+      - name: Install this project
+        run: pip install -e .
+      - name: Run ten-seed neural validation
+        run: python -m diabetes_ml.repeated_neural_validation --output repeated-neural-validation-results
+      - name: Upload repeated-neural metrics and histories
+        uses: actions/upload-artifact@v4
+        with:
+          name: repeated-seed-neural-validation
+          path: repeated-neural-validation-results/
+          if-no-files-found: error
+          retention-days: 30
