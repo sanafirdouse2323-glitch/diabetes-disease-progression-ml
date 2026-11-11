@@ -199,7 +199,7 @@ The Docker image installs the project's core dependencies plus the Streamlit dem
 ## Limitations and Next Steps
 
 1. **Tabular benchmark scope:** This project uses a small, public, preprocessed 10-feature dataset. It does not contain multimodal imaging, longitudinal EHR, raw physiological signals, or genomic measurements.
-2. **Published results and repeated splits:** The headline table in this document is from one seeded split. Separate ten-seed workflows report classical and neural results; their overlapping hold-out sets provide descriptive split-sensitivity summaries, not independent-sample confidence intervals. Repeated nested validation and, ideally, external validation are still needed.
+2. **Published results and repeated splits:** The headline table in this document is from one seeded split. Separate ten-seed workflows report classical and neural results; their overlapping hold-out sets provide descriptive split-sensitivity summaries, not independent-sample confidence intervals. A nested repeated-cross-validation model-family benchmark is now included below and in RESULTS.md. External validation on an independent cohort is still needed.
 3. **No clinical validation:** This is a research/educational benchmark and not a diagnostic or clinical decision-support system.
 
 ---
@@ -243,5 +243,5 @@ The output includes:
 The outer-fold results do not use outer-test labels for fitting or selection.
 Repeated folds overlap across repeats, so standard deviations are descriptive
 and are not independent-sample confidence intervals. The candidate grids are
-compact rather than exhaustive. This benchmark does not establish external
-validity, clinical utility, or clinical readiness.
+compact rather than exhaustive. [Measured nested benchmark results and selection-aware interpretation](RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
+This benchmark does not establish external validity, clinical utility, or clinical readiness.
