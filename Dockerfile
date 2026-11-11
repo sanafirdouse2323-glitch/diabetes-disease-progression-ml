@@ -31,8 +31,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Run Streamlit as an unprivileged account with writable app and home directories.
-RUN groupadd --system --gid 10001 app \
-    && useradd --system --uid 10001 --gid app --create-home --home-dir /home/app --shell /usr/sbin/nologin app \
+RUN groupadd --gid 10001 app \
+    && useradd --uid 10001 --gid app --create-home --home-dir /home/app --shell /bin/false app \
     && mkdir -p /home/app/.streamlit \
     && chown -R 10001:10001 /app /home/app
 
