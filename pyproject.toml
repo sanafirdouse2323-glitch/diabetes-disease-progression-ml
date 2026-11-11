@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "diabetes-ml"
 version = "0.2.0"
-description = "Clinical ML Benchmark: Classical & Neural Regression, Uncertainty Quantification, Subgroup Fairness, and Explainability on Diabetes Disease Progression"
+description = "Tabular diabetes disease-progression regression benchmark with split-conformal uncertainty and exploratory subgroup error analysis"
 authors = [{ name = "Sana Firdouse" }]
 readme = "README.md"
 requires-python = ">=3.10"
