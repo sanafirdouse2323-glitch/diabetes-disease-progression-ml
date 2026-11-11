@@ -171,7 +171,7 @@ pytest -v --cov=diabetes_ml tests/
 
 ### 5. Notebooks
 
-The three notebooks cover dataset exploration, the classical benchmark, and the PyTorch/TensorFlow baselines. Run them from the repository root after installing the core dependencies; install `.[neural]` before running the neural notebook. The automated test suite checks notebook JSON, Python syntax, and imports against the current package API; it does not execute the full notebooks.
+The three notebooks cover dataset exploration, the classical benchmark, and the PyTorch/TensorFlow baselines. Run them from the repository root after installing the core dependencies; install `.[neural]` before running the neural notebook. The automated test suite checks notebook JSON, Python syntax, and imports against the current package API. Separately, the **End-to-end notebook execution** GitHub Actions workflow executes all three notebooks on pull requests that change notebooks or their supporting source/configuration files, and on pushes to `main`; it uploads the executed notebooks and generated experiment outputs as a workflow artifact.
 
 ### 6. Docker Deployment
 

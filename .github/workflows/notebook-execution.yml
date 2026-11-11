@@ -2,7 +2,7 @@ name: End-to-end notebook execution
 
 on:
   push:
-    branches: [fix/notebook-reliability-20261111]
+    branches: [main]
   pull_request:
     paths:
       - "notebooks/**"
