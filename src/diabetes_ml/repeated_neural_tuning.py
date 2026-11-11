@@ -66,6 +66,7 @@ def run_repeated_neural_tuning(
             val_fraction=0.20, cal_fraction=0.20, random_state=seed,
         )
         best = None
+        baseline_trainer = None
         for cfg in CANDIDATE_CONFIGS:
             trainer = PyTorchTrainer(
                 in_features=data.X_train.shape[1],
@@ -93,9 +94,18 @@ def run_repeated_neural_tuning(
                     "train_mse": float(row["train_mse"]),
                     "validation_mse": float(row["val_mse"]),
                 })
+            if cfg["config"] == "baseline_default":
+                baseline_trainer = trainer
             if best is None or val_mse < best["validation_mse"]:
                 best = {"trainer": trainer, "config": cfg, "validation_mse": val_mse,
                         "best_epoch": int(best_epoch["epoch"])}
+
+        if baseline_trainer is None:
+            raise RuntimeError(f"Baseline control was not trained for seed={seed}.")
+        # The baseline control is evaluated on the same outer test rows for a
+        # paired descriptive comparison; these test metrics never affect selection.
+        baseline_prediction = baseline_trainer.predict(data.X_test)
+        baseline_point = calculate_regression_metrics(split.y_test.to_numpy(), baseline_prediction)
 
         # Calibration is used only after validation-based configuration choice.
         conformal = ConformalRegressor(best["trainer"], alpha=alpha)
@@ -113,6 +123,10 @@ def run_repeated_neural_tuning(
             "fit_n": len(data.X_train), "validation_n": len(data.X_val),
             "calibration_n": len(data.X_cal), "test_n": len(data.X_test),
             "test_mae": point["mae"], "test_rmse": point["rmse"], "test_r2": point["r2"],
+            "baseline_test_mae": baseline_point["mae"],
+            "baseline_test_rmse": baseline_point["rmse"],
+            "baseline_test_r2": baseline_point["r2"],
+            "mae_change_vs_baseline": point["mae"] - baseline_point["mae"],
             "conformal_nominal_coverage": interval["nominal_coverage"],
             "conformal_empirical_coverage": interval["empirical_coverage"],
             "conformal_mean_interval_width": interval["mean_interval_width"],
@@ -140,7 +154,8 @@ def run_repeated_neural_tuning(
         "summary_sd": "sample standard deviation across overlapping repeated hold-out splits; descriptive, not a confidence interval",
         "limitations": [
             "Only five predeclared settings for one fixed MLP architecture were tested.",
-            "Validation-based selection can be noisy with a small validation subset.",
+            "Validation-based selection can be noisy with a small validation subset; the outer test comparison estimates the full selection procedure.",
+            "The default baseline is also evaluated on each same outer test subset for a paired descriptive comparison; its test metrics do not influence selection.",
             "Repeated outer test partitions overlap and are not external validation.",
             "The experiment does not establish clinical utility or universal neural superiority."
         ],
