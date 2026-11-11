@@ -1,23 +1,25 @@
-"""Interactive Clinical Decision Support Dashboard for Diabetes Disease Progression.
+"""Educational ML research demo for diabetes disease-progression regression.
 
 Features:
-- Real-time prediction with Conformal Prediction Intervals (guaranteed 90% coverage).
-- Patient-level local biomarker attribution (why the model made this prediction).
-- Subgroup demographic fairness audit tab.
+- Point predictions with split-conformal marginal prediction intervals.
+- Local feature attribution relative to the model-fitting subset.
+- Exploratory subgroup error audit on the held-out benchmark test partition.
+
+This application is not a diagnostic or clinical decision-support system.
 """
 
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
 import streamlit as st
 
-from diabetes_ml.data import create_experiment_splits, load_diabetes_data
+from sklearn.model_selection import train_test_split
+
+from diabetes_ml.data import create_experiment_splits
 from diabetes_ml.evaluation import (
     ConformalRegressor,
     compute_patient_explanation,
     evaluate_subgroup_disparity,
-    get_linear_attribution,
 )
 from diabetes_ml.models import get_classical_models
 
@@ -28,71 +30,80 @@ def load_trained_models():
     splits = create_experiment_splits(random_state=42)
     models = get_classical_models(random_state=42)
 
-    # Fit and calibrate Conformal Predictors
+    # Keep calibration observations disjoint from model fitting.
+    X_fit, X_cal, y_fit, y_cal = train_test_split(
+        splits.X_train,
+        splits.y_train,
+        test_size=0.20,
+        random_state=42,
+        shuffle=True,
+    )
+
     conformal_models = {}
     for name, model in models.items():
         cr = ConformalRegressor(model, alpha=0.10)
         cr.fit_and_calibrate(
-            splits.X_train.values,
-            splits.y_train.values,
-            splits.X_train.values[-70:],  # inner calibration partition
-            splits.y_train.values[-70:],
+            X_fit.values,
+            y_fit.values,
+            X_cal.values,
+            y_cal.values,
         )
         conformal_models[name] = cr
 
-    return splits, models, conformal_models
+    return splits, models, conformal_models, X_fit, y_fit
 
 
 def main():
     st.set_page_config(
-        page_title="Diabetes Progression Decision Support",
+        page_title="Diabetes Progression Research Demo",
         page_icon="🩺",
         layout="wide",
     )
 
-    st.title("🩺 Diabetes Disease Progression: Clinical AI Decision Support")
+    st.title("🩺 Diabetes Disease Progression: Educational ML Research Demo")
     st.markdown(
         """
-        An educational clinical machine learning interface demonstrating **Distribution-Free Uncertainty Quantification**
-        (Split Conformal Prediction) and **Patient-Level Biomarker Attribution**.
+        An educational machine learning demonstration of **Split Conformal Prediction**
+        and **local feature attribution** on a public, preprocessed benchmark dataset.
+        This is not a diagnostic tool or a validated clinical decision system.
         """
     )
 
-    splits, models, conformal_models = load_trained_models()
+    splits, models, conformal_models, X_fit, y_fit = load_trained_models()
     feature_names = splits.feature_names
-    ref_baseline = splits.X_train.mean().values
+    ref_baseline = X_fit.mean().values
 
-    # Sidebar: Model and Patient Controls
+    # Sidebar: Model and Synthetic Feature Controls
     st.sidebar.header("⚙️ Configuration")
     selected_model_name = st.sidebar.selectbox(
         "Select Model",
         ["Ridge", "Linear Regression", "Lasso", "Random Forest"],
-        index=0,
-        help="Ridge regression is the top-performing model on this benchmark.",
+        index=2,
+        help="Select a regression model for the benchmark demonstration; Lasso had the strongest point metrics in the recorded split.",
     )
 
-    st.sidebar.subheader("👤 Patient Biomarker Profile")
-    st.sidebar.caption("Features are standardized clinical variables (scikit-learn benchmark scale).")
+    st.sidebar.subheader("Synthetic Feature Profile")
+    st.sidebar.caption("Illustrative standardized benchmark inputs only; these are not real patient measurements.")
 
-    # Patient presets
+    # Synthetic benchmark feature presets
     preset = st.sidebar.radio(
         "Load Preset Profile",
-        ["Default Median", "High Metabolic Risk", "Low Metabolic Risk"],
+        ["Benchmark Mean", "Illustrative Profile A", "Illustrative Profile B"],
         index=0,
     )
 
-    if preset == "High Metabolic Risk":
+    if preset == "Illustrative Profile A":
         default_vals = [0.05, 0.05, 0.08, 0.06, 0.04, 0.02, -0.04, 0.05, 0.08, 0.06]
-    elif preset == "Low Metabolic Risk":
+    elif preset == "Illustrative Profile B":
         default_vals = [-0.04, -0.04, -0.06, -0.05, -0.03, -0.02, 0.06, -0.04, -0.07, -0.05]
     else:
         default_vals = [0.0] * 10
 
-    patient_inputs = {}
+    feature_inputs = {}
     cols = st.sidebar.columns(2)
     for i, feat in enumerate(feature_names):
         col = cols[i % 2]
-        patient_inputs[feat] = col.slider(
+        feature_inputs[feat] = col.slider(
             feat,
             min_value=-0.15,
             max_value=0.15,
@@ -100,61 +111,65 @@ def main():
             step=0.01,
         )
 
-    patient_arr = np.array([patient_inputs[f] for f in feature_names], dtype=np.float64)
+    feature_vector = np.array([feature_inputs[f] for f in feature_names], dtype=np.float64)
 
     # Main Dashboard Tabs
     tab1, tab2, tab3 = st.tabs([
-        "📊 Patient Prediction & Uncertainty",
-        "🔍 Local Biomarker Attribution",
-        "⚖️ Benchmark & Fairness Audit",
+        "📊 Prediction & Conformal Interval",
+        "🔍 Local Feature Attribution",
+        "⚖️ Subgroup Error Audit",
     ])
 
     with tab1:
         st.subheader(f"Predictive Assessment: {selected_model_name}")
 
         cr = conformal_models[selected_model_name]
-        intervals = cr.predict_interval(patient_arr.reshape(1, -1))
+        intervals = cr.predict_interval(feature_vector.reshape(1, -1))
         pred_val = intervals.point_prediction[0]
         lower_bound = intervals.lower_bound[0]
         upper_bound = intervals.upper_bound[0]
         margin = intervals.margin
 
         c1, c2, c3 = st.columns(3)
-        c1.metric("Predicted 1-Year Progression", f"{pred_val:.1f}")
+        c1.metric("Predicted Benchmark Target", f"{pred_val:.1f}")
         c2.metric("90% Conformal Lower Bound", f"{lower_bound:.1f}")
         c3.metric("90% Conformal Upper Bound", f"{upper_bound:.1f}")
 
         st.info(
-            f"**Guaranteed Uncertainty Interval:** With 90% finite-sample statistical confidence, "
-            f"the patient's true one-year disease progression is bounded between **{lower_bound:.1f}** and **{upper_bound:.1f}** "
-            f"(margin: ±{margin:.1f})."
+            f"**90% split-conformal prediction interval:** **{lower_bound:.1f}** to "
+            f"**{upper_bound:.1f}** (margin: ±{margin:.1f}). Under exchangeability, "
+            "the procedure targets at least 90% marginal coverage across future observations. "
+            "This is not a 90% probability statement about an individual observation."
         )
 
-        # Risk stratification indicator
-        if pred_val < 100:
-            st.success("🟢 **Risk Category: Mild Progression** (Below cohort 25th percentile)")
-        elif pred_val < 180:
-            st.warning("🟡 **Risk Category: Moderate Progression** (Cohort mid-range)")
+        # Describe the prediction against the benchmark target distribution only;
+        # these labels are not clinical risk categories or treatment thresholds.
+        q25, q75 = np.quantile(y_fit.to_numpy(dtype=float), [0.25, 0.75])
+        st.caption("Position within the benchmark target distribution; not a clinical risk category.")
+        if pred_val < q25:
+            st.info("Prediction is below the benchmark training-set 25th percentile.")
+        elif pred_val > q75:
+            st.warning("Prediction is above the benchmark training-set 75th percentile.")
         else:
-            st.error("🔴 **Risk Category: Rapid Progression** (Upper quartile risk trajectory)")
+            st.success("Prediction is within the benchmark training-set interquartile range.")
 
     with tab2:
-        st.subheader("🔍 Local Biomarker Attribution Breakdown")
-        st.caption("How each clinical biomarker shifts this patient's prediction relative to the reference baseline.")
+        st.subheader("🔍 Local Feature Attribution Breakdown")
+        st.caption("How each input feature shifts this synthetic profile's prediction relative to the model-fitting reference baseline.")
 
         explanation_df = compute_patient_explanation(
             models[selected_model_name],
-            patient_arr,
+            feature_vector,
             feature_names,
             ref_baseline,
         )
 
         st.dataframe(
             explanation_df.rename(columns={
-                "feature": "Biomarker",
-                "patient_value": "Patient Value",
-                "deviation": "Deviation from Cohort Mean",
-                "contribution_to_progression": "Impact on Progression Score",
+                "feature": "Feature",
+                "patient_value": "Feature Value",
+                "deviation": "Deviation from Model-Fitting Mean",
+                "contribution_to_progression": "Contribution to Predicted Score",
             }),
             use_container_width=True,
         )
@@ -165,24 +180,24 @@ def main():
         )
 
     with tab3:
-        st.subheader("⚖️ Held-out Performance & Demographic Disparity Audit")
+        st.subheader("⚖️ Held-out Benchmark Subgroup Error Audit")
         st.markdown(
             """
-            Evaluating performance parity across demographic subgroups is critical for responsible medical AI.
-            Below is the held-out evaluation on the 89 test patients disaggregated by demographic cohort.
+            This exploratory audit compares errors across the two encoded values of the benchmark's standardized `sex` feature.
+            These feature levels are not literal demographic group labels, and this small-sample audit does not establish fairness.
             """
         )
 
-        test_preds = models[selected_model_name].predict(splits.X_test)
+        test_preds = models[selected_model_name].predict(splits.X_test.values)
         sex_fairness = evaluate_subgroup_disparity(
             splits.y_test,
             test_preds,
             splits.X_test["sex"],
-            subgroup_name="Sex Cohort",
+            subgroup_name="Standardized sex-feature level",
         )
 
         fc1, fc2 = st.columns(2)
-        fc1.metric("Demographic MAE Parity Ratio", f"{sex_fairness['mae_parity_ratio']:.3f}", "1.0 = perfect parity")
+        fc1.metric("Exploratory MAE Ratio", f"{sex_fairness['mae_parity_ratio']:.3f}", "1.0 = perfect parity")
         fc2.metric("Max Subgroup MAE Disparity", f"{sex_fairness['max_mae_disparity']:.2f}")
 
         st.json(sex_fairness["subgroups"])

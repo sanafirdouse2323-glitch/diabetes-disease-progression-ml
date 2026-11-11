@@ -77,9 +77,9 @@ def run_full_comparison_experiment(
         pt_pred = pt_trainer.predict(neural_arrays.X_test)
         pt_metrics = calculate_regression_metrics(splits.y_test.values, pt_pred)
 
-        # Calibrate conformal predictor on neural validation set
+        # Calibration set is untouched by fitting and early-stopping model selection.
         pt_conformal = ConformalRegressor(pt_trainer, alpha=0.10)
-        pt_conformal.calibrate(neural_arrays.X_val, neural_arrays.y_val)
+        pt_conformal.calibrate(neural_arrays.X_cal, neural_arrays.y_cal)
         pt_intervals = pt_conformal.predict_interval(neural_arrays.X_test)
         pt_conf_eval = evaluate_conformal_coverage(pt_intervals, splits.y_test.values)
 
@@ -134,8 +134,9 @@ def run_full_comparison_experiment(
         tf_pred = tf_trainer.predict(neural_arrays.X_test)
         tf_metrics = calculate_regression_metrics(splits.y_test.values, tf_pred)
 
+        # Use the independent calibration set, never the early-stopping validation set.
         tf_conformal = ConformalRegressor(tf_trainer, alpha=0.10)
-        tf_conformal.calibrate(neural_arrays.X_val, neural_arrays.y_val)
+        tf_conformal.calibrate(neural_arrays.X_cal, neural_arrays.y_cal)
         tf_intervals = tf_conformal.predict_interval(neural_arrays.X_test)
         tf_conf_eval = evaluate_conformal_coverage(tf_intervals, splits.y_test.values)
 
