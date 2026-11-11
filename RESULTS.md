@@ -111,7 +111,7 @@ These quantities explain how the fitted models use the input features in this be
 ## 6. Limitations and interpretation
 
 1. **Small, preprocessed benchmark:** 442 observations and 10 preprocessed features are insufficient to establish clinical utility, transportability, or robust subgroup fairness.
-2. **Single split:** The point metrics and empirical test coverage are from one seeded outer split. Repeated nested validation or external validation is needed to characterize variability.
+2. **Single split for the published table:** The point metrics and empirical test coverage above are from one seeded outer split. A repeated-seed validation command is now available for the classical models; it reports descriptive split-to-split variability, not confidence intervals, because repeated hold-out sets overlap. Repeated nested validation and external validation are still needed.
 3. **No clinical validation:** This work is an educational/research software demonstration, not a diagnostic or clinical decision-support system.
 4. **Subgroup analysis is narrow:** Only the two encoded values of the standardized `sex` feature are compared. Age-group analyses and broader fairness evaluations are not included in this measured run.
 5. **Interpretability scope:** The implemented methods are coefficients, Random Forest impurity importances, and local perturbation-style explanations. This run does not implement SHAP or causal inference.
