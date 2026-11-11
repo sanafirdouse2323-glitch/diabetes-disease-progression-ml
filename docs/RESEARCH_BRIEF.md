@@ -58,21 +58,24 @@ The matched-sample ten-seed comparison gives a useful example of why model choic
 
 A separate, validation-selected PyTorch tuning study reduced the MLP's mean test MAE to 44.934, bringing it much closer to the classical models but not establishing superiority over Linear Regression or Lasso. The ten repeated hold-out test partitions overlap; their standard deviations are descriptive split-sensitivity summaries, not independent-sample confidence intervals.
 
-The first nested repeated-CV per-family run reported the following mean outer-fold MAE values:
+The nested repeated-CV run reported the following mean outer-fold MAE values (15 outer evaluations per family):
 
 | Model family | Mean outer-fold MAE |
 |---|---:|
-| RBF-SVR | 44.414 |
+| Mean Baseline | 65.896 |
 | Linear Regression | 44.483 |
-| ElasticNet | 44.548 |
 | Ridge | 44.565 |
-| Extra Trees | 45.584 |
+| ElasticNet | 44.548 |
+| RBF-SVR | 44.414 |
 | Random Forest | 46.437 |
+| Extra Trees | 45.584 |
 | Histogram Gradient Boosting | 46.552 |
 
-The difference between RBF-SVR and Linear Regression is very small. The per-family ranking is descriptive; no formal significance test is reported, and repeated outer folds overlap across repeats. The selection-aware outer-fold result and selected-family frequencies are recorded separately in the generated benchmark outputs and the results report.
+The difference between RBF-SVR and Linear Regression is only 0.069 target units. This small numerical difference is not evidence of a reliable winner. The per-family ranking is descriptive; no formal significance test is reported, and repeated outer folds overlap across repeats.
 
-These results are not directly interchangeable with the 225-row matched-sample results: the nested benchmark uses larger outer-training partitions and a different validation protocol.
+The experiment also evaluates a selection procedure that chooses the family using inner-fold MAE inside each outer training partition, then evaluates that selected family on the untouched outer fold. Its mean outer-fold MAE was 44.854 ± 3.105, RMSE 55.565 ± 3.677, and R² 0.469 ± 0.079. It selected RBF-SVR in 10/15 folds, Ridge in 2/15, and Extra Trees, ElasticNet, and Linear Regression once each. It did not improve over the fixed Linear Regression per-family strategy (mean MAE 44.483). This is an important negative/neutral result: family selection added complexity without demonstrating a benefit on this benchmark.
+
+The nested run's standard deviations are descriptive split-sensitivity summaries, not independent-sample confidence intervals. Its results are not directly interchangeable with the 225-row matched-sample results: the nested benchmark uses larger outer-training partitions and a different validation protocol. Full metrics, fold-level results, selection frequencies, and metadata are recorded in [RESULTS.md](../RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
 
 ## What this project demonstrates
 
