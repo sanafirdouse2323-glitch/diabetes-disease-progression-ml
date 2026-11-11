@@ -1,4 +1,4 @@
-"""End-to-end Classical ML Experiment Pipeline with Conformal Uncertainty and Fairness."""
+"""Classical regression benchmark with split-conformal uncertainty and subgroup error analysis."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ def run_classical_experiment(
     cal_fraction: float = 0.20,
     random_state: int = 42,
 ) -> pd.DataFrame:
-    """Run full classical benchmark: CV, held-out evaluation, conformal uncertainty, and fairness."""
+    """Run CV, held-out regression evaluation, conformal intervals, and exploratory subgroup error analysis."""
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
@@ -70,7 +70,7 @@ def run_classical_experiment(
         reg_metrics = calculate_regression_metrics(splits.y_test.values, y_test_pred)
         conf_metrics = evaluate_conformal_coverage(intervals, splits.y_test.values)
 
-        # 4. Demographic Fairness Disparity (Sex and Age)
+        # 4. Exploratory subgroup error analysis (standardized sex feature only)
         # Note: In standard sklearn diabetes, sex is standardized into two discrete float values
         sex_disparity = evaluate_subgroup_disparity(
             splits.y_test.values,
