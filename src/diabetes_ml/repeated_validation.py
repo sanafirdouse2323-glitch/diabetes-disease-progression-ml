@@ -101,6 +101,7 @@ def run_repeated_seed_validation(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     test_size: float = 0.20,
     cal_fraction: float = 0.20,
+    val_fraction: float | None = None,
     alpha: float = 0.10,
     cv_folds: int = 5,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -108,12 +109,20 @@ def run_repeated_seed_validation(
 
     Each seed creates a new outer train/test split. Calibration observations
     are then separated from the outer training partition; cross-validation and
-    estimator fitting use only the remaining fitting partition. The test set
-    is used only for final metrics and is not used for fitting or calibration.
+    estimator fitting use only the remaining fitting partition. When
+    val_fraction is supplied, a further validation subset is reserved from
+    that development partition and left unused by classical estimators. This
+    option allows a matched fitting-sample comparison with neural models.
+    The test set is used only for final metrics and is not used for fitting or
+    calibration.
     """
     seed_values = _validated_seeds(seeds)
     test_fraction = _validated_fraction(test_size, "test_size")
     calibration_fraction = _validated_fraction(cal_fraction, "cal_fraction")
+    validation_fraction = (
+        None if val_fraction is None
+        else _validated_fraction(val_fraction, "val_fraction")
+    )
     alpha_value = float(alpha)
     if not np.isfinite(alpha_value) or not 0.0 < alpha_value < 1.0:
         raise ValueError("alpha must be strictly between 0 and 1.")
@@ -129,13 +138,25 @@ def run_repeated_seed_validation(
             test_size=test_fraction,
             random_state=seed,
         )
-        X_fit, X_cal, y_fit, y_cal = train_test_split(
+        X_development, X_cal, y_development, y_cal = train_test_split(
             splits.X_train,
             splits.y_train,
             test_size=calibration_fraction,
             random_state=seed,
             shuffle=True,
         )
+        validation_n = 0
+        if validation_fraction is None:
+            X_fit, y_fit = X_development, y_development
+        else:
+            X_fit, X_validation_unused, y_fit, y_validation_unused = train_test_split(
+                X_development,
+                y_development,
+                test_size=validation_fraction,
+                random_state=seed,
+                shuffle=True,
+            )
+            validation_n = int(len(X_validation_unused))
         if len(X_fit) < cv_folds:
             raise ValueError(
                 f"Seed {seed} leaves only {len(X_fit)} fitting rows, fewer than cv_folds={cv_folds}."
@@ -170,6 +191,7 @@ def run_repeated_seed_validation(
                 "seed": seed,
                 "model": model_name,
                 "fit_n": int(len(X_fit)),
+                "validation_n": validation_n,
                 "calibration_n": int(len(X_cal)),
                 "test_n": int(len(splits.X_test)),
                 "cv_mae_mean": cv["cv_mae_mean"],
@@ -196,6 +218,8 @@ def run_repeated_seed_validation(
         "n_seeds": len(seed_values),
         "outer_test_fraction": test_fraction,
         "calibration_fraction_of_outer_training": calibration_fraction,
+        "validation_fraction_of_non_calibration_development_data": validation_fraction,
+        "validation_partition_used_for_model_selection": False,
         "conformal_alpha": alpha_value,
         "nominal_conformal_coverage": 1.0 - alpha_value,
         "cross_validation_folds_within_fit_partition": int(cv_folds),
@@ -228,6 +252,12 @@ def main() -> None:
     )
     parser.add_argument("--test-size", type=float, default=0.20)
     parser.add_argument("--cal-fraction", type=float, default=0.20)
+    parser.add_argument(
+        "--val-fraction",
+        type=float,
+        default=None,
+        help="Optional fraction of the non-calibration development set reserved unused, e.g. 0.20 to match neural fit size.",
+    )
     parser.add_argument("--alpha", type=float, default=0.10)
     parser.add_argument("--cv-folds", type=int, default=5)
     args = parser.parse_args()
@@ -237,6 +267,7 @@ def main() -> None:
         seeds=args.seeds,
         test_size=args.test_size,
         cal_fraction=args.cal_fraction,
+        val_fraction=args.val_fraction,
         alpha=args.alpha,
         cv_folds=args.cv_folds,
     )

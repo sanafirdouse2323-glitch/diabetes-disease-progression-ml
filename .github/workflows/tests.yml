@@ -28,4 +28,4 @@ jobs:
       - name: Run experiment smoke test
         run: python -m diabetes_ml.experiment --output ci-results
       - name: Run repeated-seed validation smoke test
-        run: python -m diabetes_ml.repeated_validation --output repeated-ci-results --seeds 42 43 44 --cv-folds 3
+        run: python -m diabetes_ml.repeated_validation --output repeated-ci-results --seeds 42 43 44 --cv-folds 3 --val-fraction 0.20
