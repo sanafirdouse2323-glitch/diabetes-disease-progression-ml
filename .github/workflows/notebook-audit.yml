@@ -1,0 +1,54 @@
+name: Temporary notebook end-to-end audit
+
+on:
+  push:
+    branches: [audit/notebook-execution-29081f9]
+
+permissions:
+  contents: read
+
+jobs:
+  execute-notebooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TF_CPP_MIN_LOG_LEVEL: "2"
+      TF_NUM_INTRAOP_THREADS: "1"
+      TF_NUM_INTEROP_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MPLBACKEND: "Agg"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install base dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Install CPU PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install CPU TensorFlow and notebook executor
+        run: pip install tensorflow-cpu nbconvert
+      - name: Install project
+        run: pip install -e .
+      - name: Execute all notebooks from repository root
+        run: |
+          mkdir -p audit-executed
+          for notebook in notebooks/01_exploration.ipynb notebooks/02_model_comparison.ipynb notebooks/03_neural_networks.ipynb; do
+            echo "Executing $notebook"
+            jupyter nbconvert --to notebook --execute "$notebook" \
+              --output "$(basename "$notebook")" \
+              --output-dir audit-executed \
+              --ExecutePreprocessor.timeout=900
+          done
+      - name: Upload executed notebooks and generated outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: notebook-end-to-end-audit
+          path: |
+            audit-executed/
+            notebook-results/
+          if-no-files-found: error
+          retention-days: 7
