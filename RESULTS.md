@@ -122,15 +122,15 @@ A separate repeated outer-split run evaluated the five classical models over ten
 
 ### Point-prediction performance across seeds
 
-Values are mean ± sample standard deviation across the ten seeded outer splits. CV MAE is the mean of the five-fold CV MAE means for each seed.
+Values are mean ± sample standard deviation across the ten seeded outer splits. CV MAE summarizes the ten seed-specific five-fold CV means.
 
-| Model | Mean CV MAE | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+| Model | CV MAE (mean ± SD) | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
 |---|---:|---:|---:|---:|
-| Linear Regression | 45.792 | **42.579 ± 3.075** | **52.555 ± 3.852** | **0.499 ± 0.070** |
-| Lasso | 46.026 | 42.972 ± 3.206 | 52.776 ± 3.710 | 0.495 ± 0.067 |
-| Random Forest | 48.012 | 43.809 ± 2.984 | 54.367 ± 3.545 | 0.465 ± 0.058 |
-| Ridge | 52.044 | 47.930 ± 3.427 | 57.312 ± 3.363 | 0.406 ± 0.056 |
-| Mean Baseline | 66.455 | 64.572 ± 3.606 | 75.117 ± 3.593 | -0.018 ± 0.025 |
+| Linear Regression | 45.792 ± 1.272 | **42.579 ± 3.075** | **52.555 ± 3.852** | **0.499 ± 0.070** |
+| Lasso | 46.026 ± 1.202 | 42.972 ± 3.206 | 52.776 ± 3.710 | 0.495 ± 0.067 |
+| Random Forest | 48.012 ± 1.191 | 43.809 ± 2.984 | 54.367 ± 3.545 | 0.465 ± 0.058 |
+| Ridge | 52.044 ± 1.019 | 47.930 ± 3.427 | 57.312 ± 3.363 | 0.406 ± 0.056 |
+| Mean Baseline | 66.455 ± 1.521 | 64.572 ± 3.606 | 75.117 ± 3.593 | -0.018 ± 0.025 |
 
 Linear Regression had the lowest mean test MAE and RMSE, and the highest mean R², with Lasso close behind. This does not establish a statistically significant difference between them. The ten test partitions overlap because they are repeated random hold-out splits of the same 442 observations; the across-seed standard deviations describe split sensitivity and are not confidence intervals.
 
