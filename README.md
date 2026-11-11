@@ -8,6 +8,8 @@ An educational tabular regression benchmark comparing classical regression model
 
 > **Scope disclaimer:** This is an educational research benchmark using scikit-learn's public, preprocessed diabetes dataset (Efron et al., 2004). It demonstrates tabular regression, split-conformal uncertainty estimation, exploratory subgroup error analysis, and model-based feature attribution. It is not a clinical diagnostic tool or a validated medical decision system.
 
+**Research application brief:** [Project question, methods, evidence, limitations, and a reproducible demonstration guide](docs/RESEARCH_BRIEF.md).
+
 ---
 
 ## 🎯 Research Questions & Benchmark Objectives
@@ -209,13 +211,18 @@ Dataset attribution: Efron, Hastie, Johnstone, and Tibshirani (2004), *Least Ang
 
 ## Nested tabular model benchmark
 
-A separate nested repeated-cross-validation experiment compares tuned model
-families on the full 442-row scikit-learn diabetes progression benchmark.
-Each model family is tuned using inner folds drawn only from the corresponding
-outer training fold; the outer fold is reserved for evaluation. The compact,
-predeclared search covers linear and regularised models, RBF-SVR, Random Forest,
-Extra Trees, and histogram gradient boosting. Scale-sensitive estimators use
-a pipeline so scaling is fitted within each inner training fold.
+A separate nested repeated-cross-validation experiment compares seven predeclared
+tabular regression families on all 442 rows. Each family is tuned on the same
+inner folds drawn only from each outer training partition. In addition to
+per-family comparisons, the experiment now selects a family using inner-fold
+MAE within each outer training partition and evaluates that complete selection
+procedure on the untouched outer fold. A mean-prediction baseline is included.
+
+The default experiment uses 5 outer folds × 3 repeats and 3 inner folds. The
+scale-sensitive estimators use a pipeline so feature scaling is learned within
+the inner training folds. The per-family table is a descriptive comparison;
+the separate family-selection output is the appropriate result to discuss
+when describing a model chosen from the candidate families.
 
 Run it with:
 
@@ -223,9 +230,18 @@ Run it with:
 python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
 ```
 
-The output includes per-outer-fold metrics, model-level descriptive summaries,
-selected hyperparameters, and metadata describing the evaluation boundary.
-Repeated outer folds overlap across repeats, so the reported standard
-deviations are descriptive and are not independent-sample confidence
-intervals. This benchmark is separate from split-conformal calibration and
-does not establish external validity, clinical utility, or clinical readiness.
+The output includes:
+
+- `outer_fold_metrics.csv` and `model_summary.csv`: per-family outer-fold
+  results and descriptive summaries.
+- `family_selection_metrics.csv`: one model family selected by inner-CV MAE
+  within each outer training partition, evaluated on that outer test fold.
+- `family_selection_summary.csv` and `selected_family_frequency.csv`:
+  overall selection-procedure metrics and how often each family was selected.
+- `benchmark_metadata.json`: dataset, split, selection, and limitation details.
+
+The outer-fold results do not use outer-test labels for fitting or selection.
+Repeated folds overlap across repeats, so standard deviations are descriptive
+and are not independent-sample confidence intervals. The candidate grids are
+compact rather than exhaustive. This benchmark does not establish external
+validity, clinical utility, or clinical readiness.
