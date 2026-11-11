@@ -186,7 +186,7 @@ The Docker image installs the project's core dependencies plus the Streamlit dem
 
 ---
 
-## 🔬 Limitations & Future Horizons in Medical AI
+## Limitations and Next Steps
 
 1. **Tabular benchmark scope:** This project uses a small, public, preprocessed 10-feature dataset. It does not contain multimodal imaging, longitudinal EHR, raw physiological signals, or genomic measurements.
 2. **Published results and repeated splits:** The headline table in this document is from one seeded split. Separate ten-seed workflows report classical and neural results; their overlapping hold-out sets provide descriptive split-sensitivity summaries, not independent-sample confidence intervals. Repeated nested validation and, ideally, external validation are still needed.
