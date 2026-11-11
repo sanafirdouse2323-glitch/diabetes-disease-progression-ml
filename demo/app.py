@@ -168,6 +168,7 @@ def main():
             explanation_df.rename(columns={
                 "feature": "Feature",
                 "patient_value": "Feature Value",
+                "reference_value": "Reference Value",
                 "deviation": "Deviation from Model-Fitting Mean",
                 "contribution_to_progression": "Contribution to Predicted Score",
             }),
