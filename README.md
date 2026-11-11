@@ -97,6 +97,8 @@ The following values were measured by the corrected end-to-end workflow on one s
 
 Lasso had the strongest point-prediction metrics on this particular split. The empirical test coverage is not identical to the 90% nominal target for every model; split-conformal guarantees marginal coverage under exchangeability over future observations, not at least 90% empirical coverage on every realized test set or a patient-specific probability.
 
+A follow-up ten-seed analysis of the classical models (seeds 42–51) found very similar average performance for Linear Regression and Lasso: mean test MAE 42.579 and 42.972, respectively. Linear Regression had slightly lower mean MAE/RMSE and slightly higher mean R²; the difference is descriptive, not evidence of a statistically significant winner. See the full [ten-seed results and methodology in RESULTS.md](RESULTS.md#6-repeated-seed-classical-robustness-check) and the [GitHub Actions run and downloadable CSV/JSON artifact](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42934789858).
+
 The end-to-end run and its generated CSV/JSON artifact are documented in [RESULTS.md](RESULTS.md). The workflow also completed the test suite and conventional/neural experiment successfully.
  
 For in-depth analysis, feature rankings, and training curves, see [RESULTS.md](RESULTS.md).
