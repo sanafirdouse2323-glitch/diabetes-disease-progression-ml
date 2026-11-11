@@ -155,6 +155,14 @@ This command also defaults to seeds 42–51. It uses separate model-fitting, ear
 
 The measured ten-seed comparison is now published in [RESULTS.md](RESULTS.md). With classical and neural models matched to 225 fitting observations, Linear Regression and Lasso had mean test MAE 42.899 and 42.927, versus 53.964 for PyTorch and 57.204 for TensorFlow. This is a benchmark-specific descriptive comparison, not proof of general superiority; the repeated test partitions overlap and no formal significance test was performed. See the [classical ten-seed workflow](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695778) and [neural ten-seed workflow](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695423) for the downloadable artifacts.
 
+
+**Controlled PyTorch hyperparameter study (validation-selected):**
+```bash
+python -m diabetes_ml.repeated_neural_tuning --output repeated-neural-tuning
+```
+
+This separate study evaluates five predeclared learning-rate/dropout settings over seeds 42–51. It selects a setting using validation MSE within each seed, then calibrates on the separate calibration subset and evaluates both the selected model and the original default configuration on the same untouched test rows. The measured selected model had mean test MAE 44.934 ± 4.931 versus 53.963 ± 3.984 for the default control; mean paired MAE change was −9.030. The higher learning rate (0.003) was selected in all ten seeds. These are descriptive results on overlapping repeated hold-out splits, not confidence intervals or evidence of clinical utility. Full details and workflow artifact are in [RESULTS.md](RESULTS.md#8-controlled-validation-selected-pytorch-hyperparameter-study).
+
 ### 3. Launch the Educational Research Demo
 ```bash
 streamlit run demo/app.py
