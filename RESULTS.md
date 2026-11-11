@@ -252,8 +252,8 @@ A dedicated benchmark compares seven regression model families plus a mean-predi
 
 For each family, hyperparameters are selected using inner-fold mean absolute error (MAE), and the selected estimator is refitted on the full outer training partition. Scale-sensitive estimators use a `StandardScaler` inside a scikit-learn `Pipeline`, ensuring that each scaler is learned only from the relevant inner training fold. The outer-fold targets are not used for hyperparameter or family selection.
 
-- Workflow run: [Nested tabular benchmark](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43008891068)
-- Source commit tested: `da6aefaaecdfb0fbcb05f465ba5c894a70daa00e`
+- Workflow run: [Nested tabular benchmark](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43013838358)
+- Source commit tested: `38ca9d84298a8a59c4111a9c2413fae528e81ba4`
 - The workflow artifact contains per-fold scores, per-family summaries, selected-family results and frequencies, and benchmark metadata.
 
 ### Per-family outer-fold results
