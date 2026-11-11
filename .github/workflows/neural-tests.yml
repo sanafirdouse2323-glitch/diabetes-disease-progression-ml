@@ -35,6 +35,8 @@ jobs:
         run: pytest -q
       - name: Run end-to-end conventional and neural comparison
         run: python -m diabetes_ml.neural.neural_experiment --output neural-ci-results --epochs 100 --patience 12
+      - name: Run repeated-neural validation smoke test
+        run: python -m diabetes_ml.repeated_neural_validation --output repeated-neural-ci-results --seeds 42 43 --epochs 10 --patience 3
       - name: Upload measured metrics and training history
         uses: actions/upload-artifact@v4
         with:

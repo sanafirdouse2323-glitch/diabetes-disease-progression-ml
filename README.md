@@ -142,7 +142,14 @@ python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --p
 python -m diabetes_ml.repeated_validation --output repeated-validation
 ```
 
-The default runs 10 outer splits (seeds 42–51), with a separate calibration partition inside each training split. It writes `per_seed_metrics.csv`, `summary_metrics.csv`, and `validation_metadata.json`. The summary reports means, sample standard deviations, medians, and ranges for point-prediction and conformal metrics. Because repeated hold-out test sets overlap, these standard deviations describe split sensitivity; they are not independent-sample confidence intervals or external validation. This repeated-seed command currently covers the classical models; the neural models remain in the separately documented single-seed full-comparison workflow.
+The default runs 10 outer splits (seeds 42–51), with a separate calibration partition inside each training split. It writes `per_seed_metrics.csv`, `summary_metrics.csv`, and `validation_metadata.json`. The summary reports means, sample standard deviations, medians, and ranges for point-prediction and conformal metrics. Because repeated hold-out test sets overlap, these standard deviations describe split sensitivity; they are not independent-sample confidence intervals or external validation. This repeated-seed command covers the classical models; the neural frameworks are evaluated by the separate repeated-seed neural command below.
+
+**Repeated-seed neural validation (PyTorch and TensorFlow):**
+```bash
+python -m diabetes_ml.repeated_neural_validation --output repeated-neural-validation
+```
+
+This command also defaults to seeds 42–51. It uses separate model-fitting, early-stopping validation, conformal calibration, and outer test partitions for each seed; the scaler is fitted only on the model-fitting subset. It writes per-seed metrics, across-seed summaries, training histories, and metadata. Install the optional neural dependencies first with `pip install -r requirements-neural.txt`. The across-seed standard deviations remain descriptive because the outer test partitions overlap.
 
 ### 3. Launch the Educational Research Demo
 ```bash
