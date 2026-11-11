@@ -101,6 +101,13 @@ The following values are from the fitted models in this run. Linear coefficients
 
 These quantities explain how the fitted models use the input features in this benchmark. They are associational, model-dependent attributions—not causal effects, validated clinical risk factors, or proof of biological mechanisms. Random Forest impurity importance can be biased by feature properties and correlations; it should not be interpreted as a causal ranking.
 
+### Attribution method interpretation
+
+* The Ridge coefficients and Random Forest mean-decrease-in-impurity values above summarize the fitted models. They describe associations in this benchmark, not causal effects.
+* For a linear model, baseline-relative contributions are calculated as the fitted coefficient multiplied by the feature deviation from the model-fitting reference mean. Their sum matches the model's prediction difference from the reference profile, up to floating-point precision.
+* For the Random Forest demo, local contributions use one-feature-at-a-time perturbations to the reference value. Because feature interactions and correlations can cause overlap, these contributions are not an additive decomposition and should not be read as SHAP values.
+* The implementation does not include SHAP, neural input-gradient attribution, or causal inference.
+
 ## 6. Limitations and interpretation
 
 1. **Small, preprocessed benchmark:** 442 observations and 10 preprocessed features are insufficient to establish clinical utility, transportability, or robust subgroup fairness.
