@@ -68,6 +68,12 @@ We apply **Split Conformal Prediction** to regression without assuming Gaussian 
 * Calibrated prediction interval: $C(x) = [\hat{y}(x) - \hat{q}, \; \hat{y}(x) + \hat{q}]$.
 * **Coverage interpretation:** at least $1-\alpha$ marginal coverage over exchangeable future observations; this is not a patient-specific probability statement.
 
+### 4. Model-based Feature Attribution
+* Linear-model coefficients summarize the direction and magnitude of fitted associations.
+* For a linear model, baseline-relative feature contributions are coefficient × feature deviation from the model-fitting reference mean; these contributions sum to the prediction difference from that reference.
+* For non-linear models, the demo replaces one feature at a time with its reference value and records the prediction change. These perturbation values may overlap and are not guaranteed to sum to the total prediction change.
+* These methods are not SHAP, neural input-gradient attribution, causal inference, or a validated clinical explanation method.
+
 ### 3. Exploratory Subgroup Error Analysis
 * Compares absolute prediction errors across the two encoded values of the standardized `sex` feature; this is exploratory and does not establish fairness.
 * Computes Max Disparity: $|MAE_{group1} - MAE_{group2}|$.
