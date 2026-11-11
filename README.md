@@ -228,10 +228,11 @@ The output includes:
   overall selection-procedure metrics and how often each family was selected.
 - `benchmark_metadata.json`: dataset, split, selection, and limitation details.
 
-The outer-fold results do not use outer-test labels for fitting or selection.
-Repeated folds overlap across repeats, so standard deviations are descriptive
-and are not independent-sample confidence intervals. The candidate grids are
-compact rather than exhaustive. [Measured nested benchmark results and selection-aware interpretation](RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
+Outer-test labels are not used for fitting or selection. Each outer split is
+evaluated once; because the outer cross-validation is repeated, an observation
+can appear in test partitions in more than one repeat. The reported standard
+deviations are descriptive and are not independent-sample confidence intervals.
+The candidate grids are compact rather than exhaustive. [Measured nested benchmark results and selection-aware interpretation](RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
 This benchmark does not establish external validity, clinical utility, or clinical readiness.
 ## Limitations and Next Steps
 
