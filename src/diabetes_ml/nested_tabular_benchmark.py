@@ -1,9 +1,10 @@
 """Nested repeated-CV benchmark for small tabular regression.
 
-Every model family is tuned only inside each outer training fold. The outer
-fold is used once for evaluation. This experiment is separate from split-
-conformal calibration and does not use the existing repeated hold-out scores
-for model selection.
+Every model family is tuned only inside each outer training fold. Each outer
+split is evaluated once. Because outer cross-validation is repeated, an
+observation can appear in test partitions in more than one repeat. This
+experiment is separate from split-conformal calibration and does not use the
+existing repeated hold-out scores for model selection.
 """
 from __future__ import annotations
 
@@ -243,7 +244,7 @@ def run_nested_tabular_benchmark(
         "selection_boundary": "all hyperparameter and model-family selection occurs using inner folds drawn only from each outer training partition",
         "family_selection_procedure": "For each outer fold, tune each included model family on the same predeclared inner folds; choose the family with the lowest inner-CV MAE; use that family's refitted best estimator for the outer-fold evaluation.",
         "family_comparison_interpretation": "Per-family outer-fold summaries compare the predeclared family-specific tuning procedures. The separate family_selection_metrics.csv evaluates the procedure that chooses a family using inner-CV MAE; use this file when discussing performance after family selection.",
-        "outer_test_use": "one-time evaluation only; never used for fitting or tuning",
+        "outer_test_use": "Each outer split is evaluated once and its targets are not used for fitting or selection; because outer cross-validation is repeated, an observation can appear in test partitions in more than one repeat.",
         "preprocessing": "StandardScaler is fitted inside the pipeline on each inner training fold for scale-sensitive models; tree models are not scaled",
         "uncertainty": "This benchmark does not fit conformal intervals; conformal calibration remains a separate experiment.",
         "summary_interpretation": "Repeated outer folds overlap across repeats. Means and standard deviations are descriptive and are not independent-sample confidence intervals.",
