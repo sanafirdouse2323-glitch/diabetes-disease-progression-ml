@@ -146,10 +146,15 @@ pytest -v --cov=diabetes_ml tests/
 ```
 
 ### 5. Docker Deployment
+
+Build and run the lightweight Streamlit research demo image:
+
 ```bash
-docker build -t diabetes-clinical-ml .
-docker run -p 8501:8501 diabetes-clinical-ml
+docker build -t diabetes-progression-demo .
+docker run --rm -p 8501:8501 diabetes-progression-demo
 ```
+
+The Docker image installs the project's core dependencies plus the Streamlit demo extra. It intentionally excludes PyTorch, TensorFlow, SHAP, and test-only packages; install `requirements-neural.txt` separately when running the neural experiments outside this container. A GitHub Actions workflow builds the image and checks the Streamlit health and HTTP endpoints.
 
 ---
 
