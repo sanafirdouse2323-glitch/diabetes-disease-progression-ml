@@ -42,6 +42,8 @@ def _validated_seeds(seeds: Sequence[int]) -> tuple[int, ...]:
     if any(isinstance(seed, (bool, np.bool_)) or not isinstance(seed, Integral) for seed in values):
         raise ValueError("Every seed must be an integer; booleans are not valid seeds.")
     normalized = tuple(int(seed) for seed in values)
+    if any(seed < 0 or seed > 2**32 - 1 for seed in normalized):
+        raise ValueError("Every seed must be between 0 and 2**32 - 1 for scikit-learn compatibility.")
     if len(set(normalized)) != len(normalized):
         raise ValueError("seeds must be unique.")
     return normalized
