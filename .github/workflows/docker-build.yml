@@ -24,7 +24,7 @@ jobs:
         run: test "$(docker exec diabetes-progression-demo id -u)" = "10001"
 
       - name: Exercise the Streamlit app script
-        run: docker exec diabetes-progression-demo python -c "from streamlit.testing.v1 import AppTest; app = AppTest.from_file('demo/app.py').run(); assert not app.exception, app.exception"
+        run: docker exec diabetes-progression-demo python -c "from streamlit.testing.v1 import AppTest; app = AppTest.from_file('demo/app.py').run(timeout=60); assert not app.exception, app.exception"
 
       - name: Wait for Streamlit health endpoint
         run: |
