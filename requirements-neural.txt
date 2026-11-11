@@ -1,4 +1,3 @@
+# Optional neural-framework dependencies. Prefer: pip install -e ".[neural]"
 torch>=2.0.0
 tensorflow>=2.15.0
-streamlit>=1.30.0
-altair>=5.0.0

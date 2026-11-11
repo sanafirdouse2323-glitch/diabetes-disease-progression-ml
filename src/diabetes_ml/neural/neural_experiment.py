@@ -191,7 +191,7 @@ def main() -> None:
         batch_size=args.batch_size,
         random_state=args.seed,
     )
-    print("\n=== Model Comparison & Clinical Uncertainty Metrics ===")
+    print("\n=== Model Comparison & Conformal Uncertainty Metrics ===")
     print(df.to_string(index=False))
 
 

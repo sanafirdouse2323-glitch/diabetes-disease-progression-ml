@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An educational tabular regression benchmark comparing regularised classical models with PyTorch and TensorFlow neural networks on the scikit-learn diabetes dataset. It demonstrates split-conformal prediction intervals, exploratory subgroup error analysis, and model-based feature attribution.
+An educational tabular regression benchmark comparing classical regression models with PyTorch and TensorFlow neural networks on the scikit-learn diabetes dataset. It demonstrates split-conformal prediction intervals, exploratory subgroup error analysis, and model-based feature attribution.
 
 > **Scope disclaimer:** This is an educational research benchmark using scikit-learn's public, preprocessed diabetes dataset (Efron et al., 2004). It demonstrates tabular regression, split-conformal uncertainty estimation, exploratory subgroup error analysis, and model-based feature attribution. It is not a clinical diagnostic tool or a validated medical decision system.
 
@@ -55,7 +55,7 @@ An educational tabular regression benchmark comparing regularised classical mode
 ```
 
 ### 1. Data Isolation & Leakage Prevention
-* Classical estimators are fitted on 282 observations and calibrated on a disjoint 71-observation subset.
+* In the single-run convenience comparison, classical estimators are fitted on 282 observations and calibrated on a disjoint 71-observation subset. The matched repeated-seed comparison reserves the same 57 validation observations used by the neural models, leaving 225 classical fitting observations.
 * Neural models use 225 observations for fitting, 57 for early-stopping validation, and a separate 71 for conformal calibration.
 * Neural feature scalers (`StandardScaler`) are fitted **only** on the 225-observation model-fitting subset.
 * Classical cross-validation and neural early stopping do not use conformal calibration observations.
@@ -161,7 +161,9 @@ streamlit run demo/app.py
 ```
 
 ### 4. Run Automated Test Suite
+Install the development tools, then run the tests:
 ```bash
+pip install -e ".[dev]"
 pytest -v --cov=diabetes_ml tests/
 
 # The test suite also checks that every notebook's Python imports match the current package API.
@@ -169,7 +171,7 @@ pytest -v --cov=diabetes_ml tests/
 
 ### 5. Notebooks
 
-The three notebooks cover dataset exploration, the classical benchmark, and the PyTorch/TensorFlow baselines. Run them from the repository root after installing the relevant dependencies. The automated test suite checks notebook JSON, Python syntax, and imports against the current package API; it does not execute the full notebooks.
+The three notebooks cover dataset exploration, the classical benchmark, and the PyTorch/TensorFlow baselines. Run them from the repository root after installing the core dependencies; install `.[neural]` before running the neural notebook. The automated test suite checks notebook JSON, Python syntax, and imports against the current package API; it does not execute the full notebooks.
 
 ### 6. Docker Deployment
 
@@ -184,10 +186,10 @@ The Docker image installs the project's core dependencies plus the Streamlit dem
 
 ---
 
-## 🔬 Limitations & Future Horizons in Medical AI
+## Limitations and Next Steps
 
 1. **Tabular benchmark scope:** This project uses a small, public, preprocessed 10-feature dataset. It does not contain multimodal imaging, longitudinal EHR, raw physiological signals, or genomic measurements.
-2. **Published results and repeated splits:** The headline metrics in this document remain from one seeded split. The repeated-seed command provides descriptive split-sensitivity summaries for classical models, but overlapping hold-out sets do not provide independent-sample confidence intervals. Repeated nested validation and, ideally, external validation are still needed.
+2. **Published results and repeated splits:** The headline table in this document is from one seeded split. Separate ten-seed workflows report classical and neural results; their overlapping hold-out sets provide descriptive split-sensitivity summaries, not independent-sample confidence intervals. Repeated nested validation and, ideally, external validation are still needed.
 3. **No clinical validation:** This is a research/educational benchmark and not a diagnostic or clinical decision-support system.
 
 ---
