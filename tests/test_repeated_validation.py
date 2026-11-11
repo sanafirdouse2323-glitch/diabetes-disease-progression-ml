@@ -67,4 +67,3 @@ def test_matched_sample_partition_sizes_match_neural_pipeline(tmp_path):
     assert set(per_seed["validation_n"]) == {57}
     assert set(per_seed["calibration_n"]) == {71}
     assert set(per_seed["test_n"]) == {89}
-\n
