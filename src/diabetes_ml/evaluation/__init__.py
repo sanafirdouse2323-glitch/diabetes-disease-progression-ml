@@ -1,4 +1,4 @@
-"""Evaluation subpackage: metrics, conformal uncertainty, subgroup fairness, and explainability."""
+"""Evaluation subpackage: regression metrics, conformal uncertainty, subgroup errors, and feature attribution."""
 
 from diabetes_ml.evaluation.metrics import (
     calculate_regression_metrics,

@@ -71,7 +71,7 @@ We apply **Split Conformal Prediction** to regression without assuming Gaussian 
 ### 3. Exploratory Subgroup Error Analysis
 * Compares absolute prediction errors across the two encoded values of the standardized `sex` feature; this is exploratory and does not establish fairness.
 * Computes Max Disparity: $|MAE_{group1} - MAE_{group2}|$.
-* Evaluates statistical significance via a non-parametric **Permutation Test** (1,000 resamples) under $H_0: \text{Error} \perp \text{Group}$.
+* Uses an exploratory two-group permutation test (1,000 resamples) for mean absolute-error disparity, preserving group sizes and applying a plus-one Monte Carlo p-value correction. A p-value does not establish fairness or prove the absence of bias.
 
 ---
 
