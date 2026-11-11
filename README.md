@@ -151,6 +151,8 @@ python -m diabetes_ml.repeated_neural_validation --output repeated-neural-valida
 
 This command also defaults to seeds 42–51. It uses separate model-fitting, early-stopping validation, conformal calibration, and outer test partitions for each seed; the scaler is fitted only on the model-fitting subset. It writes per-seed metrics, across-seed summaries, training histories, and metadata. Install the optional neural dependencies first with `pip install -r requirements-neural.txt`. The across-seed standard deviations remain descriptive because the outer test partitions overlap.
 
+The measured ten-seed comparison is now published in [RESULTS.md](RESULTS.md). With classical and neural models matched to 225 fitting observations, the classical models achieved lower average test errors than either MLP under the evaluated settings. This is a benchmark-specific descriptive comparison, not proof of general superiority; the repeated test partitions overlap and no formal significance test was performed. See the [classical ten-seed workflow](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695778) and [neural ten-seed workflow](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695423) for the downloadable artifacts.
+
 ### 3. Launch the Educational Research Demo
 ```bash
 streamlit run demo/app.py
