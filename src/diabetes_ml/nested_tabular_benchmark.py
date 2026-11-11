@@ -174,7 +174,7 @@ def run_nested_tabular_benchmark(
 
         # Select the model family using inner-CV MAE only, then evaluate that
         # complete selection procedure once on the untouched outer fold.
-        selected_name = min(selected_names, key=lambda name: -outer_searches[name].best_score_)
+        selected_name = max(selected_names, key=lambda name: outer_searches[name].best_score_)
         selected_search = outer_searches[selected_name]
         selected_prediction = selected_search.predict(X_outer_test)
         family_selection_records.append({
@@ -279,7 +279,12 @@ def main() -> None:
         inner_folds=args.inner_folds,
     )
     print(f"Completed {per_fold['outer_fold'].nunique()} outer folds.")
+    print("\nPer-family outer-fold comparison (descriptive):")
     print(summary.to_string(index=False))
+    print("\nInner-CV model-family selection procedure (outer-fold evaluation):")
+    print(pd.read_csv(Path(args.output) / "family_selection_summary.csv").to_string(index=False))
+    print("\nSelected-family frequency:")
+    print(pd.read_csv(Path(args.output) / "selected_family_frequency.csv").to_string(index=False))
 
 
 if __name__ == "__main__":
