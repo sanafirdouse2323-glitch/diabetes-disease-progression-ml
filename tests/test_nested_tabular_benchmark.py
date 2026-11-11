@@ -91,6 +91,19 @@ def test_family_selector_uses_inner_cv_and_evaluates_outer_fold(tmp_path):
     )
     assert selected["outer_fold"].is_unique
     assert set(selected["outer_fold"]) == set(per_fold["outer_fold"])
+    expected = (
+        per_fold.loc[per_fold.groupby("outer_fold")["inner_best_mae"].idxmin(),
+                     ["outer_fold", "model"]]
+        .sort_values("outer_fold")
+        .reset_index(drop=True)
+    )
+    observed = (
+        selected[["outer_fold", "selected_model"]]
+        .rename(columns={"selected_model": "model"})
+        .sort_values("outer_fold")
+        .reset_index(drop=True)
+    )
+    pd.testing.assert_frame_equal(observed, expected)
     assert np.isfinite(selected[["inner_best_mae", "test_mae", "test_rmse", "test_r2"]]).all().all()
 
 
