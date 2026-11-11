@@ -108,7 +108,52 @@ These quantities explain how the fitted models use the input features in this be
 * For the Random Forest demo, local contributions use one-feature-at-a-time perturbations to the reference value. Because feature interactions and correlations can cause overlap, these contributions are not an additive decomposition and should not be read as SHAP values.
 * The implementation does not include SHAP, neural input-gradient attribution, or causal inference.
 
-## 6. Limitations and interpretation
+## 6. Repeated-seed classical robustness check
+
+A separate repeated outer-split run evaluated the five classical models over ten seeds (42–51). For each seed, the 442-row dataset was split into 353 outer-training and 89 held-out test observations. The outer-training partition was then divided into 282 model-fitting and 71 calibration observations. Five-fold cross-validation was performed only within the 282 fitting observations. The 89 test observations were reserved for final evaluation.
+
+- Workflow run: [Repeated-seed classical validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42934789858)
+- Repository commit: `427bfb5f4877563ad5dd75895d2c0dfa002b570c`
+- Environment: Python 3.11; project dependencies from the repository.
+- Seeds: 42 through 51; 10 runs.
+- Dataset: `sklearn.datasets.load_diabetes`, 442 observations and 10 preprocessed features.
+- Calibration: 71 observations per split; nominal conformal coverage 90%.
+- The uploaded `repeated-seed-classical-validation` artifact contains `per_seed_metrics.csv`, `summary_metrics.csv`, and `validation_metadata.json`.
+
+### Point-prediction performance across seeds
+
+Values are mean ± sample standard deviation across the ten seeded outer splits. CV MAE is the mean of the five-fold CV MAE means for each seed.
+
+| Model | Mean CV MAE | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+|---|---:|---:|---:|---:|
+| Linear Regression | 45.792 | **42.579 ± 3.075** | **52.555 ± 3.852** | **0.499 ± 0.070** |
+| Lasso | 46.026 | 42.972 ± 3.206 | 52.776 ± 3.710 | 0.495 ± 0.067 |
+| Random Forest | 48.012 | 43.809 ± 2.984 | 54.367 ± 3.545 | 0.465 ± 0.058 |
+| Ridge | 52.044 | 47.930 ± 3.427 | 57.312 ± 3.363 | 0.406 ± 0.056 |
+| Mean Baseline | 66.455 | 64.572 ± 3.606 | 75.117 ± 3.593 | -0.018 ± 0.025 |
+
+Linear Regression had the lowest mean test MAE and RMSE, and the highest mean R², with Lasso close behind. This does not establish a statistically significant difference between them. The ten test partitions overlap because they are repeated random hold-out splits of the same 442 observations; the across-seed standard deviations describe split sensitivity and are not confidence intervals.
+
+### Conformal interval behaviour across seeds
+
+| Model | Mean observed coverage ± SD | Observed coverage range | Mean interval width | Mean Winkler score |
+|---|---:|---:|---:|---:|
+| Mean Baseline | 92.0% ± 3.1 pp | 86.5%–96.6% | 242.110 | 275.415 |
+| Linear Regression | 91.0% ± 3.5 pp | 84.3%–97.8% | 184.671 | 215.279 |
+| Ridge | 91.3% ± 3.6 pp | 84.3%–95.5% | 190.414 | 222.248 |
+| Lasso | 91.3% ± 2.7 pp | 87.6%–96.6% | 184.871 | **214.722** |
+| Random Forest | 93.4% ± 3.1 pp | 87.6%–100.0% | 197.248 | 227.776 |
+
+Coverage percentages and standard deviations are calculated across ten per-split empirical coverage values; “pp” means percentage points. All models had mean observed coverage above the 90% nominal target in this run, but individual split coverage sometimes fell below 90%. This is consistent with the distinction between a marginal finite-sample conformal guarantee under exchangeability and the empirical coverage observed on any one realized test set. Lasso had the lowest mean Winkler score, narrowly ahead of Linear Regression; the score jointly reflects interval width and penalties for missed observations.
+
+### Interpretation and limits
+
+- The single-split table earlier in this document is retained as the original measured run; it is not replaced by these ten-seed averages.
+- This repeated-seed analysis covers the five classical models only. The PyTorch and TensorFlow models have not yet been evaluated over the same ten outer seeds.
+- Repeated random hold-out sets overlap, so these results characterize sensitivity to split choice, not independent-sample uncertainty, population-level generalization, or external validation.
+- The benchmark remains small, preprocessed, and educational. These results do not establish clinical utility or support patient-level decisions.
+
+## 7. Limitations and interpretation
 
 1. **Small, preprocessed benchmark:** 442 observations and 10 preprocessed features are insufficient to establish clinical utility, transportability, or robust subgroup fairness.
 2. **Single split for the published table:** The point metrics and empirical test coverage above are from one seeded outer split. A repeated-seed validation command is now available for the classical models; it reports descriptive split-to-split variability, not confidence intervals, because repeated hold-out sets overlap. Repeated nested validation and external validation are still needed.
@@ -117,7 +162,7 @@ These quantities explain how the fitted models use the input features in this be
 5. **Interpretability scope:** The implemented methods are coefficients, Random Forest impurity importances, and local perturbation-style explanations. This run does not implement SHAP or causal inference.
 6. **Neural comparison:** The neural models were trained for up to 100 epochs on 225 fit observations with a 57-observation early-stopping validation subset. Their test metrics should not be generalized beyond this benchmark and split.
 
-## 7. Reproducibility files
+## 8. Reproducibility files
 
 The successful GitHub Actions run uploaded the raw CSV/JSON output files and neural training history as the `diabetes-neural-experiment-results` artifact. The run also completed the test suite and end-to-end conventional/neural comparison. The artifact is associated with commit `e791bffc9a0d20695ddf307eb02c558c58a62a4a`.
 
