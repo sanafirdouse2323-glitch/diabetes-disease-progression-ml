@@ -34,7 +34,7 @@ def load_diabetes_data() -> Tuple[pd.DataFrame, pd.Series]:
     """Load the scikit-learn diabetes benchmark as pandas objects.
 
     Returns:
-        X: Feature DataFrame (442 samples, 10 standardized physiological features).
+        X: Feature DataFrame (442 samples, 10 preprocessed baseline features).
         y: Continuous quantitative disease progression target measured one year post-baseline.
     """
     data = load_diabetes(as_frame=True)
