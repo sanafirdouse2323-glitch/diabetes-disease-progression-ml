@@ -54,6 +54,7 @@ def test_invalid_seed_metric_frames_are_rejected(frame):
     with pytest.raises(ValueError):
         summarize_seed_metrics(frame)
 
+
 def test_matched_sample_partition_sizes_match_neural_pipeline(tmp_path):
     per_seed, _ = run_repeated_seed_validation(
         output_dir=tmp_path,
