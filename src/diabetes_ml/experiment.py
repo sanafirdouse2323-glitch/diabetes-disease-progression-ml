@@ -107,7 +107,7 @@ def run_classical_experiment(
     with open(out_path / "fairness_audit.json", "w", encoding="utf-8") as f:
         json.dump(fairness_records, f, indent=2)
 
-    # 5. Extract Feature Attribution from best linear (Ridge) and non-linear (Random Forest)
+    # 5. Export illustrative feature attribution from Ridge and Random Forest.
     # These estimators were fitted on X_tr_fit above and are the same
     # estimators used for conformal calibration. Do not refit them on calibration data.
     ridge_model = models["Ridge"]
