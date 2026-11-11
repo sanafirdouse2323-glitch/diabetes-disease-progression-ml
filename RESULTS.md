@@ -202,16 +202,43 @@ These results do not establish that classical models are universally superior. N
 - Repeated random hold-out sets overlap, so these results characterize sensitivity to split choice, not independent-sample uncertainty, population-level generalization, or external validation.
 - The benchmark remains small, preprocessed, and educational. These results do not establish clinical utility or support patient-level decisions.
 
-## 8. Limitations and interpretation
+## 8. Controlled validation-selected PyTorch hyperparameter study
+
+A separate controlled study investigated whether the original PyTorch MLP result was sensitive to a small, predeclared set of training settings. It did not alter the original benchmark or select settings using test results.
+
+- Workflow run: [Repeated-seed neural hyperparameter study](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43000943283)
+- Repository commit for paired comparison: `62f4ba7a9f074184e25ecc8ce292f1310fd18198`
+- Dataset: `sklearn.datasets.load_diabetes`, 442 observations and 10 preprocessed features.
+- Seeds: 42–51 (10 outer splits).
+- Per seed: 225 fitting, 57 validation, 71 calibration, and 89 test observations.
+- Candidate grid: baseline learning rate 0.001/dropout 0.10; learning rates 0.0003 and 0.003; dropout 0.30 and 0.00, with architecture (16, 8) and batch size 32 fixed.
+- Selection: minimum validation MSE within each seed. Calibration was used only after selection. Test observations were used only for final evaluation.
+- The uploaded `repeated-seed-neural-tuning` artifact contains candidate validation metrics, selected per-seed metrics (including same-test-split default control metrics), summary metrics, training histories, and metadata.
+
+### Point-prediction comparison
+
+| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+|---|---:|---:|---:|
+| Original default PyTorch MLP (paired control) | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
+| Validation-selected PyTorch MLP | **44.934 ± 4.931** | **56.790 ± 6.019** | **0.410 ± 0.132** |
+
+The mean paired MAE change (selected minus default) was **−9.030** points; it was negative on all ten seeds (range −16.246 to −4.287). The higher learning rate (0.003) was selected in all ten seeds; dropout remained 0.10 and batch size 32. The mean selected-model empirical test coverage was 91.2% (SD 3.6 percentage points), with mean interval width 198.229. The default-control point metrics are evaluated on the same test observations as the selected model for each seed. Test metrics did not influence configuration selection.
+
+### Interpretation and limitations
+
+This paired result supports the narrower conclusion that the original PyTorch MLP's performance on this benchmark was sensitive to the tested learning-rate setting. The selected model's mean MAE (44.934) is substantially closer to the matched classical results (Linear Regression 42.899; Lasso 42.927; Random Forest 44.858; Ridge 49.015) than the default MLP was. It does not show that the neural model is better than classical methods: its mean MAE remains slightly worse than Linear Regression and Lasso and similar to Random Forest. No formal statistical test was performed. The five-setting search is limited, validation-based selection can be noisy, and the repeated outer test partitions overlap; the across-seed SDs and paired changes are descriptive split-sensitivity summaries, not independent-sample confidence intervals. This is not external validation or evidence of clinical utility.
+
+## 9. Limitations and interpretation
+
 
 1. **Small, preprocessed benchmark:** 442 observations and 10 preprocessed features are insufficient to establish clinical utility, transportability, or robust subgroup fairness.
 2. **Repeated hold-out limitations:** The ten-seed analyses use overlapping random test partitions. Their standard deviations are descriptive split-sensitivity measures, not independent-sample confidence intervals. Repeated nested validation and external validation are still needed.
 3. **No clinical validation:** This work is an educational/research software demonstration, not a diagnostic or clinical decision-support system.
 4. **Subgroup analysis is narrow:** Only the two encoded values of the standardized `sex` feature are compared. Age-group analyses and broader fairness evaluations are not included in this measured run.
 5. **Interpretability scope:** The implemented methods are coefficients, Random Forest impurity importances, and local perturbation-style explanations. This run does not implement SHAP or causal inference.
-6. **Fixed neural settings:** The neural comparison uses one fixed MLP architecture and training configuration; no hyperparameter search was performed. The observed ranking should not be generalized to all neural architectures or training strategies.
+6. **Limited neural search:** The original PyTorch/TensorFlow baseline comparison uses fixed settings. The separate PyTorch follow-up tests only five predeclared learning-rate/dropout configurations for one fixed MLP architecture; it is not an exhaustive search, and its ranking should not be generalized to all neural architectures or training strategies.
 
-## 9. Reproducibility files
+## 10. Reproducibility files
 
 - [Original single-seed benchmark run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42927348449): original classical/neural comparison, subgroup audit, and feature attribution.
 - [Ten-seed classical run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695778): default 282-row fit and matched 225-row fit outputs in the `repeated-seed-classical-validation` artifact.
