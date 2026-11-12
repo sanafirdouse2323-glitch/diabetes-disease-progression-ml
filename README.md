@@ -1,95 +1,103 @@
-# Diabetes Disease Progression: Tabular ML Benchmark with Conformal Uncertainty & Subgroup Error Analysis
+# Diabetes Disease Progression: Machine-Learning Experiments
 
 [![CI](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An educational tabular regression benchmark comparing classical regression models with PyTorch and TensorFlow neural networks on the scikit-learn diabetes dataset. It demonstrates split-conformal prediction intervals, exploratory subgroup error analysis, and model-based feature attribution.
+I built this project to compare different machine-learning methods on a small diabetes disease-progression dataset. I wanted to see how ordinary regression models, tree-based models and neural networks perform on the same task, and whether the more complicated methods actually give better results.
 
-> **Scope disclaimer:** This is an educational research benchmark using scikit-learn's public, preprocessed diabetes dataset (Efron et al., 2004). It demonstrates tabular regression, split-conformal uncertainty estimation, exploratory subgroup error analysis, and model-based feature attribution. It is not a clinical diagnostic tool or a validated medical decision system.
+I also used the project to work through several parts of a complete machine-learning experiment: keeping training and test data separate, choosing model settings, estimating prediction uncertainty, looking at errors across groups, and recording results so that the experiments can be repeated.
 
-**Research application brief:** [Project question, methods, evidence, limitations, and next steps](docs/RESEARCH_BRIEF.md). For a concise application/interview walkthrough, see the [PhD application demo guide](docs/PHD_DEMO_GUIDE.md).
+This is a regression project. It predicts a continuous disease-progression measure from the dataset; it does not diagnose diabetes.
 
----
+**Project documents:** [Research brief](docs/RESEARCH_BRIEF.md) · [Detailed results](RESULTS.md) · [PhD demonstration guide](docs/PHD_DEMO_GUIDE.md)
 
-## 🎯 Research Questions & Benchmark Objectives
+## Dataset and purpose
 
-1. **Model Complexity vs. Tabular Generalisation:** How do regularised linear models (Ridge, Lasso) compare with non-linear tree ensembles (Random Forest) and deep neural architectures (PyTorch & TensorFlow MLPs) on a small tabular benchmark with 10 preprocessed features ($N=442$)?
-2. **Prediction Uncertainty:** Can split-conformal prediction provide finite-sample marginal coverage under exchangeability without assuming Gaussian residuals?
-3. **Exploratory Subgroup Error Analysis:** Does prediction error differ across the two encoded values of the benchmark's standardized sex feature? This is a limited audit, not a comprehensive fairness evaluation.
-4. **Model Interpretation:** Which input features contribute most to the predictions of the fitted linear and tree-based models? These attributions are associational, not causal.
+The experiments use `sklearn.datasets.load_diabetes`, a public dataset with 442 observations and 10 preprocessed baseline features. The target is a continuous measure of disease progression one year after baseline.
 
----
+The dataset is useful for testing and explaining regression methods, but it is small and already preprocessed. It is not a collection of raw hospital records, medical images, genomic data or longitudinal electronic health records. The interactive demo uses synthetic standardised feature values rather than real patient measurements.
 
-## 🔬 Methodological Architecture
+The project is for learning and research demonstration. It is not a diagnostic tool or a clinical decision-support system, and the results have not been validated on an independent clinical cohort.
 
-```
-                    ┌──────────────────────────────────────────────┐
-                    │ sklearn.datasets.load_diabetes (N = 442)     │
-                    │ 10 preprocessed baseline features     │
-                    └──────────────────────┬───────────────────────┘
-                                           │
-                        ┌──────────────────┴──────────────────┐
-                        │   Outer Split (80% / 20% Held-out)  │
-                        └─────────┬───────────────────┬───────┘
-                                  │                   │
-                 ┌────────────────┴──────────────┐    │
-                 │ Outer Training Split (N = 353)│    │ Held-Out Test Set (N = 89)
-                 └────────┬──────────────────────┘    │
-                          │                           │
-              ┌───────────┴─────────────┐             │
-              │ Calibration only (N=71)│             │
-              └───────────┬─────────────┘             │
-                          │                           │
-                  Development (N=282)                 │
-                          │                           │
-             ┌────────────┴────────────┐               │
-             │                        │               │
-      Classical model path     Neural model path       │
-      Fit: N=282               Fit: N=225              │
-      Cal: N=71                Early stop: N=57        │
-                              Cal: N=71               │
-             │                        │               │
-             └────────────────────────┴───────────────┘
-                                      │
-                                      ▼
-                    Final evaluation on untouched N=89
-```
+## What I wanted to examine
 
-### 1. Data Isolation & Leakage Prevention
-* In the single-run convenience comparison, classical estimators are fitted on 282 observations and calibrated on a disjoint 71-observation subset. The matched repeated-seed comparison reserves the same 57 validation observations used by the neural models, leaving 225 classical fitting observations.
-* Neural models use 225 observations for fitting, 57 for early-stopping validation, and a separate 71 for conformal calibration.
-* Neural feature scalers (`StandardScaler`) are fitted **only** on the 225-observation model-fitting subset.
-* Classical cross-validation and neural early stopping do not use conformal calibration observations.
-* The outer test partition ($N=89$) remains untouched until final evaluation.
+The main questions were:
 
-### 2. Distribution-Free Conformal Prediction
-We apply **Split Conformal Prediction** to regression without assuming Gaussian residuals:
-* Non-conformity score: $s_i = |y_i - \hat{y}(x_i)|$.
-* Finite-sample rank: $k = \lceil (n_{cal}+1)(1-\alpha) \rceil$; set $\hat{q}$ to the $k$-th sorted calibration score. If $k > n_{cal}$, set $\hat{q}=+\infty$.
-* Calibrated prediction interval: $C(x) = [\hat{y}(x) - \hat{q}, \; \hat{y}(x) + \hat{q}]$.
-* **Coverage interpretation:** at least $1-\alpha$ marginal coverage over exchangeable future observations; this is not a patient-specific probability statement.
+1. How do linear regression models compare with tree-based models and neural networks on this small tabular dataset?
+2. Does choosing a model through validation improve on using a simpler, fixed model?
+3. Can split-conformal prediction give useful prediction intervals, and what assumptions are needed for its coverage statement?
+4. Do prediction errors differ between the two encoded values of the dataset's standardised `sex` feature?
+5. What can model coefficients, feature importance and simple feature perturbations tell us about how a fitted model makes predictions?
 
-### 3. Exploratory Subgroup Error Analysis
-* Compares absolute prediction errors across the two encoded values of the standardized `sex` feature; this is exploratory and does not establish fairness.
-* Computes Max Disparity: $|MAE_{group1} - MAE_{group2}|$.
-* Uses an exploratory two-group permutation test (1,000 resamples) for mean absolute-error disparity, preserving group sizes and applying a plus-one Monte Carlo p-value correction. A p-value does not establish fairness or prove the absence of bias.
+These questions are about model performance and evaluation on this dataset. They do not establish medical or biological conclusions.
 
+## How the experiments are organised
 
-### 4. Model-based Feature Attribution
-* Linear-model coefficients summarize the direction and magnitude of fitted associations.
-* For a linear model, baseline-relative feature contributions are coefficient × feature deviation from the model-fitting reference mean; these contributions sum to the prediction difference from that reference.
-* For non-linear models, the demo replaces one feature at a time with its reference value and records the prediction change. These perturbation values may overlap and are not guaranteed to sum to the total prediction change.
-* These methods are not SHAP, neural input-gradient attribution, causal inference, or a validated clinical explanation method.
----
+I kept model fitting, validation, conformal calibration and final testing separate where the experiment required those roles.
 
-## 📊 Regenerated Benchmark Results
+### Single-run comparison
 
-The following values were measured by the corrected end-to-end workflow on one seeded 80/20 outer split (89 held-out observations). They are descriptive for this split, not estimates of performance across new populations.
+The initial comparison uses one seeded 80/20 split: 353 observations for the training side and 89 for the held-out test set.
+
+For the classical models, 282 observations are used for fitting and 71 for conformal calibration. For the neural models, the training side is divided into 225 fitting observations, 57 validation observations for early stopping, and 71 separate calibration observations. The neural feature scaler is fitted only on the 225 fitting observations.
+
+The 89 test observations are kept out of fitting, early stopping and calibration. The single-run comparison is useful for showing the workflow, but its scores describe only that particular split.
+
+### Repeated-seed comparisons
+
+I also ran experiments over ten seeds (42–51). Each run creates a new outer training/test split and keeps a separate calibration partition inside the training data.
+
+For a more direct comparison between classical and neural models, I ran a matched-sample version. Both use 225 fitting observations, 57 reserved validation observations, 71 calibration observations and 89 test observations per seed. The classical models do not use the reserved validation observations.
+
+The test partitions overlap across seeds because the same 442 observations are split repeatedly. For that reason, the reported means and standard deviations describe how results vary across these splits. They are not confidence intervals, and they do not come from ten independent datasets.
+
+### Nested cross-validation and model-family selection
+
+A separate experiment compares seven predeclared regression model families using five outer folds repeated three times, with three inner folds.
+
+Tuning and model-family selection take place within the outer training data. Preprocessing for scale-sensitive models is placed inside the relevant scikit-learn pipeline, so scaling is learned from training folds rather than from the full dataset.
+
+The experiment reports two different things:
+
+- **Per-family results:** each candidate family is tuned using inner folds and evaluated on the corresponding outer fold.
+- **Selection-procedure results:** the family with the lowest inner-fold MAE is selected within each outer training partition, refitted, and evaluated on that partition's untouched outer fold.
+
+The second result measures the model-selection procedure. It avoids choosing a supposed winner by looking at outer-test scores first. Since the outer cross-validation is repeated, observations can appear in test folds in more than one repeat. The standard deviations are therefore descriptive, not independent-sample confidence intervals.
+
+### Split-conformal prediction intervals
+
+For the experiments that include conformal prediction, I use absolute calibration residuals:
+
+`s_i = |y_i - \\hat{y}(x_i)|`
+
+The finite-sample rank is:
+
+`k = ceil((n_cal + 1) * (1 - alpha))`
+
+The corresponding ordered calibration residual is used as the interval threshold. If the required rank is larger than the number of calibration observations, the threshold is positive infinity.
+
+The resulting interval is centred on the model prediction. Under exchangeability, split conformal prediction gives a marginal coverage guarantee over future observations. This is not a probability statement about one particular patient, and it does not guarantee coverage for every subgroup or under distribution shift.
+
+### Subgroup error and feature analysis
+
+I compare absolute prediction errors across the two encoded values of the standardised `sex` feature. The analysis reports the difference in group MAE and uses a permutation test with 1,000 resamples.
+
+This is a limited exploratory check. It is not a full fairness assessment, and a non-significant result does not prove that a model has no bias.
+
+For model interpretation, I report fitted linear-model coefficients and Random Forest feature importance. The demo also shows reference-relative linear contributions and one-feature-at-a-time perturbations for the tree model. These describe model behaviour on this dataset; they are not causal explanations or clinically validated explanations. The tree perturbation values are not SHAP values and are not guaranteed to add up to the full prediction difference.
+
+## Results
+
+The figures below come from different experiments and split designs. They should not be combined as if they were measured under one common evaluation protocol.
+
+### One seeded held-out test split
+
+The following results use the same 89-observation test set:
 
 | Model | Test MAE | Test RMSE | Test R² | Observed 90%-nominal coverage | Mean interval width |
 |---|---:|---:|---:|---:|---:|
-| **Lasso** | **42.703** | **52.941** | **0.471** | 88.8% | 170.445 |
+| Lasso | 42.703 | 52.941 | 0.471 | 88.8% | 170.445 |
 | Linear Regression | 42.908 | 53.952 | 0.451 | 84.3% | 164.600 |
 | Random Forest | 43.729 | 53.875 | 0.452 | 94.4% | 190.048 |
 | Ridge | 46.564 | 56.151 | 0.405 | 89.9% | 181.196 |
@@ -97,156 +105,167 @@ The following values were measured by the corrected end-to-end workflow on one s
 | TensorFlow MLP (16, 8) | 50.458 | 66.376 | 0.168 | 94.4% | 269.726 |
 | Mean Baseline | 63.529 | 72.899 | -0.003 | 93.3% | 240.433 |
 
-Lasso had the strongest point-prediction metrics on this particular split. The empirical test coverage is not identical to the 90% nominal target for every model; split-conformal guarantees marginal coverage under exchangeability over future observations, not at least 90% empirical coverage on every realized test set or a patient-specific probability.
+Lasso had the lowest test MAE and RMSE on this split. That does not mean it will be the best model on every new sample. The observed coverage values are the results on this particular test set; they are not required to equal the 90% nominal target on every realised split.
 
-A follow-up ten-seed analysis of the classical models (seeds 42–51) found very similar average performance for Linear Regression and Lasso: mean test MAE 42.579 and 42.972, respectively. Linear Regression had slightly lower mean MAE/RMSE and slightly higher mean R²; the difference is descriptive, not evidence of a statistically significant winner. See the full [ten-seed results and methodology in RESULTS.md](RESULTS.md#6-repeated-seed-classical-robustness-check) and the [GitHub Actions run and downloadable CSV/JSON artifact](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42934789858).
+### Ten-seed matched-sample comparison
 
-The end-to-end run and its generated CSV/JSON artifact are documented in [RESULTS.md](RESULTS.md). The workflow also completed the test suite and conventional/neural experiment successfully.
- 
-For in-depth analysis, feature rankings, and training curves, see [RESULTS.md](RESULTS.md).
+When the classical and neural models use the same number of fitting observations, the mean test MAE was:
 
----
+| Model | Mean test MAE |
+|---|---:|
+| Linear Regression | 42.899 |
+| Lasso | 42.927 |
+| Random Forest | 44.858 |
+| Ridge | 49.015 |
+| PyTorch MLP (default) | 53.964 |
+| TensorFlow MLP (default) | 57.204 |
 
-## 💻 Installation & Quickstart
+Linear Regression and Lasso performed similarly and had lower mean test MAE than the default neural models in this experiment. This is a descriptive comparison on repeated, overlapping hold-out splits; it is not a formal significance test.
 
-### 1. Setup Environment
+The classical repeated-seed results are available in the [GitHub Actions run and its downloadable artifacts](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695778). The corresponding [neural repeated-seed run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695423) contains the neural results and metadata.
+
+### Model tuning and nested selection
+
+A separate validation-selected PyTorch tuning experiment reported mean test MAE of 44.934, compared with 53.963 for its default control. This brought the tuned network closer to the classical models, but did not show that it was better than Linear Regression or Lasso. Details are in [Section 8 of RESULTS.md](RESULTS.md#8-controlled-validation-selected-pytorch-hyperparameter-study).
+
+In the nested repeated-CV experiment, the mean outer-fold MAE for the fixed Linear Regression family strategy was 44.483. The inner-fold family-selection procedure had mean outer-fold MAE of 44.854. The selector therefore did not improve on the fixed Linear Regression strategy in this experiment. The difference is small, and the results are descriptive rather than a formal significance test. See [Section 11 of RESULTS.md](RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
+
+A further PyTorch experiment tested target standardisation using statistics from the fitting data only. The validation-selected model had mean test MAE of 43.408, compared with 44.086 for its paired default control trained under the same 300-epoch and 25-epoch-patience budget. The mean paired MAE change was -0.677 target units; the selected model had lower MAE on eight of the ten seeds and higher MAE on two. This is a modest descriptive difference, not evidence that neural networks are generally better. See [Section 12 of RESULTS.md](RESULTS.md#12-target-standardised-neural-training-study).
+
+The detailed tables, fold-level results, metadata and experiment provenance are in [RESULTS.md](RESULTS.md).
+
+## Run the project
+
+### 1. Create an environment and install the package
+
 ```bash
 python -m venv .venv
-# On Windows:
-.venv\Scripts\activate
-# On Linux / macOS:
+
+# Windows
+.venv\\Scripts\\activate
+
+# Linux or macOS
 source .venv/bin/activate
 
-pip install --upgrade pip
+python -m pip install --upgrade pip
 pip install -e .
+```
 
-# Optional: install PyTorch and TensorFlow for neural experiments
+### 2. Install optional packages when needed
+
+For the PyTorch and TensorFlow experiments:
+
+```bash
 pip install -e ".[neural]"
+```
 
-# Optional: install Streamlit for the demo
+For the Streamlit demo:
+
+```bash
 pip install -e ".[demo]"
 ```
 
-### 2. Run Experiments
+For tests:
 
-**Classical benchmark with conformal uncertainty and subgroup error analysis:**
+```bash
+pip install -e ".[dev]"
+```
+
+### 3. Run the experiments
+
+Classical benchmark, including conformal intervals and subgroup error analysis:
+
 ```bash
 python -m diabetes_ml.experiment --output results
 ```
 
-**Full Comparative Run (including PyTorch & TensorFlow MLPs):**
+Single-run comparison with PyTorch and TensorFlow:
+
 ```bash
 python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --patience 20
 ```
 
-This convenience run is not a matched-sample comparison: the classical models fit 282 rows, while each neural model fits 225 rows and uses 57 separate early-stopping validation rows. Use the ten-seed matched-sample workflows below when comparing classical and neural performance directly.
+This single-run command is not a matched-sample comparison: the classical models use 282 fitting observations, while the neural models use 225 fitting observations and 57 validation observations. Use the repeated-seed matched-sample workflows when comparing those model families.
 
-**Repeated-seed robustness analysis (classical models):**
+Repeated-seed classical validation:
+
 ```bash
 python -m diabetes_ml.repeated_validation --output repeated-validation
 ```
 
-The default runs 10 outer splits (seeds 42–51), with a separate calibration partition inside each training split. It writes `per_seed_metrics.csv`, `summary_metrics.csv`, and `validation_metadata.json`. The summary reports means, sample standard deviations, medians, and ranges for point-prediction and conformal metrics. Because repeated hold-out test sets overlap, these standard deviations describe split sensitivity; they are not independent-sample confidence intervals or external validation. To match the neural models' 225-row fitting sample, also run `python -m diabetes_ml.repeated_validation --output matched-validation --val-fraction 0.20`; this reserves 57 rows from the development subset as unused data while keeping the same calibration and test partitions. The neural frameworks are evaluated by the separate repeated-seed neural command below.
+To reserve the same 57 validation observations as the neural models:
 
-**Repeated-seed neural validation (PyTorch and TensorFlow):**
+```bash
+python -m diabetes_ml.repeated_validation --output matched-validation --val-fraction 0.20
+```
+
+Repeated-seed PyTorch and TensorFlow validation:
+
 ```bash
 python -m diabetes_ml.repeated_neural_validation --output repeated-neural-validation
 ```
 
-This command also defaults to seeds 42–51. It uses separate model-fitting, early-stopping validation, conformal calibration, and outer test partitions for each seed; the scaler is fitted only on the model-fitting subset. It writes per-seed metrics, across-seed summaries, training histories, and metadata. Install the optional neural dependencies first with `pip install -e ".[neural]"`. The across-seed standard deviations remain descriptive because the outer test partitions overlap.
+Controlled PyTorch hyperparameter study:
 
-The measured ten-seed comparison is now published in [RESULTS.md](RESULTS.md). With classical and neural models matched to 225 fitting observations, Linear Regression and Lasso had mean test MAE 42.899 and 42.927, versus 53.964 for PyTorch and 57.204 for TensorFlow. This is a benchmark-specific descriptive comparison, not proof of general superiority; the repeated test partitions overlap and no formal significance test was performed. See the [classical ten-seed workflow](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695778) and [neural ten-seed workflow](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/42936695423) for the downloadable artifacts.
-
-
-**Controlled PyTorch hyperparameter study (validation-selected):**
 ```bash
 python -m diabetes_ml.repeated_neural_tuning --output repeated-neural-tuning
 ```
 
-This separate study evaluates five predeclared learning-rate/dropout settings over seeds 42–51. It selects a setting using validation MSE within each seed, then calibrates on the separate calibration subset and evaluates both the selected model and the original default configuration on the same untouched test rows. The measured selected model had mean test MAE 44.934 ± 4.931 versus 53.963 ± 3.984 for the default control; mean paired MAE change was −9.030. The higher learning rate (0.003) was selected in all ten seeds. These are descriptive results on overlapping repeated hold-out splits, not confidence intervals or evidence of clinical utility. Full details and workflow artifact are in [RESULTS.md](RESULTS.md#8-controlled-validation-selected-pytorch-hyperparameter-study).
+Nested tabular benchmark with inner-fold model-family selection:
 
-### 3. Launch the Educational Research Demo
+```bash
+python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
+```
+
+The commands write their metrics and experiment metadata to the output directories. The repeated-validation summaries include means, sample standard deviations, medians and ranges. Remember that the repeated test partitions overlap, so these standard deviations describe split-to-split variation; they are not confidence intervals.
+
+### 4. Open the demo
+
 ```bash
 streamlit run demo/app.py
 ```
 
-### 4. Run Automated Test Suite
-Install the development tools, then run the tests:
-```bash
-pip install -e ".[dev]"
-pytest -v --cov=diabetes_ml tests/
+The demo lets you inspect a prediction, its split-conformal interval, feature-attribution views and subgroup-error results. Its input controls use synthetic standardised values. Do not enter real patient measurements or use the demo to guide diagnosis, treatment or care.
 
-# The test suite also checks that every notebook's Python imports match the current package API.
+### 5. Run the tests
+
+```bash
+pytest -v --cov=diabetes_ml tests/
 ```
 
-### 5. Notebooks
+The test suite checks the package and experiment code. It also checks notebook structure, syntax and imports against the current package API. The separate notebook workflow executes the notebooks in GitHub Actions.
 
-The three notebooks cover dataset exploration, the classical benchmark, and the PyTorch/TensorFlow baselines. Run them from the repository root after installing the core dependencies; install `.[neural]` before running the neural notebook. The automated test suite checks notebook JSON, Python syntax, and imports against the current package API. Separately, the **End-to-end notebook execution** GitHub Actions workflow executes all three notebooks on pull requests that change notebooks or their supporting source/configuration files, and on pushes to `main`; it uploads the executed notebooks and generated experiment outputs as a workflow artifact.
+## Notebooks, CI and Docker
 
-### 6. Docker Deployment
+The notebooks cover dataset exploration, the classical benchmark, and the PyTorch/TensorFlow baselines. Install the neural extras before running the neural notebook.
 
-Build and run the lightweight Streamlit research demo image:
+GitHub Actions runs the automated checks and the relevant experiment workflows. The notebook workflow executes the notebooks on changes to notebooks or their supporting source and configuration files, and on pushes to `main`.
+
+The Docker image runs the Streamlit research demo:
 
 ```bash
 docker build -t diabetes-progression-demo .
 docker run --rm -p 8501:8501 diabetes-progression-demo
 ```
 
-The Docker image installs the project's core dependencies plus the Streamlit demo extra. It intentionally excludes PyTorch, TensorFlow, SHAP, and test-only packages; install the neural extra with `pip install -e ".[neural]"` when running the neural experiments outside this container. The runtime runs as an unprivileged UID (10001), not root. The Docker CI workflow drops Linux capabilities, enables `no-new-privileges`, verifies the runtime UID, exercises the Streamlit script, and checks the health and HTTP endpoints.
+The image installs the core project dependencies and the demo extra. It does not include PyTorch, TensorFlow, SHAP or test-only packages. The container runs as an unprivileged user. The Docker workflow checks the runtime user, starts the application and tests its health and HTTP endpoints.
 
----
+## Limitations and what I would do next
 
+There are important limits to keep in mind:
 
-## Nested tabular model benchmark
+- The dataset has only 442 observations and 10 preprocessed features.
+- The experiments do not include raw images, longitudinal health records, genomic data or a new patient cohort.
+- Repeated hold-out and repeated outer-fold test sets overlap. Their standard deviations are descriptive, not independent-sample confidence intervals.
+- The conformal coverage statement depends on exchangeability. It does not guarantee subgroup coverage or performance after distribution shift.
+- The subgroup analysis is narrow and does not establish fairness.
+- Feature coefficients and importance scores describe fitted models; they do not show cause and effect.
+- The results do not establish clinical validity, patient benefit or readiness for use in a hospital.
 
-A separate nested repeated-cross-validation experiment compares seven predeclared
-tabular regression families on all 442 rows. Each family is tuned on the same
-inner folds drawn only from each outer training partition. In addition to
-per-family comparisons, the experiment now selects a family using inner-fold
-MAE within each outer training partition and evaluates that complete selection
-procedure on the untouched outer fold. A mean-prediction baseline is included.
+If I extend this work, I would first define a clinically meaningful prediction task and the point in time at which the prediction should be made. I would then need a larger, appropriately governed dataset, patient-level and temporal splits where suitable, and evaluation on an independent cohort. Depending on the research question and available data, I would also consider longitudinal or multimodal inputs and work with clinical experts to decide which outcomes and error measures matter.
 
-The default experiment uses 5 outer folds × 3 repeats and 3 inner folds. The
-scale-sensitive estimators use a pipeline so feature scaling is learned within
-the inner training folds. The per-family table is a descriptive comparison;
-the separate family-selection output is the appropriate result to discuss
-when describing a model chosen from the candidate families.
+## References and licence
 
-Run it with:
-
-```bash
-python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
-```
-
-The output includes:
-
-- `outer_fold_metrics.csv` and `model_summary.csv`: per-family outer-fold
-  results and descriptive summaries.
-- `family_selection_metrics.csv`: one model family selected by inner-CV MAE
-  within each outer training partition, evaluated on that outer test fold.
-- `family_selection_summary.csv` and `selected_family_frequency.csv`:
-  overall selection-procedure metrics and how often each family was selected.
-- `benchmark_metadata.json`: dataset, split, selection, and limitation details.
-
-Outer-test labels are not used for fitting or selection. Each outer split is
-evaluated once; because the outer cross-validation is repeated, an observation
-can appear in test partitions in more than one repeat. The reported standard
-deviations are descriptive and are not independent-sample confidence intervals.
-The candidate grids are compact rather than exhaustive. [Measured nested benchmark results and selection-aware interpretation](RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
-This benchmark does not establish external validity, clinical utility, or clinical readiness.
-
-
-A follow-up PyTorch experiment also tests target standardisation using fitting-set targets only, with validation-only candidate selection and separate calibration/test partitions. Across ten repeated hold-out seeds, the selected model's mean test MAE was 43.408 versus 44.086 for the paired default configuration trained under the same 300-epoch/25-patience budget (not the earlier fixed-budget baseline); this is a modest descriptive improvement, not evidence of neural superiority. See [the detailed target-standardised study results](RESULTS.md#12-target-standardised-neural-training-study) and the [research brief](docs/RESEARCH_BRIEF.md).
-
-## Limitations and Next Steps
-
-1. **Tabular benchmark scope:** This project uses a small, public, preprocessed 10-feature dataset. It does not contain multimodal imaging, longitudinal EHR, raw physiological signals, or genomic measurements.
-2. **Published results and repeated splits:** The headline table in this document is from one seeded split. Separate ten-seed workflows report classical and neural results; their overlapping hold-out sets provide descriptive split-sensitivity summaries, not independent-sample confidence intervals. A nested repeated-cross-validation model-family benchmark is now included below and in RESULTS.md. External validation on an independent cohort is still needed.
-3. **No clinical validation:** This is a research/educational benchmark and not a diagnostic or clinical decision-support system.
-
----
-
-## 📜 Citation & License
+Dataset: Efron, Hastie, Johnstone and Tibshirani (2004), *Least Angle Regression*, Annals of Statistics. The dataset is provided through scikit-learn's `load_diabetes` function.
 
 This project is licensed under the MIT License.
-Dataset attribution: Efron, Hastie, Johnstone, and Tibshirani (2004), *Least Angle Regression*, Annals of Statistics.
