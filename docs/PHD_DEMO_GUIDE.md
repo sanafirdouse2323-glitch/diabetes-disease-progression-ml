@@ -1,88 +1,72 @@
-# PhD Application Demo Guide
+# PhD Demonstration Guide
 
-## Purpose
+## What this project is
 
-Use this repository as evidence of independent machine-learning research and research-software engineering. It demonstrates experimental design, leakage-aware evaluation, model comparison, uncertainty estimation, interpretation, testing, and reproducibility.
+I built an independent machine-learning project using a public diabetes disease-progression dataset. I compare different regression methods and examine how their predictions should be evaluated.
 
-**Scope:** this is a regression benchmark using scikit-learn's public, preprocessed diabetes disease-progression dataset (442 observations, 10 features). It predicts a continuous progression measure; it does not diagnose diabetes. It is not a clinical decision-support system and has not been externally or prospectively clinically validated.
+The dataset has 442 observations and 10 preprocessed features. Its target is a continuous measure of disease progression one year after baseline. This is **not a diabetes diagnosis project**. The demo uses synthetic standardised inputs, not real patient measurements.
 
-## Recommended 8–12 minute walkthrough
+## A simple 8–10 minute walkthrough
 
-### 1. Start with the research question (1 minute)
+### 1. Explain the question
 
-Explain that the project asks whether more complex tabular models offer a meaningful benefit over simpler models, and what uncertainty and error analysis add. Emphasise that model complexity is tested rather than assumed to be better.
+"I wanted to compare simple regression models, tree-based models and neural networks, and see whether the more complex methods actually improve the predictions."
 
-### 2. Establish the data and task (1 minute)
+### 2. Show the data
 
-Show the README and research brief. State the dataset size, feature count, and continuous regression target. Explain that the demo's feature controls use synthetic standardised values, not real patient measurements.
+Open the README. Explain that the dataset is public, small and already preprocessed. Point out that the target is a progression measure, not a diabetes/no-diabetes label.
 
-### 3. Show the evaluation design (2 minutes)
+### 3. Explain the models
 
-Use the methodology in docs/RESEARCH_BRIEF.md and RESULTS.md:
-- Distinguish model fitting, validation, conformal calibration, and final testing.
-- Explain that preprocessing is fitted within training folds in the nested benchmark.
-- Explain that the nested family selector chooses using inner-fold MAE, then evaluates the selected procedure on an untouched outer fold.
-- Note that repeated outer-CV test partitions overlap across repeats; reported standard deviations are descriptive, not independent-sample confidence intervals.
+Briefly name the main model groups:
 
-### 4. Discuss the evidence, including neutral results (2 minutes)
+- Linear and regularised regression.
+- Support Vector Regression.
+- Tree-based models.
+- Small neural networks using PyTorch and TensorFlow/Keras.
 
-Use the measured results in RESULTS.md, not a newly calculated or selectively chosen score.
+You do not need to explain every model in detail unless asked.
 
-Key points:
-- In the matched-sample ten-seed comparison, Linear Regression and Lasso had mean test MAE of 42.899 and 42.927, compared with 53.964 for the default PyTorch MLP and 57.204 for the default TensorFlow MLP.
-- A separate validation-selected PyTorch tuning study reduced mean test MAE to 44.934, but did not establish superiority over the simpler classical models.
-- In the nested repeated-CV benchmark, the inner-fold family-selection procedure had mean outer-fold MAE 44.854, compared with 44.483 for the fixed Linear Regression family strategy. The selector therefore did not demonstrate a benefit on this dataset.
-- In the target-standardised neural follow-up, the selected model's mean test MAE was 43.408 versus 44.086 for its paired default control under the same training budget. This is a modest descriptive difference, not evidence of neural superiority; Linear Regression and Lasso remained slightly better in the earlier matched-sample comparison.
+### 4. Explain how you checked the results
 
-Do not combine scores from different split protocols as if they were directly comparable. Do not present overlapping-seed or repeated-fold standard deviations as confidence intervals or formal significance tests.
+Show the experiment design in the research brief and the full results in [RESULTS.md](../RESULTS.md). Explain that fitting, validation, calibration and test data have separate roles where required. Mention repeated splits and nested cross-validation.
 
-### 5. Demonstrate uncertainty and interpretation (1–2 minutes)
+### 5. Discuss what you found
 
-In the Streamlit demo, show the point prediction and split-conformal interval, then the feature-attribution and subgroup-error views. Explain:
-- Conformal coverage is marginal and relies on exchangeability; it is not an individual patient's probability of being inside an interval and does not guarantee subgroup-conditional coverage or robustness to distribution shift.
-- The subgroup analysis is a limited exploratory audit, not a fairness certificate.
-- Feature attributions describe model behaviour; they are not causal effects or clinically validated explanations.
+The simpler regression models performed strongly. In the matched-sample comparison, Linear Regression and Lasso had lower mean MAE than the default neural networks. Tuning improved the PyTorch result, but did not establish that it was better than the simpler models.
 
-### 6. Show reproducibility and software engineering (1–2 minutes)
+Be clear that results from different experiment designs are not directly comparable.
 
-Point to the package structure, tests, notebooks, GitHub Actions, and Docker setup. The main-branch commit e47915188b2c802e3a0e94e138470ae0c93f2d7b passed the eight post-merge workflows recorded for that commit: tests, CI, Docker smoke test, neural framework checks, repeated-seed classical validation, repeated-seed neural validation, neural hyperparameter study, and end-to-end notebook execution.
+### 6. Show the demo and code
 
-For a live demonstration, follow the current installation and run instructions in the repository README. Do not claim a deployment is clinically usable merely because the Streamlit demo or Docker image runs.
+Run `streamlit run demo/app.py` after installing the demo extra. Use only the synthetic example values. Then show the package, tests and GitHub Actions workflows.
 
-## Suggested interview explanation
+## A short interview explanation
 
-> I developed an independent machine-learning project to study disease-progression regression on a small public tabular benchmark. I compared classical regressors with compact neural networks, separated fitting, validation, conformal calibration and final testing, and extended the work to nested repeated cross-validation with inner-fold model-family selection. An important finding was that additional model complexity did not automatically improve performance: simpler linear models remained highly competitive, and the nested selection procedure did not outperform the fixed linear strategy on this dataset. I also implemented split-conformal prediction intervals, a limited subgroup error audit, model-attribution views, automated tests, reproducible notebooks and a Docker-based demo. I treat this as a methodological and engineering demonstration, not a clinical prediction product. My next research step would be to apply these evaluation principles to a larger, appropriately governed medical dataset with patient-level splitting, external validation and clinically meaningful outcomes.
+"I independently built a machine-learning project using a public diabetes disease-progression dataset. I compared regression models, tree-based methods and small neural networks. I also worked on data splitting, model evaluation, prediction intervals and feature analysis. The results showed me that more complex models do not always perform better. This is a research demonstration, not a clinical tool, and I would like to apply the same methods to larger medical datasets with independent validation."
 
-## Questions to prepare for
+## Questions you may be asked
 
-**Why use a diabetes dataset if this is not a diagnostic model?**  
-The dataset provides a compact, public regression benchmark for demonstrating modelling and evaluation methods. The target is disease progression, not diabetes status or diagnosis.
+**Why did you choose this dataset?**
 
-**Why did you compare neural networks if classical models performed well?**  
-To test whether added complexity offered measurable benefit rather than assuming it would. The results support a cautious, evidence-led model choice.
+It is a public research dataset that allows me to practise and demonstrate regression methods without needing private hospital records.
 
-**How did you reduce leakage risk?**  
-The workflow separates fitting, validation, calibration and test roles. In the nested benchmark, preprocessing and tuning are confined to the relevant training folds; the outer test fold evaluates the complete selection procedure.
+**Does the project diagnose diabetes?**
 
-**What does the conformal interval mean?**  
-Under exchangeability, split conformal prediction targets marginal coverage over future observations. It is not a patient-specific probability and does not guarantee coverage under distribution shift.
+No. The target is a continuous disease-progression measure. It is not a diagnosis label.
 
-**What is missing before medical use?**  
-A clinically relevant and sufficiently large cohort, a prespecified prediction task and prediction time, patient-level and temporal validation where appropriate, external validation, subgroup and calibration assessment, clinical review, governance, and prospective evaluation. This repository does not establish clinical utility or deployment readiness.
+**Why include neural networks?**
 
-## Claims to avoid
+I wanted to test whether they improved the results rather than assume they would. On this small dataset, the simpler models remained strong.
 
-- “The model diagnoses diabetes.”
-- “The model is clinically validated, fair, or ready for hospital deployment.”
-- “The neural network outperforms classical models.”
-- “The conformal interval is a patient's probability of the outcome.”
-- “The subgroup audit proves fairness.”
-- “The repeated-split standard deviation is a confidence interval.”
+**Can this be used in a hospital?**
 
-## Files to open during the walkthrough
+No. It has not been clinically validated and is not designed for diagnosis or treatment.
 
-1. README.md — project overview, installation, demo and experiment commands.
-2. docs/RESEARCH_BRIEF.md — research question, methods, results, limitations and next steps.
-3. RESULTS.md — detailed experimental metrics, provenance and interpretation.
-4. demo/app.py — interactive educational demonstration.
-5. tests/ and .github/workflows/ — automated checks and reproducibility infrastructure.
+## Important points to remember
+
+- Do not call this a diabetes diagnosis model.
+- Do not claim that neural networks performed best.
+- Do not describe prediction intervals as a patient's probability of an outcome.
+- Do not claim the subgroup check proves fairness.
+- Do not describe this small benchmark as clinical validation.
