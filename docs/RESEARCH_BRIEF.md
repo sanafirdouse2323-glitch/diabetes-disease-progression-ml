@@ -77,6 +77,10 @@ The experiment also evaluates a selection procedure that chooses the family usin
 
 The nested run's standard deviations are descriptive split-sensitivity summaries, not independent-sample confidence intervals. Its results are not directly interchangeable with the 225-row matched-sample results: the nested benchmark uses larger outer-training partitions and a different validation protocol. Full metrics, fold-level results, selection frequencies, and metadata are recorded in [RESULTS.md](../RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
 
+## Target-standardised neural follow-up
+
+A separate follow-up expanded the validation-selected PyTorch study to ten predeclared candidates, pairing five training configurations with and without target standardisation. Target mean and standard deviation were estimated from model-fitting targets only; validation data were used for candidate selection, calibration data were kept separate, and test data were used only for final evaluation. Across ten repeated hold-out seeds, the selected MLP achieved mean test MAE 43.408 ± 4.174, compared with 44.086 ± 3.365 for the paired default control. Its paired MAE change was −0.677 target units on average, with improvement on eight seeds and worse MAE on two. Target standardisation was selected in seven of ten seeds. These descriptive results do not establish statistical significance or neural superiority; the mean MAE remained slightly above the earlier matched-sample Linear Regression and Lasso results. Full results and limitations are in [Section 12 of RESULTS.md](../RESULTS.md#12-target-standardised-neural-training-study), with reproducible outputs from the [workflow run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43002171678).
+
 ## What this project demonstrates
 
 The work is useful evidence of practical research skills in:
