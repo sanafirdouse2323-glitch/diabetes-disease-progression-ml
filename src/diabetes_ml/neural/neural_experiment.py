@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-import argparsefrom pathlib import Path
+import argparse
+from pathlib import Path
 from typing import Any, Dict, List
 
 import numpy as np
