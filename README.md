@@ -82,6 +82,31 @@ pip install -e ".[neural]"
 python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --patience 20
 ```
 
+For the repeated classical-model comparison:
+
+```bash
+python -m diabetes_ml.repeated_validation --output repeated-validation
+```
+
+For the nested model comparison:
+
+```bash
+python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
+```
+
+For repeated neural-network experiments, install both neural frameworks first:
+
+```bash
+pip install -e ".[neural]"
+python -m diabetes_ml.repeated_neural_validation --output repeated-neural-validation
+```
+
+For the validation-selected PyTorch tuning experiment:
+
+```bash
+python -m diabetes_ml.repeated_neural_tuning --output repeated-neural-tuning
+```
+
 For the interactive demo:
 
 ```bash
