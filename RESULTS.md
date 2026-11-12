@@ -292,3 +292,30 @@ The selector's mean outer-fold MAE (44.854) was not lower than the fixed Linear 
 - The repeated outer-fold results are dependent because observations recur across repeats. No inferential claim is made from their standard deviations, and no formal significance test is reported.
 - This nested benchmark does not fit conformal prediction intervals. Split-conformal results in earlier sections belong to separate experiments and should not be conflated with this nested model comparison.
 - Predictive results do not establish clinical utility, fairness, causal explanation, or readiness for patient-level use.
+
+
+## 12. Target-standardised neural training study
+
+A follow-up experiment tested whether standardising the continuous target during PyTorch MLP training changes performance. It expanded the earlier five-setting study into ten predeclared candidates: the same five learning-rate/dropout configurations, each with and without target standardisation. For each of ten seeds (42–51), candidates were selected using validation MSE only. When enabled, the target mean and standard deviation were estimated from the 225 model-fitting targets only; validation targets were transformed using those fitting-set statistics, and predictions and Monte Carlo-dropout standard deviations were returned to the original target scale. The selected model was calibrated on 71 separate observations and evaluated on 89 held-out observations.
+
+- Workflow run: [Repeated-seed neural hyperparameter study](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43002171678)
+- Source commit tested: `32780440b850b321e0a614229f190246bd6b175f`
+- Candidate fits: 10 configurations × 10 seeds = 100.
+- Per seed: 225 fitting, 57 validation, 71 calibration, and 89 test observations.
+- The workflow artifact contains candidate validation metrics, candidate training histories, per-seed selected-model results, summary metrics, and validation metadata.
+
+### Paired point-prediction results
+
+| Metric | Validation-selected target-scaling study | Paired default PyTorch control |
+|---|---:|---:|
+| Test MAE (mean ± SD) | **43.408 ± 4.174** | 44.086 ± 3.365 |
+| Test RMSE (mean ± SD) | **54.312 ± 4.278** | 55.714 ± 4.038 |
+| Test R² (mean ± SD) | **0.464 ± 0.079** | 0.435 ± 0.086 |
+
+The mean paired MAE change (selected model minus default control) was **−0.677 ± 2.523** target units. The selected model had lower MAE on 8 of 10 seeds and higher MAE on 2. Target standardisation was selected in 7 of 10 seeds; it was not selected in the other three. The higher learning rate (0.003) was selected in 8 of 10 seeds across the scaled and unscaled candidates. These are descriptive results from overlapping repeated hold-out partitions; no formal significance test was performed, and the across-seed standard deviations are not confidence intervals.
+
+The selected model's mean empirical conformal coverage was 91.35% (SD 2.37 percentage points) at a nominal 90% level. Mean interval width was 184.308 (SD 16.092). These are empirical marginal results on this small benchmark, not subgroup-conditional guarantees or evidence of robustness to distribution shift.
+
+### Interpretation and limitations
+
+This experiment provides evidence that target standardisation is a reasonable training option to test, but it does not show a consistent improvement over the paired default: two of ten seeds had worse MAE, and target scaling was not selected in every seed. The mean selected-model MAE (43.408) is close to, but still above, the earlier matched-sample Linear Regression and Lasso means (42.899 and 42.927). The experiment therefore does not establish neural superiority over classical models. It uses one fixed MLP architecture, a compact ten-candidate grid, a small public preprocessed dataset, and overlapping repeated test partitions. It is not external clinical validation.
