@@ -298,7 +298,7 @@ The selector's mean outer-fold MAE (44.854) was not lower than the fixed Linear 
 
 A follow-up experiment tested whether standardising the continuous target during PyTorch MLP training changes performance. It expanded the earlier five-setting study into ten predeclared candidates: the same five learning-rate/dropout configurations, each with and without target standardisation. For each of ten seeds (42–51), candidates were selected using validation MSE only. The paired default control is the `baseline_default` candidate (learning rate 0.001, dropout 0.10, batch size 32) trained under the same 300-epoch maximum and 25-epoch patience budget; it is not the earlier fixed-budget neural baseline reported in Sections 7–8. When enabled, the target mean and standard deviation were estimated from the 225 model-fitting targets only; validation targets were transformed using those fitting-set statistics, and predictions and Monte Carlo-dropout standard deviations were returned to the original target scale. The selected model was calibrated on 71 separate observations and evaluated on 89 held-out observations.
 
-- Workflow run: [Repeated-seed neural hyperparameter study](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43002171678)
+- Workflow run: [Repeated-seed neural hyperparameter study](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43141780230)
 - Source commit tested: `32780440b850b321e0a614229f190246bd6b175f`
 - Candidate fits: 10 configurations × 10 seeds = 100.
 - Per seed: 225 fitting, 57 validation, 71 calibration, and 89 test observations.
