@@ -236,7 +236,7 @@ The candidate grids are compact rather than exhaustive. [Measured nested benchma
 This benchmark does not establish external validity, clinical utility, or clinical readiness.
 
 
-A follow-up PyTorch experiment also tests target standardisation using fitting-set targets only, with validation-only candidate selection and separate calibration/test partitions. Across ten repeated hold-out seeds, the selected model's mean test MAE was 43.408 versus 44.086 for its paired default control; this is a modest descriptive improvement, not evidence of neural superiority. See [the detailed target-standardised study results](RESULTS.md#12-target-standardised-neural-training-study) and the [research brief](docs/RESEARCH_BRIEF.md).
+A follow-up PyTorch experiment also tests target standardisation using fitting-set targets only, with validation-only candidate selection and separate calibration/test partitions. Across ten repeated hold-out seeds, the selected model's mean test MAE was 43.408 versus 44.086 for the paired default configuration trained under the same 300-epoch/25-patience budget (not the earlier fixed-budget baseline); this is a modest descriptive improvement, not evidence of neural superiority. See [the detailed target-standardised study results](RESULTS.md#12-target-standardised-neural-training-study) and the [research brief](docs/RESEARCH_BRIEF.md).
 
 ## Limitations and Next Steps
 
