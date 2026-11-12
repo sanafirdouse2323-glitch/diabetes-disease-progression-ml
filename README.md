@@ -8,7 +8,7 @@ An educational tabular regression benchmark comparing classical regression model
 
 > **Scope disclaimer:** This is an educational research benchmark using scikit-learn's public, preprocessed diabetes dataset (Efron et al., 2004). It demonstrates tabular regression, split-conformal uncertainty estimation, exploratory subgroup error analysis, and model-based feature attribution. It is not a clinical diagnostic tool or a validated medical decision system.
 
-**Research application brief:** [Project question, methods, evidence, limitations, and a reproducible demonstration guide](docs/RESEARCH_BRIEF.md).
+**Research application brief:** [Project question, methods, evidence, limitations, and next steps](docs/RESEARCH_BRIEF.md). For a concise application/interview walkthrough, see the [PhD application demo guide](docs/PHD_DEMO_GUIDE.md).
 
 ---
 
