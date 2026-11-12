@@ -236,7 +236,7 @@ This paired result supports the narrower conclusion that the original PyTorch ML
 3. **No clinical validation:** This work is an educational/research software demonstration, not a diagnostic or clinical decision-support system.
 4. **Subgroup analysis is narrow:** Only the two encoded values of the standardized `sex` feature are compared. Age-group analyses and broader fairness evaluations are not included in this measured run.
 5. **Interpretability scope:** The implemented methods are coefficients, Random Forest impurity importances, and local perturbation-style explanations. This run does not implement SHAP or causal inference.
-6. **Limited neural search:** The original PyTorch/TensorFlow baseline comparison uses fixed settings. The separate PyTorch follow-up tests only five predeclared learning-rate/dropout configurations for one fixed MLP architecture; it is not an exhaustive search, and its ranking should not be generalized to all neural architectures or training strategies.
+6. **Limited neural search:** The original PyTorch/TensorFlow baseline comparison uses fixed settings. Two separate PyTorch follow-ups were conducted: the first tested five predeclared learning-rate/dropout settings, and the second expanded these to ten candidates by pairing the same five settings with and without target standardisation. Both use one fixed MLP architecture and compact searches; neither is exhaustive, and their rankings should not be generalized to all neural architectures or training strategies.
 
 ## 10. Reproducibility files
 
