@@ -1,123 +1,55 @@
-# Independent ML Research Demonstration
+# Research Brief: Diabetes Disease Progression
 
-## Project
+## Project aim
 
-**Diabetes disease-progression regression with uncertainty estimation and leakage-aware evaluation**
+I built this project to compare machine-learning methods for estimating a measure of diabetes disease progression. I wanted to see whether more complex models improve on simpler regression methods and how carefully the results can be evaluated.
 
-Repository: https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml
+This is a regression study. It does not diagnose diabetes or predict whether a person has the condition.
 
-This is an independent educational research-software project. Its purpose is to demonstrate a complete and reproducible machine-learning workflow on a small public tabular benchmark—not to provide a clinical prediction system.
+## Dataset
 
-## Research question
+The project uses scikit-learn's public `load_diabetes` dataset:
 
-On a small, preprocessed tabular disease-progression benchmark, how do linear, kernel, tree-ensemble, and compact neural models compare when model selection is separated from final evaluation? What additional information do split-conformal prediction intervals, subgroup error summaries, and feature-attribution methods provide—and what are their limits?
+- 442 observations.
+- 10 preprocessed baseline features.
+- A continuous disease-progression measure recorded one year after baseline.
 
-The project deliberately tests whether added model complexity produces a meaningful benefit rather than assuming that a neural or ensemble model should outperform simpler methods.
+The dataset is small and is not raw hospital data. The interactive demo uses synthetic standardised values.
 
-## Data and prediction target
+## Models
 
-- Dataset: `sklearn.datasets.load_diabetes`.
-- Size: 442 observations and 10 preprocessed baseline features.
-- Target: a continuous quantitative measure of disease progression one year after baseline.
-- The task is **regression**, not diabetes diagnosis or classification.
+I compare:
 
-The repository does not contain raw medical images, longitudinal electronic health records, genomic data, or a new patient cohort. The model inputs in the interactive demo are synthetic standardized feature values, not measurements from a real person.
+- Linear Regression, Ridge, Lasso and ElasticNet.
+- Support Vector Regression.
+- Random Forest, Extra Trees and Histogram Gradient Boosting.
+- Small neural networks built with PyTorch and TensorFlow/Keras.
 
-## Methodology
+The purpose is to compare these approaches, not to assume that a neural network or a more complex model will perform best.
 
-### 1. Controlled fitting, validation, calibration, and testing
+## How I evaluated them
 
-The repeated-seed neural comparison uses disjoint partitions per seed: 225 model-fitting observations, 57 validation observations, 71 conformal-calibration observations, and 89 test observations. The validation set is used for neural early stopping and configuration selection; the calibration set is not used to fit or select the model; and the test set is reserved for final evaluation.
+I used held-out test data, repeated train/test splits and nested cross-validation. Where needed, fitting, validation, conformal calibration and final testing were kept separate. Scaling was fitted within the training folds in the nested benchmark to reduce data leakage.
 
-### 2. Model comparison and hyperparameter selection
+I also used split-conformal prediction to form prediction intervals, compared errors across the two encoded values of the standardised `sex` feature, and examined model coefficients and feature importance.
 
-The project compares ordinary and regularised linear models, tree ensembles, SVR-RBF, and compact PyTorch/TensorFlow MLPs. A controlled PyTorch study selects from a small, predeclared set of settings using validation data, then compares the selected model and its default control on the same untouched test observations.
+These extra analyses have limits: conformal coverage is marginal and relies on exchangeability; the subgroup check is not a full fairness assessment; and feature importance does not show cause and effect.
 
-The expanded nested benchmark uses five outer folds repeated three times and three inner folds. It evaluates a predeclared set of model families and includes a mean-prediction baseline. Scaling is placed inside a scikit-learn pipeline so it is learned only from the relevant training fold.
+## Main findings
 
-Crucially, the benchmark now has two distinct outputs:
+- Lasso had the lowest MAE (42.703) in the single held-out test run.
+- In the ten-seed matched-sample experiment, Linear Regression and Lasso had mean MAE values of 42.899 and 42.927. The default PyTorch and TensorFlow networks had higher mean MAE values.
+- Validation-based tuning improved the PyTorch network compared with its default control, but did not establish that it was better than the simpler models.
+- The nested model-family selection procedure did not improve on the fixed Linear Regression strategy in that experiment.
 
-- **Per-family comparison:** each model family is tuned within the inner folds and evaluated on the corresponding outer fold. This compares the predeclared family-specific tuning procedures.
-- **Inner-fold family selector:** within each outer training partition, the family with the lowest inner-CV MAE is selected; its refitted estimator is then evaluated on the untouched outer fold. This evaluates the process of choosing among the candidate families, rather than selecting a winner by inspecting outer-test results.
+The experiments use different split designs. Their scores should not be combined into one direct ranking. The full metrics and experiment records are in [RESULTS.md](../RESULTS.md).
 
-### 3. Split-conformal prediction
+## What the project demonstrates
 
-The project constructs regression intervals from absolute calibration residuals using the finite-sample conformal rank. The stated guarantee is marginal coverage under exchangeability. It is not an individual patient's probability of being inside an interval and does not imply reliable coverage after distribution shift.
+This work gave me practice in preparing data, training and comparing models, setting up evaluation, checking for data leakage, estimating prediction uncertainty, examining model behaviour and recording experiments so they can be repeated.
 
-### 4. Exploratory subgroup error analysis
+## Limitations
 
-The project compares errors across the two encoded values of the dataset's standardized `sex` feature. This is a narrow, small-sample error audit—not a comprehensive fairness assessment, proof of fairness, or evidence that disparities are absent.
+The dataset is small and preprocessed. There is no independent clinical validation, no raw medical imaging, no longitudinal health-record data and no evidence of clinical benefit. The demo is for demonstration only and must not be used for patient care.
 
-### 5. Model interpretation
-
-Linear-model coefficients and reference-relative contributions, together with tree-model feature importance and one-feature perturbation explanations, are used to inspect fitted model behaviour. These are model-dependent associations, not causal effects or clinically validated explanations. The perturbation values for the tree model are not SHAP values and are not guaranteed to sum to the prediction difference.
-
-## Selected empirical evidence
-
-The matched-sample ten-seed comparison gives a useful example of why model choice should be evidence-led. With 225 fitting observations per seed, the classical models had mean test MAE of 42.899 for Linear Regression, 42.927 for Lasso, 44.858 for Random Forest, and 49.015 for Ridge. The default PyTorch and TensorFlow MLPs had mean test MAE of 53.964 and 57.204, respectively.
-
-A separate, validation-selected PyTorch tuning study reduced the MLP's mean test MAE to 44.934, bringing it much closer to the classical models but not establishing superiority over Linear Regression or Lasso. The ten repeated hold-out test partitions overlap; their standard deviations are descriptive split-sensitivity summaries, not independent-sample confidence intervals.
-
-The nested repeated-CV run reported the following mean outer-fold MAE values (15 outer evaluations per family):
-
-| Model family | Mean outer-fold MAE |
-|---|---:|
-| Mean Baseline | 65.896 |
-| Linear Regression | 44.483 |
-| Ridge | 44.565 |
-| ElasticNet | 44.548 |
-| SVR-RBF | 44.414 |
-| Random Forest | 46.437 |
-| Extra Trees | 45.584 |
-| Histogram Gradient Boosting | 46.552 |
-
-The difference between SVR-RBF and Linear Regression is only 0.069 target units. This small numerical difference is not evidence of a reliable winner. The per-family ranking is descriptive; no formal significance test is reported. Each outer split is evaluated once, but an observation can appear in outer-test partitions in more than one repeat.
-
-The experiment also evaluates a selection procedure that chooses the family using inner-fold MAE inside each outer training partition, then evaluates that selected family on the untouched outer fold. Its mean outer-fold MAE was 44.854 ± 3.105, RMSE 55.565 ± 3.677, and R² 0.469 ± 0.079. It selected SVR-RBF in 10/15 folds, Ridge in 2/15, and Extra Trees, ElasticNet, and Linear Regression once each. It did not improve over the fixed Linear Regression per-family strategy (mean MAE 44.483). This is an important negative/neutral result: family selection added complexity without demonstrating a benefit on this benchmark.
-
-The nested run's standard deviations are descriptive split-sensitivity summaries, not independent-sample confidence intervals. Its results are not directly interchangeable with the 225-row matched-sample results: the nested benchmark uses larger outer-training partitions and a different validation protocol. Full metrics, fold-level results, selection frequencies, and metadata are recorded in [RESULTS.md](../RESULTS.md#11-nested-repeated-cv-comparison-and-inner-fold-family-selection).
-
-## Target-standardised neural follow-up
-
-A separate follow-up expanded the validation-selected PyTorch study to ten predeclared candidates, pairing five training configurations with and without target standardisation. Target mean and standard deviation were estimated from model-fitting targets only; validation data were used for candidate selection, calibration data were kept separate, and test data were used only for final evaluation. Across ten repeated hold-out seeds, the selected MLP achieved mean test MAE 43.408 ± 4.174, compared with 44.086 ± 3.365 for the paired default configuration trained under the same 300-epoch/25-patience budget (not the earlier fixed-budget neural baseline). Its paired MAE change was −0.677 target units on average, with improvement on eight seeds and worse MAE on two. Target standardisation was selected in seven of ten seeds. These descriptive results do not establish statistical significance or neural superiority; the mean MAE remained slightly above the earlier matched-sample Linear Regression and Lasso results. Full results and limitations are in [Section 12 of RESULTS.md](../RESULTS.md#12-target-standardised-neural-training-study), with reproducible outputs from the [workflow run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43141780230).
-
-## What this project demonstrates
-
-The work is useful evidence of practical research skills in:
-
-- formulating a measurable regression question and choosing appropriate metrics;
-- separating training, validation, calibration, and test data;
-- controlling preprocessing leakage through fold-local pipelines;
-- comparing simple and complex model families rather than assuming model complexity is beneficial;
-- implementing validation-based model selection and nested evaluation;
-- applying split-conformal uncertainty estimation with its assumptions stated;
-- conducting limited subgroup error analysis and explaining why it is not a fairness certificate;
-- examining model behaviour without presenting association as causation;
-- building a Python package, automated tests, reproducible notebooks, CI workflows, a Streamlit demonstration, and a Docker image.
-
-## How to demonstrate the application
-
-1. Read the repository README and the detailed [experimental results](../RESULTS.md).
-2. Install the demo extra and run `streamlit run demo/app.py`.
-3. Use the synthetic standardized feature controls. Open the prediction tab to see a benchmark-scale point prediction and split-conformal interval.
-4. Open local feature attribution to inspect how the selected model changes the synthetic profile's prediction relative to the model-fitting reference.
-5. Open the subgroup audit to see the held-out benchmark error comparison and its limitations.
-6. For a reproducible methods discussion, run `python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark` and inspect the per-family and inner-selected-family CSV outputs.
-
-The demo's profile sliders do not accept real patient measurements and should not be used to guide diagnosis, treatment, or care.
-
-## Limitations and next research steps
-
-- The benchmark is small and preprocessed, with 442 observations and 10 input features.
-- No external cohort or prospective validation is included.
-- The project does not implement multimodal fusion, longitudinal modelling, raw-image analysis, or electronic-health-record integration.
-- The conformal statement depends on exchangeability; it does not guarantee subgroup-conditional coverage or robustness to distribution shift.
-- The subgroup audit is limited to one encoded feature and does not establish fairness.
-- The model searches are intentionally compact, and no inferential claim is made from the descriptive repeated-fold standard deviations.
-- Predictive performance on this benchmark does not establish clinical validity, patient benefit, or readiness for deployment.
-
-A natural next step for a medical machine-learning PhD would be to transfer the same evaluation discipline to a suitably governed, clinically meaningful dataset with clearly defined prediction time, outcomes, patient-level split strategy, external validation, subgroup analysis, and—where relevant—multimodal or longitudinal inputs.
-
-## Suggested explanation in an interview
-
-> I developed an independent machine-learning project to examine disease-progression regression on a small public benchmark. I compared classical models with compact neural networks, separated fitting, validation, conformal calibration and test data, and then extended the comparison to nested repeated cross-validation. One important result was that more complex models did not automatically outperform simpler regressors. I also implemented split-conformal intervals, a limited subgroup error audit, and model-attribution views, while documenting their assumptions and limitations. The project is not a clinical tool; it demonstrates my approach to experimental design, leakage control, model evaluation, uncertainty estimation, interpretation, and reproducible software. I would like to extend these methods to larger, externally validated medical datasets and, where appropriate, multimodal or longitudinal learning.
+A next step would be to define a clinically meaningful task and evaluate it on a larger, properly governed dataset with patient-level splitting and independent validation.
