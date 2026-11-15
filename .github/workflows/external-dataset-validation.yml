@@ -28,7 +28,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install locked external-data dependencies
-        run: uv sync --locked --python 3.11 --extra external-data
+        run: uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra external-data
       - name: Run patient-grouped external-cohort evaluation
         run: uv run --locked python -m diabetes_ml.external_readmission --output external-readmission-results --seeds 42 43 44
       - name: Upload aggregate metrics and provenance only

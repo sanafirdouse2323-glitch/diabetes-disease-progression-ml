@@ -30,7 +30,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install locked neural dependencies
-        run: uv sync --locked --python 3.11 --extra neural
+        run: uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra neural
       - name: Run ten-seed validation-selected tuning
         run: uv run --locked python -m diabetes_ml.repeated_neural_tuning --output repeated-neural-tuning-results
       - name: Upload tuning results

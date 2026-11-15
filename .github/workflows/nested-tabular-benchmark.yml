@@ -28,7 +28,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install locked core dependencies
-        run: uv sync --locked --python 3.11
+        run: uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build
       - name: Run nested repeated-CV benchmark
         run: uv run --locked python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
       - name: Upload benchmark results
