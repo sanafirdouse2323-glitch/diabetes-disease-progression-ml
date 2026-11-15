@@ -1,3 +1,3 @@
-"""Diabetes Disease Progression: Classical & Neural ML with Clinical Uncertainty and Fairness."""
+"""Tabular diabetes disease-progression benchmark with classical and neural machine learning."""
 
 __version__ = "0.2.0"
