@@ -374,12 +374,13 @@ def select_f2_threshold(
     of the largest threshold, reducing unnecessary positive classifications.
     This is a research operating-point choice, not a clinical decision rule.
     """
-    labels = np.asarray(y_true, dtype=np.int8).reshape(-1)
+    raw_labels = np.asarray(y_true).reshape(-1)
     scores = np.asarray(probabilities, dtype=np.float64).reshape(-1)
-    if len(labels) == 0 or len(labels) != len(scores):
+    if len(raw_labels) == 0 or len(raw_labels) != len(scores):
         raise ValueError("Labels and probabilities must have equal, non-zero lengths.")
-    if not np.isin(labels, [0, 1]).all() or np.unique(labels).size != 2:
+    if not np.isin(raw_labels, [0, 1]).all() or np.unique(raw_labels).size != 2:
         raise ValueError("Threshold selection requires both binary target classes.")
+    labels = raw_labels.astype(np.int8, copy=False)
     if not np.isfinite(scores).all() or np.any((scores < 0.0) | (scores > 1.0)):
         raise ValueError("Probabilities must be finite values between zero and one.")
 
@@ -534,6 +535,7 @@ def run_external_readmission_evaluation(
                             "test_encounters": int(len(local_positions)),
                             "test_patients": int(subgroup_ids.nunique()),
                             "positive_prevalence": float(subgroup_y.mean()),
+                            "threshold_oof_f2": float(oof_f2_threshold),
                             **subgroup_metrics,
                         }
                     )
