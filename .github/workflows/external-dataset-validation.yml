@@ -9,6 +9,14 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/external-dataset-validation.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/diabetes_ml/external_readmission.py"
+      - "tests/test_external_readmission.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/external-dataset-validation.yml"
   workflow_dispatch:
 
 permissions:
