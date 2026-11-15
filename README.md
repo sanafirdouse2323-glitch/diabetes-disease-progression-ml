@@ -1,6 +1,6 @@
 # Diabetes Disease Progression with Machine Learning
 
-I built this project to understand how different machine-learning methods perform when estimating a measure of diabetes disease progression. I wanted to compare traditional regression models with tree-based methods and neural networks, and see whether using a more complex model actually leads to better results.
+This repository documents a machine-learning study of a continuous measure of diabetes disease progression one year after baseline measurements. It covers data preparation, model development, evaluation, prediction uncertainty, and exploratory analysis of model errors. Several model families are included as part of the experimental methods; the project does not claim that one family is generally superior.
 
 The project uses a continuous disease-progression target. It does not predict whether a person has diabetes, diagnose a condition, or recommend treatment.
 
@@ -8,7 +8,7 @@ The project uses a continuous disease-progression target. It does not predict wh
 
 I used the diabetes dataset provided by scikit-learn. It contains 442 observations and 10 preprocessed baseline features. The target is a continuous measure of disease progression one year after the baseline measurements.
 
-**Preprocessing detail:** the current experiments call `load_diabetes` with its default `scaled=True` setting. scikit-learn therefore returns features mean-centred and scaled using statistics calculated across all 442 observations before the repository creates its train/test or cross-validation splits. Later fold-local scaling (where used) is an additional transformation; it does not undo that dataset-level preprocessing. This is unsupervised use of the full feature matrix, not target-label leakage, but it means the experiments are not a fully raw-data, fold-isolated preprocessing evaluation. Reported results should be understood as results on scikit-learn's pre-standardised benchmark. A raw-feature sensitivity analysis using `scaled=False` would require rerunning and separately reporting all affected experiments.
+**Preprocessing detail:** the current experiments call `load_diabetes` explicitly with `scaled=True` (the scikit-learn default). scikit-learn therefore returns features mean-centred and scaled using statistics calculated across all 442 observations before the repository creates its train/test or cross-validation splits. Later fold-local scaling (where used) is an additional transformation; it does not undo that dataset-level preprocessing. This is unsupervised use of the full feature matrix, not target-label leakage, but it means the experiments are not a fully raw-data, fold-isolated preprocessing evaluation. Reported results should be understood as results on scikit-learn's pre-standardised benchmark. A raw-feature sensitivity analysis using `scaled=False` would require rerunning and separately reporting all affected experiments.
 
 This is a small public benchmark dataset, not a collection of raw hospital records. The demo included in this repository uses illustrative standardised inputs. They are synthetic examples and should not be treated as measurements from real patients.
 
