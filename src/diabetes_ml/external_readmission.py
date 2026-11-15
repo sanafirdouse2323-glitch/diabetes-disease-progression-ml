@@ -15,6 +15,7 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -46,8 +47,15 @@ METRIC_COLUMNS = (
     "average_precision",
     "brier_score",
     "accuracy_at_0_5",
+    "precision_at_0_5",
     "sensitivity_at_0_5",
     "specificity_at_0_5",
+    "f2_at_0_5",
+    "accuracy_at_oof_f2",
+    "precision_at_oof_f2",
+    "sensitivity_at_oof_f2",
+    "specificity_at_oof_f2",
+    "f2_at_oof_f2",
 )
 
 
@@ -291,18 +299,148 @@ def _build_estimators(seed: int) -> dict[str, object]:
     }
 
 
-def _calculate_binary_metrics(y_true: pd.Series, probabilities: np.ndarray) -> dict[str, float]:
+def grouped_oof_probabilities(
+    X: pd.DataFrame,
+    y: pd.Series,
+    patient_groups: pd.Series,
+    estimator: object,
+    seed: int,
+    n_splits: int = 3,
+) -> np.ndarray:
+    """Generate one out-of-fold probability per training encounter.
+
+    Each validation fold is patient-disjoint from its fitting fold. This
+    cross-fitting is performed only within the outer training partition and
+    is used for threshold selection, never for final test evaluation.
+    """
+    if not (len(X) == len(y) == len(patient_groups)):
+        raise ValueError("X, y, and patient_groups must have equal lengths.")
+    if len(X) == 0 or y.isna().any() or patient_groups.isna().any():
+        raise ValueError("Training data and patient groups must be non-empty and complete.")
+    if y.nunique() != 2:
+        raise ValueError("Both target classes are required for threshold cross-fitting.")
+    if (
+        isinstance(n_splits, (bool, np.bool_))
+        or not isinstance(n_splits, Integral)
+        or n_splits < 2
+    ):
+        raise ValueError("n_splits must be an integer greater than or equal to 2.")
+    if patient_groups.nunique() < n_splits:
+        raise ValueError("There are fewer unique patients than requested cross-fitting folds.")
+
+    splitter = StratifiedGroupKFold(
+        n_splits=int(n_splits),
+        shuffle=True,
+        random_state=int(seed),
+    )
+    oof_probabilities = np.full(len(X), np.nan, dtype=np.float64)
+    assignment_count = np.zeros(len(X), dtype=np.int8)
+
+    for fit_indices, validation_indices in splitter.split(
+        X, y.to_numpy(), groups=patient_groups.to_numpy()
+    ):
+        fit_patients = set(patient_groups.iloc[fit_indices])
+        validation_patients = set(patient_groups.iloc[validation_indices])
+        if fit_patients & validation_patients:
+            raise RuntimeError("Patient overlap detected inside threshold cross-fitting.")
+
+        fold_pipeline = Pipeline(
+            steps=[
+                ("preprocess", _build_preprocessor(X.iloc[fit_indices])),
+                ("model", clone(estimator)),
+            ]
+        )
+        fold_pipeline.fit(X.iloc[fit_indices], y.iloc[fit_indices])
+        fold_probabilities = fold_pipeline.predict_proba(
+            X.iloc[validation_indices]
+        )[:, 1]
+        if not np.isfinite(fold_probabilities).all():
+            raise ValueError("Out-of-fold probabilities must all be finite.")
+        oof_probabilities[validation_indices] = fold_probabilities
+        assignment_count[validation_indices] += 1
+
+    if not np.all(assignment_count == 1) or not np.isfinite(oof_probabilities).all():
+        raise RuntimeError("Every training encounter must receive exactly one finite OOF prediction.")
+    return oof_probabilities
+
+
+def select_f2_threshold(
+    y_true: pd.Series,
+    probabilities: np.ndarray,
+) -> float:
+    """Select an F2-maximising threshold using training-only OOF probabilities.
+
+    F2 weights recall more heavily than precision. Ties are resolved in favour
+    of the largest threshold, reducing unnecessary positive classifications.
+    This is a research operating-point choice, not a clinical decision rule.
+    """
+    labels = np.asarray(y_true, dtype=np.int8).reshape(-1)
+    scores = np.asarray(probabilities, dtype=np.float64).reshape(-1)
+    if len(labels) == 0 or len(labels) != len(scores):
+        raise ValueError("Labels and probabilities must have equal, non-zero lengths.")
+    if not np.isin(labels, [0, 1]).all() or np.unique(labels).size != 2:
+        raise ValueError("Threshold selection requires both binary target classes.")
+    if not np.isfinite(scores).all() or np.any((scores < 0.0) | (scores > 1.0)):
+        raise ValueError("Probabilities must be finite values between zero and one.")
+
+    candidate_thresholds = np.unique(scores)
+    threshold_scores = []
+    for threshold in candidate_thresholds:
+        predicted = scores >= threshold
+        tp = int(np.sum((labels == 1) & predicted))
+        fp = int(np.sum((labels == 0) & predicted))
+        fn = int(np.sum((labels == 1) & ~predicted))
+        denominator = 5 * tp + 4 * fn + fp
+        threshold_scores.append((5 * tp / denominator) if denominator else 0.0)
+
+    best_f2 = max(threshold_scores)
+    tied_thresholds = [
+        threshold
+        for threshold, score in zip(candidate_thresholds, threshold_scores)
+        if np.isclose(score, best_f2, rtol=0.0, atol=1e-12)
+    ]
+    return float(max(tied_thresholds))
+
+
+def _metrics_at_threshold(
+    y_true: pd.Series,
+    probabilities: np.ndarray,
+    threshold: float,
+    suffix: str,
+) -> dict[str, float]:
+    predictions = (probabilities >= threshold).astype("int8")
+    tn, fp, fn, tp = confusion_matrix(y_true, predictions, labels=[0, 1]).ravel()
+    precision = float(tp / (tp + fp)) if tp + fp else 0.0
+    sensitivity = float(tp / (tp + fn)) if tp + fn else float("nan")
+    specificity = float(tn / (tn + fp)) if tn + fp else float("nan")
+    f2_denominator = 5 * tp + 4 * fn + fp
+    f2 = float(5 * tp / f2_denominator) if f2_denominator else 0.0
+    return {
+        f"accuracy_{suffix}": float(accuracy_score(y_true, predictions)),
+        f"precision_{suffix}": precision,
+        f"sensitivity_{suffix}": sensitivity,
+        f"specificity_{suffix}": specificity,
+        f"f2_{suffix}": f2,
+    }
+
+
+def _calculate_binary_metrics(
+    y_true: pd.Series,
+    probabilities: np.ndarray,
+    oof_f2_threshold: float,
+) -> dict[str, float]:
     if not np.isfinite(probabilities).all():
         raise ValueError("Predicted probabilities must all be finite.")
-    predictions = (probabilities >= 0.5).astype("int8")
-    tn, fp, fn, tp = confusion_matrix(y_true, predictions, labels=[0, 1]).ravel()
+    if np.any((probabilities < 0.0) | (probabilities > 1.0)):
+        raise ValueError("Predicted probabilities must be between zero and one.")
+    if not 0.0 <= oof_f2_threshold <= 1.0:
+        raise ValueError("The OOF-selected threshold must be between zero and one.")
     return {
         "roc_auc": float(roc_auc_score(y_true, probabilities)),
         "average_precision": float(average_precision_score(y_true, probabilities)),
         "brier_score": float(brier_score_loss(y_true, probabilities)),
-        "accuracy_at_0_5": float(accuracy_score(y_true, predictions)),
-        "sensitivity_at_0_5": float(tp / (tp + fn)) if tp + fn else float("nan"),
-        "specificity_at_0_5": float(tn / (tn + fp)) if tn + fp else float("nan"),
+        **_metrics_at_threshold(y_true, probabilities, 0.5, "at_0_5"),
+        **_metrics_at_threshold(y_true, probabilities, oof_f2_threshold, "at_oof_f2"),
     }
 
 
@@ -330,15 +468,30 @@ def run_external_readmission_evaluation(
         test_audit = audit_groups.iloc[test_indices]
 
         for model_name, estimator in _build_estimators(seed).items():
+            # Select the operating threshold only from grouped out-of-fold
+            # predictions inside the outer training partition. The held-out
+            # test partition is not used for threshold selection.
+            oof_probabilities = grouped_oof_probabilities(
+                X_train,
+                y_train,
+                groups_train,
+                estimator,
+                seed=seed,
+                n_splits=3,
+            )
+            oof_f2_threshold = select_f2_threshold(y_train, oof_probabilities)
+
             pipeline = Pipeline(
                 steps=[
-                    ("preprocess", _build_preprocessor(X)),
+                    ("preprocess", _build_preprocessor(X_train)),
                     ("model", estimator),
                 ]
             )
             pipeline.fit(X_train, y_train)
             probabilities = pipeline.predict_proba(X_test)[:, 1]
-            metrics = _calculate_binary_metrics(y_test, probabilities)
+            metrics = _calculate_binary_metrics(
+                y_test, probabilities, oof_f2_threshold
+            )
             records.append(
                 {
                     "seed": seed,
@@ -348,6 +501,7 @@ def run_external_readmission_evaluation(
                     "train_patients": int(groups_train.nunique()),
                     "test_patients": int(groups_test.nunique()),
                     "test_positive_prevalence": float(y_test.mean()),
+                    "threshold_oof_f2": float(oof_f2_threshold),
                     **metrics,
                 }
             )
@@ -395,6 +549,11 @@ def run_external_readmission_evaluation(
             row[f"{metric}_std"] = (
                 float(np.nanstd(values, ddof=1)) if np.isfinite(values).sum() > 1 else float("nan")
             )
+        thresholds = frame["threshold_oof_f2"].to_numpy(dtype=np.float64)
+        row["threshold_oof_f2_mean"] = float(np.mean(thresholds))
+        row["threshold_oof_f2_std"] = (
+            float(np.std(thresholds, ddof=1)) if len(thresholds) > 1 else float("nan")
+        )
         summary_records.append(row)
 
     summary = pd.DataFrame.from_records(summary_records)
@@ -425,7 +584,22 @@ def run_external_readmission_evaluation(
             "name": "readmitted_within_30_days",
             "positive_label": "<30",
             "negative_labels": [">30", "NO"],
-            "threshold_for_reported_class_metrics": 0.5,
+        },
+        "prediction_time": (
+            "At discharge. The feature set includes discharge disposition and "
+            "encounter-level information that is not necessarily available at admission."
+        ),
+        "threshold_selection": {
+            "method": "Three-fold StratifiedGroupKFold out-of-fold predictions within each outer training partition",
+            "objective": "Maximise F2 (beta=2), weighting recall more heavily than precision",
+            "tie_break": "Largest threshold among thresholds tied for best OOF F2",
+            "held_out_test_used_for_selection": False,
+            "reference_threshold": 0.5,
+            "interpretation": (
+                "The 0.5 cutoff is retained as a reference only. The OOF-selected "
+                "F2 operating point is a research comparison, not a clinically selected "
+                "or validated decision threshold."
+            ),
         },
         "split": {
             "method": "StratifiedGroupKFold",
@@ -451,7 +625,12 @@ def run_external_readmission_evaluation(
             "partitions overlap, so across-seed standard deviations are descriptive "
             "split-sensitivity summaries, not confidence intervals. Subgroup results "
             "are exploratory and do not establish fairness or clinical utility. "
-            "A 0.5 threshold is a reporting convention, not a clinical decision threshold."
+            "The 0.5 cutoff is reported only as a reference. The F2 threshold is selected "
+            "from patient-grouped out-of-fold predictions in the outer training partition; "
+            "the held-out test partition is not used for selection. F2 weights recall more "
+            "heavily than precision, but this operating point is not clinically validated. "
+            "The intended prediction time is discharge because the features include "
+            "discharge-related information."
         ),
         "files": [
             "per_seed_metrics.csv",
