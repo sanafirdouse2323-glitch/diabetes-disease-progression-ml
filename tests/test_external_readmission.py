@@ -11,6 +11,7 @@ from diabetes_ml.external_readmission import (
     grouped_oof_probabilities,
     prepare_readmission_frames,
     select_f2_threshold,
+    _calibration_bins,
 )
 
 
@@ -133,3 +134,39 @@ def test_binary_metrics_report_reference_and_oof_selected_thresholds():
     assert metrics["sensitivity_at_oof_f2"] == pytest.approx(1.0)
     assert metrics["precision_at_oof_f2"] == pytest.approx(1.0)
     assert metrics["f2_at_oof_f2"] == pytest.approx(1.0)
+
+
+def test_prepare_frames_rejects_misaligned_indexes_and_duplicate_encounters():
+    features, targets, identifiers = _synthetic_frames()
+    shuffled = features.sample(frac=1.0, random_state=7)
+    with pytest.raises(ValueError, match="identical row indexes"):
+        prepare_readmission_frames(shuffled, targets, identifiers)
+
+    features, targets, identifiers = _synthetic_frames()
+    identifiers.loc[1, "encounter_id"] = identifiers.loc[0, "encounter_id"]
+    with pytest.raises(ValueError, match="encounter_id values"):
+        prepare_readmission_frames(features, targets, identifiers)
+
+
+def test_equal_frequency_calibration_bins_and_ece_use_supplied_predictions():
+    labels = np.array([0, 0, 1, 1], dtype=np.int8)
+    probabilities = np.array([0.1, 0.4, 0.6, 0.9])
+
+    ece, bins = _calibration_bins(labels, probabilities, n_bins=4)
+
+    assert ece == pytest.approx(0.25)
+    assert sum(row["n"] for row in bins) == len(labels)
+    assert [row["n"] for row in bins] == [1, 1, 1, 1]
+    assert bins[0]["mean_predicted_probability"] == pytest.approx(0.1)
+    assert bins[-1]["observed_positive_rate"] == pytest.approx(1.0)
+
+
+def test_calibration_bins_handle_constant_probabilities_and_reject_invalid_inputs():
+    ece, bins = _calibration_bins([1, 0, 0, 0], np.full(4, 0.2), n_bins=10)
+    assert ece == pytest.approx(0.05)
+    assert len(bins) == 1
+    assert bins[0]["n"] == 4
+    with pytest.raises(ValueError, match="equal, non-zero lengths"):
+        _calibration_bins([0, 1], np.array([0.2]))
+    with pytest.raises(ValueError, match="between zero and one"):
+        _calibration_bins([0, 1], np.array([0.2, 1.2]))

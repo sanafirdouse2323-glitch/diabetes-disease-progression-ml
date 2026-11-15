@@ -27,8 +27,8 @@ def test_evaluate_subgroup_disparity_reports_aligned_group_metrics():
     assert result["subgroups"]["B"]["n_samples"] == 2
     assert result["subgroups"]["A"]["mae"] == pytest.approx(10.0)
     assert result["subgroups"]["B"]["mae"] == pytest.approx(10.0)
-    assert result["subgroups"]["A"]["r2"] == 0.0
-    assert result["subgroups"]["B"]["r2"] == 0.0
+    assert result["subgroups"]["A"]["r2"] is None
+    assert result["subgroups"]["B"]["r2"] is None
     assert result["max_mae_disparity"] == pytest.approx(0.0)
     assert result["mae_parity_ratio"] == pytest.approx(1.0)
 

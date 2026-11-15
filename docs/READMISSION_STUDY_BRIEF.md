@@ -26,7 +26,7 @@ The intended prediction time is **at discharge**. The feature table includes dis
 
 ## Data handling and evaluation design
 
-- `encounter_id` and `patient_nbr` are not predictors. `patient_nbr` is used only as the group key for splitting.
+- `encounter_id` and `patient_nbr` are not predictors. `patient_nbr` is used only as the group key for splitting. Feature, target, and identifier tables must have equal row counts and identical unique row indexes; encounter identifiers must be non-missing and unique before rows are assigned to patient groups.
 - Race, gender, and age are excluded from the predictive feature matrix in this pre-specified baseline and retained only for exploratory subgroup reporting.
 - The three coded categorical integer fields (`admission_type_id`, `discharge_disposition_id`, and `admission_source_id`) are treated as categorical, not continuous measurements.
 - Imputation, scaling, and one-hot encoding are fitted inside each model pipeline using only the relevant training partition.
@@ -40,11 +40,11 @@ The positive class is relatively uncommon, so a 0.5 probability threshold can pr
 
 For each outer split and model, the operating threshold is selected by maximising F2 (beta = 2) on three-fold, patient-grouped out-of-fold probabilities generated **only within the outer training partition**. A tie is resolved by choosing the largest threshold among tied candidates. The selected threshold is then applied once to the untouched outer test partition. Test labels are not used to select the threshold.
 
-F2 weights recall more heavily than precision. This makes it a stated research choice for examining a recall-oriented operating point; it is not a clinically validated threshold, utility function, or decision rule. The outputs report ROC-AUC, average precision, Brier score, and threshold-based accuracy, precision, sensitivity, specificity, and F2 at both the 0.5 reference cutoff and the training-selected F2 cutoff.
+F2 weights recall more heavily than precision. This makes it a stated research choice for examining a recall-oriented operating point; it is not a clinically validated threshold, utility function, or decision rule. The outputs report ROC-AUC, average precision, Brier score, a 10-bin equal-frequency expected calibration error (ECE), and threshold-based accuracy, precision, sensitivity, specificity, and F2 at both the 0.5 reference cutoff and the training-selected F2 cutoff. The per-seed reliability bins are calculated on the untouched outer test partition and saved in `calibration_curve.csv`. This is an evaluation diagnostic only: it does not fit a post-hoc calibration model or establish clinical probability calibration. ECE depends on binning and should be interpreted alongside the Brier score and reliability table.
 
 ## Privacy and reproducibility
 
-The workflow uploads aggregate metrics and metadata only. It does not write raw patient-level records or patient identifiers to the repository or the workflow artifact. A SHA-256 fingerprint of the retrieved source tables is recorded to help detect changes in the upstream data. The fingerprint is not a substitute for dataset version control or a formal data-provenance audit.
+The workflow uploads aggregate metrics, metadata and the per-seed calibration reliability-bin table. It does not write raw patient-level records or patient identifiers to the repository or the workflow artifact. A SHA-256 fingerprint of the retrieved source tables is recorded to help detect changes in the upstream data. The fingerprint is not a substitute for dataset version control or a formal data-provenance audit.
 
 ## Results from the current three-seed run
 

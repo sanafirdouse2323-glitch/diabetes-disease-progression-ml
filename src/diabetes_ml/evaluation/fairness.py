@@ -82,7 +82,7 @@ def evaluate_subgroup_disparity(
     if len(unique_groups) < 2:
         raise ValueError("At least two distinct subgroup labels are required.")
 
-    group_results: dict[str, dict[str, float | int]] = {}
+    group_results: dict[str, dict[str, float | int | None]] = {}
     for group in unique_groups:
         mask = groups == group
         group_targets = targets[mask]
@@ -94,7 +94,7 @@ def evaluate_subgroup_disparity(
             "rmse": float(np.sqrt(mean_squared_error(group_targets, group_predictions))),
             "r2": float(r2_score(group_targets, group_predictions))
             if group_targets.size >= 3
-            else 0.0,
+            else None,
         }
 
     group_maes = [metrics["mae"] for metrics in group_results.values()]

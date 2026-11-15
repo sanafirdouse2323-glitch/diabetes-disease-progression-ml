@@ -46,6 +46,7 @@ METRIC_COLUMNS = (
     "roc_auc",
     "average_precision",
     "brier_score",
+    "calibration_ece_10_bins",
     "accuracy_at_0_5",
     "precision_at_0_5",
     "sensitivity_at_0_5",
@@ -102,6 +103,18 @@ def prepare_readmission_frames(
         raise ValueError("The UCI feature, target, and identifier tables must not be empty.")
     if not (len(features) == len(targets) == len(identifiers)):
         raise ValueError("UCI feature, target, and identifier tables must have equal row counts.")
+    if not (features.index.is_unique and targets.index.is_unique and identifiers.index.is_unique):
+        raise ValueError("UCI feature, target, and identifier tables must have unique row indexes.")
+    if not (features.index.equals(targets.index) and features.index.equals(identifiers.index)):
+        raise ValueError(
+            "UCI feature, target, and identifier tables must have identical row indexes; "
+            "refusing to pair potentially misaligned encounters and patient groups."
+        )
+    if "encounter_id" not in identifiers.columns:
+        raise ValueError("The UCI identifier table must contain encounter_id for row-integrity checks.")
+    encounter_ids = identifiers["encounter_id"]
+    if encounter_ids.isna().any() or encounter_ids.duplicated().any():
+        raise ValueError("UCI encounter_id values must be non-missing and unique.")
     if "readmitted" not in targets.columns:
         raise ValueError("The UCI target table must contain the 'readmitted' column.")
     if "patient_nbr" not in identifiers.columns:
@@ -425,6 +438,47 @@ def _metrics_at_threshold(
     }
 
 
+
+def _calibration_bins(
+    y_true: pd.Series | np.ndarray,
+    probabilities: np.ndarray,
+    n_bins: int = 10,
+) -> tuple[float, list[dict[str, float | int]]]:
+    """Return equal-frequency reliability bins and their weighted absolute gap.
+
+    Bins are formed from the supplied evaluation probabilities only. The
+    resulting expected calibration error (ECE) is descriptive and depends on
+    the number and placement of bins; it is not a calibration guarantee.
+    """
+    labels = np.asarray(y_true).reshape(-1)
+    scores = np.asarray(probabilities, dtype=np.float64).reshape(-1)
+    if labels.size == 0 or labels.shape != scores.shape:
+        raise ValueError("Calibration labels and probabilities must have equal, non-zero lengths.")
+    if not np.isin(labels, [0, 1]).all():
+        raise ValueError("Calibration labels must contain only binary values 0 and 1.")
+    if not np.isfinite(scores).all() or np.any((scores < 0.0) | (scores > 1.0)):
+        raise ValueError("Calibration probabilities must be finite values between zero and one.")
+    if isinstance(n_bins, (bool, np.bool_)) or not isinstance(n_bins, Integral) or n_bins < 1:
+        raise ValueError("n_bins must be a positive integer.")
+
+    edges = np.unique(np.quantile(scores, np.linspace(0.0, 1.0, int(n_bins) + 1)))
+    bin_ids = np.searchsorted(edges[1:-1], scores, side="right")
+    rows: list[dict[str, float | int]] = []
+    weighted_gap = 0.0
+    for bin_id in np.unique(bin_ids):
+        mask = bin_ids == bin_id
+        mean_probability = float(np.mean(scores[mask]))
+        observed_rate = float(np.mean(labels[mask].astype(np.float64)))
+        count = int(mask.sum())
+        weighted_gap += (count / labels.size) * abs(observed_rate - mean_probability)
+        rows.append({
+            "bin": int(bin_id) + 1,
+            "n": count,
+            "mean_predicted_probability": mean_probability,
+            "observed_positive_rate": observed_rate,
+        })
+    return float(weighted_gap), rows
+
 def _calculate_binary_metrics(
     y_true: pd.Series,
     probabilities: np.ndarray,
@@ -436,10 +490,12 @@ def _calculate_binary_metrics(
         raise ValueError("Predicted probabilities must be between zero and one.")
     if not 0.0 <= oof_f2_threshold <= 1.0:
         raise ValueError("The OOF-selected threshold must be between zero and one.")
+    calibration_ece, _ = _calibration_bins(y_true, probabilities, n_bins=10)
     return {
         "roc_auc": float(roc_auc_score(y_true, probabilities)),
         "average_precision": float(average_precision_score(y_true, probabilities)),
         "brier_score": float(brier_score_loss(y_true, probabilities)),
+        "calibration_ece_10_bins": calibration_ece,
         **_metrics_at_threshold(y_true, probabilities, 0.5, "at_0_5"),
         **_metrics_at_threshold(y_true, probabilities, oof_f2_threshold, "at_oof_f2"),
     }
@@ -457,6 +513,7 @@ def run_external_readmission_evaluation(
 
     records: list[dict[str, int | float | str]] = []
     subgroup_records: list[dict[str, int | float | str]] = []
+    calibration_records: list[dict[str, int | float | str]] = []
 
     for seed in seed_values:
         train_indices, test_indices = grouped_holdout_indices(
@@ -492,6 +549,15 @@ def run_external_readmission_evaluation(
             probabilities = pipeline.predict_proba(X_test)[:, 1]
             metrics = _calculate_binary_metrics(
                 y_test, probabilities, oof_f2_threshold
+            )
+            _, reliability_bins = _calibration_bins(y_test, probabilities, n_bins=10)
+            calibration_records.extend(
+                {
+                    "seed": int(seed),
+                    "model": model_name,
+                    **bin_record,
+                }
+                for bin_record in reliability_bins
             )
             records.append(
                 {
@@ -566,6 +632,8 @@ def run_external_readmission_evaluation(
     per_seed.to_csv(out_path / "per_seed_metrics.csv", index=False)
     summary.to_csv(out_path / "summary_metrics.csv", index=False)
     subgroup_summary.to_csv(out_path / "subgroup_metrics.csv", index=False)
+    calibration_frame = pd.DataFrame.from_records(calibration_records)
+    calibration_frame.to_csv(out_path / "calibration_curve.csv", index=False)
 
     metadata = {
         "dataset": "Diabetes 130-US Hospitals for Years 1999-2008",
@@ -629,6 +697,12 @@ def run_external_readmission_evaluation(
             "is fitted inside each training partition. Rare categories are grouped "
             "using OneHotEncoder(min_frequency=20)."
         ),
+        "probability_calibration_evaluation": (
+            "Brier score and a 10-bin equal-frequency reliability curve are calculated "
+            "on each untouched outer test partition. The 10-bin ECE is descriptive, "
+            "depends on binning, and is not a calibration guarantee or a fitted "
+            "post-hoc probability calibration step."
+        ),
         "interpretation": (
             "This is a related but different diabetes classification task, not an "
             "external validation of the one-year disease-progression regression model. "
@@ -650,6 +724,7 @@ def run_external_readmission_evaluation(
             "per_seed_metrics.csv",
             "summary_metrics.csv",
             "subgroup_metrics.csv",
+            "calibration_curve.csv",
             "metadata.json",
         ],
         "raw_patient_level_data_written": False,
