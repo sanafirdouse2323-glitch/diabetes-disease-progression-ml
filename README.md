@@ -83,6 +83,13 @@ pip install -e ".[demo]"
 streamlit run demo/app.py
 ```
 
+To execute the notebooks, install the notebook and neural extras:
+
+```bash
+pip install -e ".[notebooks,neural]"
+jupyter nbconvert --to notebook --execute notebooks/01_exploration.ipynb
+```
+
 To run the tests:
 
 ```bash
