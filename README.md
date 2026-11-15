@@ -4,6 +4,28 @@ This repository documents a machine-learning study of a continuous measure of di
 
 The project uses a continuous disease-progression target. It does not predict whether a person has diabetes, diagnose a condition, or recommend treatment.
 
+## Interactive Streamlit demo
+
+The repository includes a locally runnable Streamlit application that demonstrates selected parts of the progression-regression workflow. The interface lets you:
+
+- Select one of the implemented regression models (Ridge, Linear Regression, Lasso or Random Forest).
+- Adjust illustrative, standardised benchmark feature values and view a point prediction with a 90% split-conformal prediction interval.
+- Inspect local feature-attribution output relative to the model-fitting reference baseline.
+- Explore a held-out benchmark subgroup error audit across the two encoded levels of the standardised `sex` feature.
+
+**Important:** the controls use illustrative synthetic benchmark inputs, not real patient measurements. The displayed prediction is a benchmark regression output, not a diagnosis, personal disease-risk estimate, treatment recommendation or clinically validated decision. The conformal interval targets marginal coverage under its assumptions; it is not a 90% probability statement about an individual. The subgroup audit is exploratory and does not establish fairness.
+
+**Source:** [`demo/app.py`](demo/app.py)
+
+To install the optional demo dependencies and launch the application from the repository root:
+
+```bash
+pip install -e ".[demo]"
+streamlit run demo/app.py
+```
+
+This documents a local application included in the repository; it does not imply that a public hosted demo is currently available.
+
 ## Dataset
 
 I used the diabetes dataset provided by scikit-learn. It contains 442 observations and 10 preprocessed baseline features. The target is a continuous measure of disease progression one year after the baseline measurements.
