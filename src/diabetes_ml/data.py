@@ -37,7 +37,9 @@ def load_diabetes_data() -> Tuple[pd.DataFrame, pd.Series]:
         X: Feature DataFrame (442 samples, 10 preprocessed baseline features).
         y: Continuous quantitative disease progression target measured one year post-baseline.
     """
-    data = load_diabetes(as_frame=True)
+    # Preserve the benchmark's documented pre-standardised feature representation.
+    # This scaling is performed by scikit-learn before repository-level splits.
+    data = load_diabetes(as_frame=True, scaled=True)
     X = data.data
     y = data.target
     return X, y
