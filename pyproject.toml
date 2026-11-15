@@ -16,6 +16,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+build = [
+    "setuptools>=68",
+    "wheel>=0.41"
+]
 neural = [
     "torch>=2.0.0",
     "tensorflow-cpu>=2.15.0"
@@ -37,6 +41,8 @@ external-data = [
     "ucimlrepo>=0.0.7"
 ]
 all = [
+    "setuptools>=68",
+    "wheel>=0.41",
     "torch>=2.0.0",
     "tensorflow-cpu>=2.15.0",
     "streamlit>=1.30.0",

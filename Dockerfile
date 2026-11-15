@@ -13,7 +13,7 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
 
-RUN uv sync --frozen --no-dev --extra demo
+RUN uv sync --frozen --no-dev --no-build-isolation-package diabetes-ml --extra build --extra demo
 
 
 # Keep the runtime image free of compilers, test tools, and neural frameworks.

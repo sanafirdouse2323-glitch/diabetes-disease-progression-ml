@@ -43,7 +43,7 @@ The committed `uv.lock` resolves the project and every declared optional extra, 
 # https://docs.astral.sh/uv/getting-started/installation/
 
 uv python install 3.11
-uv sync --locked --python 3.11 --extra dev --extra demo
+uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra dev --extra demo
 uv run --locked pytest -v
 uv run --locked python -m diabetes_ml.experiment --output results
 ```
@@ -51,7 +51,7 @@ uv run --locked python -m diabetes_ml.experiment --output results
 To install every optional component, including neural, notebook, and external-dataset tooling:
 
 ```bash
-uv sync --locked --python 3.11 --all-extras
+uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --all-extras
 ```
 
 The lockfile pins resolved package versions and artifact hashes across supported environments. The Python interpreter, operating system, and external UCI data service remain separate runtime inputs; the external-data experiment records a SHA-256 fingerprint of the retrieved dataset tables.
@@ -128,7 +128,7 @@ This study is **not** external validation of the original one-year disease-progr
 Install the optional data connector and run the experiment:
 
 ```bash
-uv sync --locked --python 3.11 --extra external-data
+uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra external-data
 uv run --locked python -m diabetes_ml.external_readmission --output external-readmission-results --seeds 42 43 44
 ```
 
