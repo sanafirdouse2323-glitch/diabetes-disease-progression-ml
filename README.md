@@ -41,8 +41,11 @@ Create a virtual environment and install the project:
 ```bash
 python -m venv .venv
 
-# Windows
-.venv\\Scripts\\activate
+# Windows PowerShell
+.venv\\Scripts\\Activate.ps1
+
+# Windows Command Prompt
+.venv\\Scripts\\activate.bat
 
 # Linux or macOS
 source .venv/bin/activate
