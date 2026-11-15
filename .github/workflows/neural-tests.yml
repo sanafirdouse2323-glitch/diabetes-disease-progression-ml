@@ -6,10 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   neural-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       TF_CPP_MIN_LOG_LEVEL: "2"
       TF_NUM_INTRAOP_THREADS: "1"
@@ -17,24 +20,27 @@ jobs:
       OMP_NUM_THREADS: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "0.13.8"
           python-version: "3.11"
-          cache: pip
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-      - name: Install CPU PyTorch
-        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
-      - name: Install CPU TensorFlow
-        run: pip install tensorflow-cpu
-      - name: Install this project and test dependencies
-        run: pip install -e ".[dev]"
-      - name: Run full test suite
-        run: pytest -q
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install locked neural and test dependencies
+        run: uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra dev --extra neural
+      - name: Run neural-specific tests
+        run: >-
+          uv run --locked pytest -q
+          tests/test_neural_data.py
+          tests/test_pytorch_model.py
+          tests/test_tensorflow_model.py
+          tests/test_repeated_neural_validation.py
+          tests/test_repeated_neural_tuning.py
       - name: Run end-to-end conventional and neural comparison
-        run: python -m diabetes_ml.neural.neural_experiment --output neural-ci-results --epochs 100 --patience 12
+        run: uv run --locked python -m diabetes_ml.neural.neural_experiment --output neural-ci-results --epochs 100 --patience 12
       - name: Run repeated-neural validation smoke test
-        run: python -m diabetes_ml.repeated_neural_validation --output repeated-neural-ci-results --seeds 42 43 --epochs 10 --patience 3
+        run: uv run --locked python -m diabetes_ml.repeated_neural_validation --output repeated-neural-ci-results --seeds 42 43 --epochs 10 --patience 3
       - name: Upload measured metrics and training history
         uses: actions/upload-artifact@v4
         with:

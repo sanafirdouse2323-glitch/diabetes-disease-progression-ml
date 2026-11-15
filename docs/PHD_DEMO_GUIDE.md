@@ -70,3 +70,4 @@ No. It has not been clinically validated and is not designed for diagnosis or tr
 - Do not describe prediction intervals as a patient's probability of an outcome.
 - Do not claim the subgroup check proves fairness.
 - Do not describe this small benchmark as clinical validation.
+- Do not describe the separate 30-day hospital readmission classification experiment as external validation of the one-year progression regression task.

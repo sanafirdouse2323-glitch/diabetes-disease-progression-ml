@@ -1,16 +1,19 @@
-# Build the project and its demo dependencies in an isolated environment.
+# Resolve the exact Python dependencies from uv.lock in an isolated build stage.
+FROM ghcr.io/astral-sh/uv:0.13.8 AS uv
+
 FROM python:3.11-slim AS builder
 
+COPY --from=uv /uv /uvx /bin/
 WORKDIR /build
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-COPY pyproject.toml README.md ./
+COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir ".[demo]"
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+RUN uv sync --frozen --no-dev --no-editable --no-build-isolation-package diabetes-ml --extra build --extra demo
 
 
 # Keep the runtime image free of compilers, test tools, and neural frameworks.

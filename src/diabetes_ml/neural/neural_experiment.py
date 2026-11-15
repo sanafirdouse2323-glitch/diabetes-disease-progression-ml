@@ -23,6 +23,25 @@ from diabetes_ml.neural.pytorch_model import TORCH_AVAILABLE, PyTorchTrainer
 from diabetes_ml.neural.tensorflow_model import TF_AVAILABLE, TensorFlowTrainer
 
 
+
+def _require_both_neural_frameworks(
+    torch_available: bool,
+    tensorflow_available: bool,
+) -> None:
+    """Fail before running a partial result when a full two-framework comparison is requested."""
+    missing = []
+    if not torch_available:
+        missing.append("PyTorch")
+    if not tensorflow_available:
+        missing.append("TensorFlow/Keras")
+    if missing:
+        raise ImportError(
+            "The full neural comparison requires both frameworks; unavailable: "
+            + ", ".join(missing)
+            + ". Install the optional neural dependencies with "
+            + "uv sync --locked --extra neural."
+        )
+
 def run_full_comparison_experiment(
     output_dir: str | Path = "results",
     epochs: int = 200,
@@ -32,6 +51,7 @@ def run_full_comparison_experiment(
     random_state: int = 42,
 ) -> pd.DataFrame:
     """Run full benchmark comparing classical regressors with PyTorch and TensorFlow MLPs."""
+    _require_both_neural_frameworks(TORCH_AVAILABLE, TF_AVAILABLE)
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
@@ -55,7 +75,7 @@ def run_full_comparison_experiment(
     if TORCH_AVAILABLE:
         print("Training PyTorch MLP with Early Stopping...")
         pt_trainer = PyTorchTrainer(
-            in_features=10,
+            in_features=neural_arrays.X_train.shape[1],
             lr=lr,
             batch_size=batch_size,
             epochs=epochs,
@@ -112,7 +132,7 @@ def run_full_comparison_experiment(
     if TF_AVAILABLE:
         print("Training TensorFlow / Keras MLP with Early Stopping...")
         tf_trainer = TensorFlowTrainer(
-            in_features=10,
+            in_features=neural_arrays.X_train.shape[1],
             lr=lr,
             batch_size=batch_size,
             epochs=epochs,

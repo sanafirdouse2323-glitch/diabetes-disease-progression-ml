@@ -32,8 +32,17 @@ results/
 reports/*.png
 *.keras
 *.pt
-.DS_Store
+
+# External UCI medical data and generated aggregate results must not be committed.
+data/
+external-readmission-results/
+repeated-validation-results/
+repeated-validation-matched-results/
+repeated-neural-validation-results/
+repeated-neural-tuning-results/
 
 # Notebook outputs
 notebook-results/
 .ipynb_checkpoints/
+
+.DS_Store
