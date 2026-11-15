@@ -29,8 +29,8 @@ jobs:
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Install CPU TensorFlow
         run: pip install tensorflow-cpu
-      - name: Install this project
-        run: pip install -e .
+      - name: Install this project and test dependencies
+        run: pip install -e ".[dev]"
       - name: Run full test suite
         run: pytest -q
       - name: Run end-to-end conventional and neural comparison
