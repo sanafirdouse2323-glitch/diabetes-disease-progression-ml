@@ -58,7 +58,7 @@ The lockfile pins resolved package versions and artifact hashes across supported
 
 ### Install with pip (version ranges)
 
-Python 3.10 or later is required. The following commands install compatible versions from the ranges in `pyproject.toml`; use the uv instructions above when exact dependency locking is required.
+Python 3.10 through 3.13 is supported by the current lockfile. The following commands install compatible versions from the ranges in `pyproject.toml`; use the uv instructions above when exact dependency locking is required.
 
 ```bash
 python -m venv .venv
