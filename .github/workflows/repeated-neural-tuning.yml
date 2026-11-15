@@ -1,11 +1,15 @@
 name: Repeated-seed neural hyperparameter study
 
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/diabetes_ml/repeated_neural_tuning.py"
+      - "src/diabetes_ml/neural/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "tests/test_repeated_neural_tuning.py"
+      - ".github/workflows/repeated-neural-tuning.yml"
 
 permissions:
   contents: read
@@ -18,17 +22,17 @@ jobs:
       OMP_NUM_THREADS: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "0.13.8"
           python-version: "3.11"
-          cache: pip
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -e .
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install locked neural dependencies
+        run: uv sync --locked --python 3.11 --extra neural
       - name: Run ten-seed validation-selected tuning
-        run: python -m diabetes_ml.repeated_neural_tuning --output repeated-neural-tuning-results
+        run: uv run --locked python -m diabetes_ml.repeated_neural_tuning --output repeated-neural-tuning-results
       - name: Upload tuning results
         uses: actions/upload-artifact@v4
         with:

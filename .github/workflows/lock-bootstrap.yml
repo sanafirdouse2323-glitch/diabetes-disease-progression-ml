@@ -1,0 +1,38 @@
+name: Generate dependency lockfile (bootstrap)
+
+on:
+  push:
+    branches:
+      - audit/lockfile-ci-and-external-readmission
+    paths-ignore:
+      - "uv.lock"
+
+permissions:
+  contents: write
+
+jobs:
+  generate-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+          python-version: "3.11"
+          enable-cache: false
+      - name: Resolve all optional dependency extras
+        run: uv lock --python 3.10
+      - name: Commit generated lockfile to this audit branch
+        run: |
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "Add universal reproducible dependency lockfile"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

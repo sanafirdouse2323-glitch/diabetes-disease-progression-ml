@@ -1,0 +1,40 @@
+name: External UCI diabetes readmission evaluation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/diabetes_ml/external_readmission.py"
+      - "tests/test_external_readmission.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/external-dataset-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external-readmission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install locked external-data dependencies
+        run: uv sync --locked --python 3.11 --extra external-data
+      - name: Run patient-grouped external-cohort evaluation
+        run: uv run --locked python -m diabetes_ml.external_readmission --output external-readmission-results --seeds 42 43 44
+      - name: Upload aggregate metrics and provenance only
+        uses: actions/upload-artifact@v4
+        with:
+          name: uci-diabetes-130-readmission-results
+          path: external-readmission-results/
+          if-no-files-found: error
+          retention-days: 90
