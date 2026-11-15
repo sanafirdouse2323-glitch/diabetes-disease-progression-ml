@@ -111,6 +111,13 @@ A meaningful next step would be to define a specific clinical research question 
 
 ## References and licence
 
-The dataset is available through scikit-learn's `load_diabetes` function and is associated with Efron, Hastie, Johnstone and Tibshirani (2004), *Least Angle Regression*, Annals of Statistics.
+**Dataset**
+
+- Efron, B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004). *Least Angle Regression*. The Annals of Statistics, 32(2), 407–499. [https://doi.org/10.1214/009053604000000067](https://doi.org/10.1214/009053604000000067).
+- scikit-learn developers. *`sklearn.datasets.load_diabetes` API documentation*. [https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_diabetes.html](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_diabetes.html).
+
+**Split-conformal prediction**
+
+- Lei, J., G’Sell, M., Rinaldo, A., Tibshirani, R. J., and Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116).
 
 This project is licensed under the MIT License.
