@@ -39,8 +39,6 @@ jobs:
           pip install tensorflow-cpu
           pip install -e ".[notebooks]"
           python -m ipykernel install --user --name python3 --display-name "Python 3"
-      - name: Install project
-        run: pip install -e .
       - name: Execute notebooks
         run: |
           mkdir -p audit-executed
