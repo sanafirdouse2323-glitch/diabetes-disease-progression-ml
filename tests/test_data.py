@@ -1,5 +1,8 @@
 """Unit tests for dataset loading, validation, and split integrity."""
 
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
 from diabetes_ml.data import create_experiment_splits, load_diabetes_data
 
 
@@ -19,10 +22,36 @@ def test_create_experiment_splits_shapes():
     assert set(splits.feature_names) == set(splits.X_train.columns)
 
 
-def test_split_isolation_no_overlap():
+def test_split_partitions_are_disjoint_and_match_source_rows():
+    X, y = load_diabetes_data()
+    expected_train_indices, expected_test_indices = train_test_split(
+        X.index.to_numpy(),
+        test_size=0.20,
+        random_state=42,
+        shuffle=True,
+    )
+
+    # Prove that the source-observation identities assigned to the partitions
+    # are disjoint, rather than inferring isolation from reset output indices.
+    assert set(expected_train_indices).isdisjoint(set(expected_test_indices))
+
     splits = create_experiment_splits(test_size=0.20, random_state=42)
-    # Check that indices were reset and no index collision exists
-    assert len(splits.X_train) + len(splits.X_test) == 442
-    # Verify values match expectations
-    assert splits.y_train.min() >= 25.0
-    assert splits.y_test.max() <= 346.0
+
+    # Compare the returned feature and target rows with their original source
+    # observations. This also checks that each target remains aligned with X.
+    pd.testing.assert_frame_equal(
+        splits.X_train,
+        X.loc[expected_train_indices].reset_index(drop=True),
+    )
+    pd.testing.assert_frame_equal(
+        splits.X_test,
+        X.loc[expected_test_indices].reset_index(drop=True),
+    )
+    pd.testing.assert_series_equal(
+        splits.y_train,
+        y.loc[expected_train_indices].reset_index(drop=True),
+    )
+    pd.testing.assert_series_equal(
+        splits.y_test,
+        y.loc[expected_test_indices].reset_index(drop=True),
+    )
