@@ -1,3 +1,0 @@
-# Optional neural-framework dependencies. Prefer: pip install -e ".[neural]"
-torch>=2.0.0
-tensorflow>=2.15.0
