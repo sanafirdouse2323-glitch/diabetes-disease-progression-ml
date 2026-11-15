@@ -142,6 +142,8 @@ Only aggregate metrics and metadata are written to the output directory; raw pat
 
 Dataset source and licence: [UCI Machine Learning Repository — Diabetes 130-US Hospitals](https://archive.ics.uci.edu/dataset/296/diabetes%2B130-us%2Bhospitals%2Bfor%2Byears%2B1999-2008). Please cite Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014), *Diabetes 130-US Hospitals for Years 1999-2008*, UCI Machine Learning Repository, DOI [10.24432/C5230J](https://doi.org/10.24432/C5230J).
 
+The scope, prediction-time assumption, grouped evaluation, threshold-selection method, and limitations are documented separately in [READMISSION_STUDY_BRIEF.md](docs/READMISSION_STUDY_BRIEF.md).
+
 ## Project structure
 
 The main Python package is in `src/diabetes_ml`. It contains the data preparation, models, evaluation methods and experiment scripts. The `tests` directory contains the automated tests. The `notebooks` directory contains the exploration, model comparison and neural-network notebooks. The Streamlit demonstration is in `demo/app.py`.
