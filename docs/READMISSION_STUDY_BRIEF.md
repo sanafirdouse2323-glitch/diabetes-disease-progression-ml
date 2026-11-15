@@ -16,7 +16,9 @@ The target is mapped as:
 
 The `NO` value must not be interpreted as proof that no readmission occurred anywhere. The original Health Facts paper states that encounters from out-of-network providers were not captured, so some out-of-network readmissions may be absent from this source outcome.
 
-The unit of analysis is an **encounter**, not a unique patient. All encounters belonging to one patient are assigned to the same outer partition, but patients with more encounters contribute more rows to encounter-level metrics.\n\nThe source outcome is limited to the contributing Health Facts data. The original publication reports that out-of-network provider encounters were not captured; consequently, `NO` means no readmission recorded in the source data, not confirmed absence of a readmission in every healthcare setting.
+The unit of analysis is an **encounter**, not a unique patient. All encounters belonging to one patient are assigned to the same outer partition, but patients with more encounters contribute more rows to encounter-level metrics.
+
+The source outcome is limited to the contributing Health Facts data. The original publication reports that out-of-network provider encounters were not captured; consequently, `NO` means no readmission recorded in the source data, not confirmed absence of a readmission in every healthcare setting.
 
 ## Prediction time
 
@@ -62,4 +64,6 @@ This is a retrospective, historical benchmark from 1999–2008. It does not esta
 
 Subgroup summaries are exploratory and do not establish fairness. The dataset, task definition, endpoint, and model outputs have not been clinically validated for care decisions. No clinical utility, treatment benefit, deployment readiness, or external validity of the one-year disease-progression regression model is claimed.
 
-Further work would require a pre-specified clinical use case, a justified utility/cost function for threshold choice, calibration and decision-curve analysis, temporal and site-aware validation where identifiers and permissions allow, and prospective evaluation under appropriate governance.\n\nDataset source: Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014), *Diabetes 130-US Hospitals for Years 1999-2008*, UCI Machine Learning Repository, DOI [10.24432/C5230J](https://doi.org/10.24432/C5230J). Source-capture limitation: Strack et al. (2014), *Impact of HbA1c Measurement on Hospital Readmission Rates*, DOI [10.1155/2014/781670](https://doi.org/10.1155/2014/781670).
+Further work would require a pre-specified clinical use case, a justified utility/cost function for threshold choice, calibration and decision-curve analysis, temporal and site-aware validation where identifiers and permissions allow, and prospective evaluation under appropriate governance.
+
+Dataset source: Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014), *Diabetes 130-US Hospitals for Years 1999-2008*, UCI Machine Learning Repository, DOI [10.24432/C5230J](https://doi.org/10.24432/C5230J). Source-capture limitation: Strack et al. (2014), *Impact of HbA1c Measurement on Hospital Readmission Rates*, DOI [10.1155/2014/781670](https://doi.org/10.1155/2014/781670).
