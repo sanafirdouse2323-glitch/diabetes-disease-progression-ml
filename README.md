@@ -134,9 +134,23 @@ uv run --locked python -m diabetes_ml.external_readmission --output external-rea
 
 The experiment uses `readmitted == "<30"` as the positive label; `">30"` and `"NO"` are negative for the within-30-day endpoint. It uses `patient_nbr` only to form stratified patient-grouped folds and never as a model feature. All encounters for a patient stay in one partition. Race, gender, and age are excluded from the predictive feature matrix in this pre-specified baseline, and are retained only for exploratory subgroup reporting. Numeric/categorical preprocessing is fitted on each training partition. The model comparison includes a prior-only baseline, logistic regression, and a random forest.
 
-The intended prediction time for this experiment is **at discharge**, because the predictor set includes discharge disposition and encounter-level information that is not necessarily available at admission. The experiment therefore should not be described as an admission-time prediction model.
+The intended prediction time for this experiment is **at discharge**, because the predictor set includes discharge disposition and encounter-level information that is not necessarily available at admission. The experiment therefore should not be described as an admission-time prediction model.\n\nThis experiment uses the UCI label `NO` as a negative value because the source defines it as no recorded readmission. The underlying Health Facts database did not capture encounters from out-of-network providers, so `NO` must not be interpreted as proof that no readmission occurred anywhere. Readmission capture may be incomplete outside participating systems.
 
 Threshold handling is explicit because the positive class is uncommon. A 0.5 cutoff is retained as a reference, not treated as an appropriate clinical operating point. For each outer split and model, a threshold is selected by maximising F2 (beta=2) on three-fold, patient-grouped out-of-fold probabilities generated only within the outer training partition. The selected threshold is then evaluated once on the untouched outer test partition. This avoids choosing a threshold from test labels. F2 weights recall more heavily than precision, but it is an experimental operating-point criterion, not a clinically justified decision rule. Results report discrimination and probability metrics as well as sensitivity, specificity, precision, and F2 at both the 0.5 reference cutoff and the training-selected threshold.
+
+### Results from the current three-seed run
+
+The positive class prevalence in the held-out folds was approximately 11.16%. The following are means across seeds 42–44; the thresholds were selected inside the corresponding outer training partitions and evaluated on their untouched test folds.
+
+| Model | ROC-AUC | Average precision | Mean selected threshold | Precision at selected threshold | Sensitivity at selected threshold | Specificity at selected threshold | F2 at selected threshold | Sensitivity at 0.5 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Prior baseline | 0.5000 | 0.1116 | 0.11159 | 0.1116 | 1.0000 | 0.0000 | 0.3858 | 0.0000 |
+| Logistic Regression | 0.6639 | 0.2127 | 0.07670 | 0.1424 | 0.8043 | 0.3916 | 0.4168 | 0.0213 |
+| Random Forest | 0.6752 | 0.2195 | 0.10015 | 0.1477 | 0.7999 | 0.4197 | 0.4246 | 0.0000 |
+
+The 0.5 cutoff therefore missed almost all positive encounters. The training-selected F2 thresholds raised test sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. In practical terms, the recall increase comes with many false-positive flags. Random Forest's mean F2 was only modestly above the prior baseline, and its ROC-AUC/average precision indicate limited discrimination rather than a strong predictive system. These results do not establish clinical usefulness.
+
+There are only three outer seeds, and their test partitions overlap. The reported across-seed standard deviations are descriptive split-sensitivity summaries, not confidence intervals; no inferential claim of model superiority is made. Full per-seed, subgroup, and provenance outputs are retained as the GitHub Actions artifact for the run.
 
 Only aggregate metrics and metadata are written to the output directory; raw patient-level data and patient identifiers are not written to the repository or workflow artifacts. The metadata records a SHA-256 fingerprint of a canonical serialization of the retrieved UCI tables so that a changed upstream copy can be detected. The across-seed standard deviations are descriptive split-sensitivity summaries because test folds may overlap across seeds. Subgroup metrics use the same training-selected threshold as the overall model and remain exploratory; they do not establish fairness, clinical utility, or generalisability to other health systems.
 
@@ -165,7 +179,7 @@ Further research should evaluate the models with contemporary, independently gov
 
 **External readmission dataset**
 
-- Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014). *Diabetes 130-US Hospitals for Years 1999-2008* [Dataset]. UCI Machine Learning Repository. [https://doi.org/10.24432/C5230J](https://doi.org/10.24432/C5230J).
+- Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014). *Diabetes 130-US Hospitals for Years 1999-2008* [Dataset]. UCI Machine Learning Repository. [https://doi.org/10.24432/C5230J](https://doi.org/10.24432/C5230J).\n- Strack, B., DeShazo, J. P., Gennings, C., Olmo, J. L., Ventura, S., Cios, K. J., and Clore, J. N. (2014). *Impact of HbA1c Measurement on Hospital Readmission Rates: Analysis of 70,000 Clinical Database Patient Records*. BioMed Research International, 2014, 781670. [https://doi.org/10.1155/2014/781670](https://doi.org/10.1155/2014/781670).
 
 **Split-conformal prediction**
 
