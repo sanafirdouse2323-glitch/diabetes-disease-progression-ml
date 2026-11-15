@@ -585,10 +585,18 @@ def run_external_readmission_evaluation(
         ],
         "subgroup_audit_attributes": list(DEMOGRAPHIC_COLUMNS),
         "target": {
-            "name": "readmitted_within_30_days",
+            "name": "recorded_readmission_within_30_days",
             "positive_label": "<30",
             "negative_labels": [">30", "NO"],
+            "no_label_interpretation": (
+                "NO means no readmission record in the source dataset; it does not "
+                "prove that no readmission occurred outside the contributing network."
+            ),
         },
+        "outcome_capture_limitation": (
+            "The underlying Health Facts source did not capture encounters from "
+            "out-of-network providers; recorded readmission may therefore be incomplete."
+        ),
         "prediction_time": (
             "At discharge. The feature set includes discharge disposition and "
             "encounter-level information that is not necessarily available at admission."
@@ -634,7 +642,9 @@ def run_external_readmission_evaluation(
             "the held-out test partition is not used for selection. F2 weights recall more "
             "heavily than precision, but this operating point is not clinically validated. "
             "The intended prediction time is discharge because the features include "
-            "discharge-related information."
+            "discharge-related information. The underlying Health Facts source did not "
+            "capture out-of-network providers; the 'NO' label means no recorded readmission "
+            "in this source dataset, not proof of no readmission elsewhere."
         ),
         "files": [
             "per_seed_metrics.csv",
