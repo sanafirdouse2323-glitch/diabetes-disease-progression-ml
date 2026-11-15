@@ -164,9 +164,16 @@ The scope, prediction-time assumption, grouped evaluation, threshold-selection m
 
 ## Project structure
 
-The main Python package is in `src/diabetes_ml`. It contains the data preparation, models, evaluation methods and experiment scripts. The `tests` directory contains the automated tests. The `notebooks` directory contains the exploration, model comparison and neural-network notebooks. The Streamlit demonstration is in `demo/app.py`.
+- `src/diabetes_ml/`: the Python package for loading the progression dataset, classical and neural regression experiments, repeated-seed validation, nested cross-validation, conformal prediction, subgroup error analysis and feature explanations. It also contains the separate UCI hospital-readmission classification experiment.
+- `tests/`: automated tests for the data, models, evaluation methods, demo and experiment workflows.
+- `notebooks/`: three notebooks covering exploration, model comparison and neural-network experiments.
+- `demo/app.py`: the Streamlit research demonstration, using illustrative standardised inputs rather than real patient measurements.
+- `docs/`: the research brief, PhD demonstration guide and separate readmission-study brief.
+- `reports/ci-run-2026-11-02/`: a dated snapshot of outputs from an earlier successful neural CI run. These are historical reproducibility records, not the latest experiment results.
+- `.github/workflows/`: workflows for tests, neural checks, notebook execution, repeated validation, the nested benchmark, the optional external readmission study and the Docker smoke test.
+- `Dockerfile`: the container definition used by the Docker build and application smoke test.
 
-GitHub Actions workflows run the tests and experiment checks. They also build the Docker image, start the demo in a container and check that the application responds. The repository includes the Dockerfile and workflow definitions so these checks can be reviewed.
+GitHub Actions run the applicable tests and experiment checks when their workflow triggers are met. The Docker workflow builds the image, starts the demo in a container, checks its runtime identity and exercises the application and health endpoint. Some research workflows also upload aggregate results and metadata as workflow artifacts; those artifacts have workflow-specific retention periods.
 
 ## Limitations and next steps
 
