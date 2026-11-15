@@ -5,8 +5,12 @@ import pandas as pd
 import pytest
 
 from diabetes_ml.external_readmission import (
+    _build_estimators,
+    _calculate_binary_metrics,
     grouped_holdout_indices,
+    grouped_oof_probabilities,
     prepare_readmission_frames,
+    select_f2_threshold,
 )
 
 
@@ -78,3 +82,54 @@ def test_seed_validation_is_strict(seeds):
 
     with pytest.raises(ValueError):
         _validated_seeds(seeds)
+
+def test_f2_threshold_is_selected_from_supplied_training_probabilities():
+    labels = pd.Series([1, 1, 1, 0, 0, 0], dtype="int8")
+    probabilities = np.array([0.9, 0.8, 0.7, 0.6, 0.2, 0.1])
+
+    threshold = select_f2_threshold(labels, probabilities)
+
+    assert threshold == pytest.approx(0.7)
+
+
+def test_threshold_selection_rejects_invalid_probabilities_and_alignment():
+    labels = pd.Series([1, 1, 0, 0], dtype="int8")
+    with pytest.raises(ValueError, match="equal"):
+        select_f2_threshold(labels, np.array([0.8, 0.7]))
+
+    with pytest.raises(ValueError, match="between zero and one"):
+        select_f2_threshold(labels, np.array([0.8, 1.2, 0.3, 0.1]))
+
+
+def test_grouped_oof_predictions_cover_each_encounter_for_threshold_selection():
+    features, targets, identifiers = _synthetic_frames()
+    X, y, groups, _ = prepare_readmission_frames(features, targets, identifiers)
+
+    probabilities = grouped_oof_probabilities(
+        X,
+        y,
+        groups,
+        _build_estimators(42)["Logistic Regression"],
+        seed=42,
+        n_splits=3,
+    )
+
+    assert probabilities.shape == (len(y),)
+    assert np.isfinite(probabilities).all()
+    assert np.all((probabilities >= 0.0) & (probabilities <= 1.0))
+    threshold = select_f2_threshold(y, probabilities)
+    assert 0.0 <= threshold <= 1.0
+
+
+def test_binary_metrics_report_reference_and_oof_selected_thresholds():
+    labels = pd.Series([1, 1, 1, 0, 0, 0], dtype="int8")
+    probabilities = np.array([0.9, 0.8, 0.7, 0.6, 0.2, 0.1])
+
+    metrics = _calculate_binary_metrics(
+        labels, probabilities, oof_f2_threshold=0.7
+    )
+
+    assert metrics["sensitivity_at_0_5"] == pytest.approx(1.0)
+    assert metrics["sensitivity_at_oof_f2"] == pytest.approx(1.0)
+    assert metrics["precision_at_oof_f2"] == pytest.approx(1.0)
+    assert metrics["f2_at_oof_f2"] == pytest.approx(1.0)
