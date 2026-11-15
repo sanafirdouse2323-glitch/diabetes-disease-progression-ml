@@ -28,7 +28,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install locked neural and test dependencies
-        run: uv sync --locked --python 3.11 --extra dev --extra neural
+        run: uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra dev --extra neural
       - name: Run neural-specific tests
         run: >-
           uv run --locked pytest -q

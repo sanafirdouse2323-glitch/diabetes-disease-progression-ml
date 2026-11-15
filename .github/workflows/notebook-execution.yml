@@ -34,7 +34,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install locked notebook and neural dependencies
-        run: uv sync --locked --python 3.11 --extra notebooks --extra neural
+        run: uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra notebooks --extra neural
       - name: Execute notebooks
         run: |
           mkdir -p audit-executed
