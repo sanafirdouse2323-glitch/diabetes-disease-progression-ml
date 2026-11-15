@@ -355,8 +355,8 @@ def run_external_readmission_evaluation(
             for attribute in DEMOGRAPHIC_COLUMNS:
                 for subgroup_value, positions in test_audit.groupby(
                     attribute, sort=True, dropna=False
-                ).groups.items():
-                    local_positions = np.asarray(list(positions), dtype=int)
+                ).indices.items():
+                    local_positions = np.asarray(positions, dtype=int)
                     # The subgroup index is relative to the test partition.
                     subgroup_y = y_test.iloc[local_positions]
                     subgroup_probabilities = probabilities[local_positions]

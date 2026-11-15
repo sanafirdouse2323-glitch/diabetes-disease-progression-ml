@@ -27,8 +27,8 @@ jobs:
         run: uv lock --python 3.10
       - name: Commit generated lockfile to this audit branch
         run: |
-          if git diff --quiet -- uv.lock; then
-            echo "uv.lock is already current."
+          if [ -f uv.lock ] && git ls-files --error-unmatch uv.lock >/dev/null 2>&1 && git diff --quiet -- uv.lock; then
+            echo "uv.lock is already tracked and current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
