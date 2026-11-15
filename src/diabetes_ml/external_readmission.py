@@ -516,7 +516,9 @@ def run_external_readmission_evaluation(
                     subgroup_probabilities = probabilities[local_positions]
                     subgroup_ids = groups_test.iloc[local_positions]
                     subgroup_metrics = (
-                        _calculate_binary_metrics(subgroup_y, subgroup_probabilities)
+                        _calculate_binary_metrics(
+                            subgroup_y, subgroup_probabilities, oof_f2_threshold
+                        )
                         if subgroup_y.nunique() == 2
                         else {
                             metric: float("nan")
