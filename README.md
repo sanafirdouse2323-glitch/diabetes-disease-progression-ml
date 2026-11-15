@@ -144,13 +144,13 @@ Threshold handling is explicit because the positive class is uncommon. A 0.5 cut
 
 The positive class prevalence in the held-out folds was approximately 11.16%. The following are means across seeds 42–44; the thresholds were selected inside the corresponding outer training partitions and evaluated on their untouched test folds.
 
-| Model | ROC-AUC | Average precision | Mean selected threshold | Precision at selected threshold | Sensitivity at selected threshold | Specificity at selected threshold | F2 at selected threshold | Sensitivity at 0.5 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Prior baseline | 0.5000 | 0.1116 | 0.11159 | 0.1116 | 1.0000 | 0.0000 | 0.3858 | 0.0000 |
-| Logistic Regression | 0.6639 | 0.2127 | 0.07670 | 0.1424 | 0.8043 | 0.3916 | 0.4168 | 0.0213 |
-| Random Forest | 0.6752 | 0.2195 | 0.10015 | 0.1477 | 0.7999 | 0.4197 | 0.4246 | 0.0000 |
+| Model | ROC-AUC | Average precision | Brier score | 10-bin ECE | Mean selected threshold | Precision | Sensitivity | Specificity | F2 | Sensitivity at 0.5 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Prior baseline | 0.5000 | 0.1116 | 0.0992 | 0.00003 | 0.11159 | 0.1116 | 1.0000 | 0.0000 | 0.3858 | 0.0000 |
+| Logistic Regression | 0.6639 | 0.2127 | 0.0953 | 0.0098 | 0.07686 | 0.1424 | 0.8021 | 0.3931 | 0.4163 | 0.0213 |
+| Random Forest | 0.6752 | 0.2195 | 0.0961 | 0.0276 | 0.10015 | 0.1477 | 0.7999 | 0.4197 | 0.4246 | 0.0000 |
 
-The 0.5 cutoff therefore missed almost all positive encounters. The training-selected F2 thresholds raised test sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. In practical terms, the recall increase comes with many false-positive flags. Random Forest's mean F2 was only modestly above the prior baseline, and its ROC-AUC/average precision indicate limited discrimination rather than a strong predictive system. These results do not establish clinical usefulness.
+The 0.5 cutoff therefore missed almost all positive encounters. The training-selected F2 thresholds raised test sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. In practical terms, the recall increase comes with many false-positive flags. The 10-bin ECE values are descriptive summaries of outer-test reliability bins; they do not establish calibration on new hospitals or clinical probability reliability. Random Forest's mean F2 was only modestly above the prior baseline, and its ROC-AUC/average precision indicate limited discrimination rather than a strong predictive system. These results do not establish clinical usefulness.
 
 There are only three outer seeds, and their test partitions overlap. The reported across-seed standard deviations are descriptive split-sensitivity summaries, not confidence intervals; no inferential claim of model superiority is made. Full per-seed, subgroup, and provenance outputs are retained as the GitHub Actions artifact for the run.
 

@@ -50,17 +50,17 @@ The workflow uploads aggregate metrics, metadata and the per-seed calibration re
 
 Across seeds 42–44, the held-out positive prevalence was approximately 11.16%. Mean test metrics at the training-selected F2 thresholds were:
 
-| Model | ROC-AUC | Average precision | Precision | Sensitivity | Specificity | F2 |
-|---|---:|---:|---:|---:|---:|---:|
-| Prior baseline | 0.5000 | 0.1116 | 0.1116 | 1.0000 | 0.0000 | 0.3858 |
-| Logistic Regression | 0.6639 | 0.2127 | 0.1424 | 0.8043 | 0.3916 | 0.4168 |
-| Random Forest | 0.6752 | 0.2195 | 0.1477 | 0.7999 | 0.4197 | 0.4246 |
+| Model | ROC-AUC | Average precision | Brier score | 10-bin ECE | Precision | Sensitivity | Specificity | F2 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Prior baseline | 0.5000 | 0.1116 | 0.0992 | 0.00003 | 0.1116 | 1.0000 | 0.0000 | 0.3858 |
+| Logistic Regression | 0.6639 | 0.2127 | 0.0953 | 0.0098 | 0.1424 | 0.8021 | 0.3931 | 0.4163 |
+| Random Forest | 0.6752 | 0.2195 | 0.0961 | 0.0276 | 0.1477 | 0.7999 | 0.4197 | 0.4246 |
 
-At the 0.5 reference cutoff, mean sensitivity was 2.13% for Logistic Regression and 0% for Random Forest. The selected F2 thresholds raised sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. The recall gain therefore comes with many false-positive flags. These metrics describe an experimental operating point, not clinical readiness. There are only three outer seeds, their test folds overlap, and no statistical superiority claim is made.
+At the 0.5 reference cutoff, mean sensitivity was 2.13% for Logistic Regression and 0% for Random Forest. The selected F2 thresholds raised sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. The recall gain therefore comes with many false-positive flags. The ECE estimates are computed from 10 equal-frequency bins on the held-out folds; they are bin-dependent and descriptive, not calibration guarantees. These metrics describe an experimental operating point, not clinical readiness. There are only three outer seeds, their test folds overlap, and no statistical superiority claim is made.
 
 ## Limitations
 
-This is a retrospective, historical benchmark from 1999–2008. It does not establish performance in contemporary hospitals, on new sites, or in prospective workflows. Patient-grouped splitting addresses within-patient overlap between training and test partitions; it does not establish hospital-level generalisation. Metrics are encounter-weighted, and repeated encounters from a patient remain multiple observations within that patient's assigned partition.
+This is a retrospective, historical benchmark from 1999–2008. It does not establish performance in contemporary hospitals, on new sites, or in prospective workflows. Patient-grouped splitting addresses within-patient overlap between training and test partitions; it does not establish hospital-level generalisation. The published UCI attribute schema exposes encounter and patient identifiers but does not expose a hospital/facility identifier, so a hospital-held-out split cannot be constructed from this release even though records originate from 130 hospitals ([UCI dataset schema](https://archive.ics.uci.edu/dataset/296/diabetes%2B130-us%2Bhospitals%2Bfor%2Byears%2B1999-2008)). Metrics are encounter-weighted, and repeated encounters from a patient remain multiple observations within that patient's assigned partition.
 
 Subgroup summaries are exploratory and do not establish fairness. The dataset, task definition, endpoint, and model outputs have not been clinically validated for care decisions. No clinical utility, treatment benefit, deployment readiness, or external validity of the one-year disease-progression regression model is claimed.
 
