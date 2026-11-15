@@ -66,3 +66,60 @@ def test_invalid_neural_partition_fractions_are_rejected(val_fraction, cal_fract
             cal_fraction=cal_fraction,
             random_state=42,
         )
+
+def test_neural_fit_validation_calibration_and_test_rows_are_disjoint():
+    splits = create_experiment_splits(random_state=42)
+    train_source_ids = np.arange(splits.train_size, dtype=np.int64)
+    test_source_ids = np.arange(
+        splits.train_size,
+        splits.train_size + splits.test_size,
+        dtype=np.int64,
+    )
+    X_train = splits.X_train.assign(_source_id=train_source_ids)
+    X_test = splits.X_test.assign(_source_id=test_source_ids)
+
+    data = prepare_neural_datasets(
+        X_train,
+        splits.y_train,
+        X_test,
+        splits.y_test,
+        val_fraction=0.20,
+        cal_fraction=0.20,
+        random_state=42,
+    )
+
+    def recover_source_ids(features):
+        # The final feature is a unique integer row identifier. Undo only its
+        # fitted standardisation to recover the original observation IDs.
+        return np.rint(
+            features[:, -1] * data.scaler_scale[-1] + data.scaler_mean[-1]
+        ).astype(np.int64)
+
+    partitions = [
+        (recover_source_ids(data.X_train), data.y_train),
+        (recover_source_ids(data.X_val), data.y_val),
+        (recover_source_ids(data.X_cal), data.y_cal),
+        (recover_source_ids(data.X_test), data.y_test),
+    ]
+
+    all_source_ids = np.concatenate([source_ids for source_ids, _ in partitions])
+    assert len(all_source_ids) == 442
+    assert len(np.unique(all_source_ids)) == 442
+    assert set(all_source_ids) == set(range(442))
+
+    target_by_source_id = {
+        int(source_id): np.float32(target)
+        for source_id, target in zip(train_source_ids, splits.y_train.to_numpy())
+    }
+    target_by_source_id.update({
+        int(source_id): np.float32(target)
+        for source_id, target in zip(test_source_ids, splits.y_test.to_numpy())
+    })
+
+    for source_ids, targets in partitions:
+        expected_targets = np.asarray(
+            [target_by_source_id[int(source_id)] for source_id in source_ids],
+            dtype=np.float32,
+        )
+        np.testing.assert_array_equal(targets.reshape(-1), expected_targets)
+
