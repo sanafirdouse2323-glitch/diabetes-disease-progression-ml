@@ -22,11 +22,12 @@ def test_demo_renders_each_analysis_tab_without_exceptions():
     assert not app.exception
     assert [tab.label for tab in app.tabs] == EXPECTED_TABS
 
-    # All three tab bodies are evaluated by the app script. These elements
-    # confirm that prediction, attribution, and subgroup output were rendered.
-    assert len(app.metric) >= 3
-    assert len(app.dataframe) == 1
-    assert len(app.json) == 1
+    # Inspect each tab's own output tree so one successful tab cannot mask
+    # a missing or broken analysis panel in another tab.
+    assert len(app.tabs[0].metric) == 3
+    assert len(app.tabs[1].dataframe) == 1
+    assert len(app.tabs[2].metric) == 2
+    assert len(app.tabs[2].json) == 1
 
 
 def test_demo_model_profile_and_feature_controls_can_be_changed():
