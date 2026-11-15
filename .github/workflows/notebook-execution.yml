@@ -36,7 +36,8 @@ jobs:
       - name: Install neural frameworks and notebook runtime
         run: |
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install tensorflow-cpu nbconvert ipykernel
+          pip install tensorflow-cpu
+          pip install -e ".[notebooks]"
           python -m ipykernel install --user --name python3 --display-name "Python 3"
       - name: Install project
         run: pip install -e .
