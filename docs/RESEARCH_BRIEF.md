@@ -48,6 +48,10 @@ The experiments use different split designs. Their scores should not be combined
 
 This work gave me practice in preparing data, training and comparing models, setting up evaluation, checking for data leakage, estimating prediction uncertainty, examining model behaviour and recording experiments so they can be repeated.
 
+## Separate repository experiment: 30-day readmission
+
+The repository also contains a distinct UCI hospital readmission classification experiment. It predicts readmission within 30 days after discharge from a different historical dataset and uses encounters rather than the 442 baseline observations in this progression study. It is **not external validation** of the one-year disease-progression regression model. Its methods and limitations are documented in [READMISSION_STUDY_BRIEF.md](READMISSION_STUDY_BRIEF.md).
+
 ## Limitations
 
 The dataset is small and preprocessed. There is no independent clinical validation, no raw medical imaging, no longitudinal health-record data and no evidence of clinical benefit. The demo is for demonstration only and must not be used for patient care.
