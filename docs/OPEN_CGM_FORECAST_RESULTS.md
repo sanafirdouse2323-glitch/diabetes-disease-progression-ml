@@ -27,7 +27,7 @@ Predict the ShanghaiT2DM CGM glucose reading **30 minutes ahead** from the 20 mo
 - Missing values and irregular intervals break windows; no interpolation or imputation is used.
 - Participant filename prefixes are assigned to train/validation/test before windows are assembled. All sessions from one participant remain in one split.
 
-The 20-reading/30-minute configuration is a feasibility choice aligned with recent CGM forecasting literature; it is not a novelty claim. A recent study also evaluated 20 recent CGM readings with 30-, 60- and 90-minute horizons on ShanghaiT2DM.
+The 20-reading/30-minute configuration is not novel. A published 2025 study, [Interpretable glucose forecasting for type 2 diabetes across traditional, deep, and large language models](https://doi.org/10.1038/s41598-025-32373-4), used 20 prior CGM readings with 30-, 60- and 90-minute horizons and included ShanghaiT2DM in its data. That study also used six static patient features and compared several model families. This repository's experiment is a narrower reproducibility/proof-of-pipeline exercise: one fixed HistGradientBoostingRegressor, CGM lags only, session-preserving windows, and a participant-held-out 70/15/15 split. Its metrics must not be compared directly with the published paper because the inputs, splits and protocols differ. No novelty claim is made.
 
 ## Window feasibility and split
 
@@ -59,7 +59,7 @@ The model uses only the 20 past CGM readings. No demographic or medication featu
 
 ## Results
 
-<badge>Internal held-out test completed</badge>
+**Evaluation status: internal participant-held-out test completed.**
 
 | Metric | Validation | Held-out test |
 |---|---:|---:|
