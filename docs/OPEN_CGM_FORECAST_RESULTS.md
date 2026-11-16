@@ -4,11 +4,11 @@
 
 **One fixed-model forecasting experiment completed successfully.** This is a separate CGM extension; it does not replace or update the original tabular diabetes progression benchmark in RESULTS.md.
 
-- Workflow run: https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43797065112
-- Tested repository commit: da9c25dcfbe879a7a572074fd3f9bd4cb7c8b3fc
+- Workflow run: https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43797999060
+- Tested repository commit: 5cd4f5999aa77b70bcf3af92ec9da806f25d1bf1
 - Upstream Glucose-ML revision: decf266461dd125ead7715bf524e5ffb9b9469c4
-- Aggregate artifact SHA-256: 2741412c8ced5d8fe8dccf6c15849f56944292dae94b3eecd5fdf257ab6c3a74
-- Focused CGM tests: 10 passed.
+- Aggregate artifact SHA-256: e50cd093969fdce8f50fc8333210eeb4b8264603871f5cefe8d1414aae26d320
+- Focused CGM tests: 11 passed.
 - Repository CI across Python 3.10–3.13, neural-framework checks, Docker smoke test, and end-to-end notebook execution: passed.
 
 Only aggregate JSON reports were uploaded. Raw source workbooks, participant-level CSVs, participant IDs, individual predictions, and model binaries were not uploaded or committed.
