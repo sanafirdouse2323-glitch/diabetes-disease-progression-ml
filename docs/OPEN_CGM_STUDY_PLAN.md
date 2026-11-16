@@ -103,7 +103,7 @@ The model predicts short-horizon CGM glucose only. It does not predict long-term
 ## Remaining research gates
 
 1. **Independent T2D validation:** identify another genuinely open T2D CGM cohort with compatible units, cadence, rights and participant-level identifiers. Bris-T1D Open is T1D and must not be presented as external validation for the Shanghai T2D model.
-2. **Bris-T1D duplicate resolution:** trace the 309 conflicting duplicate timestamp groups across 13 files to the source records. Do not deduplicate by first/last/mean/median until the cause and rule are documented.
+2. **Bris-T1D duplicate resolution:** the source-level audit found all 309 conflicts already in the processed-state files; all are within one recorded device label, not cross-device groups. The processed-state data do not retain row-level source provenance to identify the correct value. Do not deduplicate by first/last/mean/median. Obtain a maintainer clarification or a documented source-level rule before modelling.
 3. **Source timestamp semantics:** confirm timezone conventions before any local-calendar or circadian analysis. The current forecast uses elapsed intervals only.
 4. **Out-of-range sensitivity:** the 359 Shanghai readings outside 40–400 mg/dL were retained. A separate, pre-specified sensitivity analysis may be needed before drawing conclusions.
 5. **Independent evaluation:** any further model claims require an untouched external cohort and participant-clustered uncertainty. No production or clinical-readiness claim is justified.
