@@ -12,7 +12,7 @@ The first-batch GitHub Actions workflow completed successfully on 16 November 20
 - Audit artifact SHA-256: fefe3f3bedcdaff01ea8ca002c0dfc2e4ad7f8f2c0070c2e31f2e990461e6e3c
 - The artifact contains only dataset-level aggregates. Raw data and participant-level CSVs were not committed or uploaded.
 
-All ten focused CGM audit and forecasting tests passed. The repository CI, neural-framework, Docker smoke-test, and notebook-execution workflows are being checked against the latest branch commit separately.
+All eleven focused CGM audit and forecasting tests passed. The repository CI, neural-framework, Docker smoke-test, and notebook-execution workflows are being checked against the latest branch commit separately.
 
 ## Observed cohort and file counts
 
