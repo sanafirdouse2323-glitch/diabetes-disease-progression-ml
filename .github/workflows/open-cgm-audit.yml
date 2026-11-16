@@ -91,6 +91,26 @@ jobs:
             --seed 42 --bootstrap-replicates 1000 \
             --upstream-revision "$(git -C upstream-glucose-ml rev-parse HEAD)" \
             --output cgm-audit-summary/shanghai-forecast-metrics.json
+      - name: Verify model windows match the independent feasibility counter
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          feasibility = json.loads(Path("cgm-audit-summary/shanghai-window-feasibility.json").read_text())
+          forecast = json.loads(Path("cgm-audit-summary/shanghai-forecast-metrics.json").read_text())
+          f_split = feasibility["participant_split"]
+          m_split = forecast["participant_split"]
+          keys = ("train_participants", "validation_participants", "test_participants",
+                  "train_windows", "validation_windows", "test_windows")
+          for key in keys:
+              assert f_split[key] == m_split[key], (key, f_split[key], m_split[key])
+          assert feasibility["total_valid_windows"] == sum(m_split[key] for key in
+              ("train_windows", "validation_windows", "test_windows"))
+          assert feasibility["source_workbooks"] == forecast["source_workbooks"]
+          assert feasibility["participant_filename_prefixes"] == forecast["participants"]
+          assert feasibility["upstream_glucose_ml_revision"] == forecast["upstream_glucose_ml_revision"]
+          print("Forecast windows, participant splits, source workbook count and upstream revision match.")
+          PY
       - name: Run aggregate-only data quality audit
         env:
           PYTHONPATH: ${{ github.workspace }}/src
