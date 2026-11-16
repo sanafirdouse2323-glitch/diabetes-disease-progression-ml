@@ -92,7 +92,7 @@ These intervals quantify uncertainty across the 15 held-out participants under t
 6. The model predicts short-horizon CGM glucose. It does not predict long-term diabetes progression, diagnosis, complications, treatment response, or clinical outcomes.
 7. No clinical utility, safety, fairness, causal effect, or patient-level decision support is established.
 
-The Bris-T1D Open cohort was not used for model training or evaluation. It has 309 conflicting duplicate timestamp groups across 13 of 20 participant files. That issue must be resolved from the source before a separate T1D analysis is considered.
+The Bris-T1D Open cohort was not used for model training or evaluation. A source-level audit confirms 309 conflicting duplicate timestamp groups across 13 of 20 files; all 309 are within one recorded device label, and the processed-state files do not preserve enough row-level provenance to select a correct value. The separate raw-state deposit is restricted. This cohort remains excluded until the dataset maintainers clarify the conflicts.
 
 ## Reproduction
 
