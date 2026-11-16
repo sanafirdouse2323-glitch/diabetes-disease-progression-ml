@@ -10,8 +10,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -33,13 +31,19 @@ reports/*.png
 *.keras
 *.pt
 
-# External UCI medical data and generated aggregate results must not be committed.
+# External UCI/CGM medical data and all generated data outputs must not be committed.
 data/
 external-readmission-results/
 repeated-validation-results/
 repeated-validation-matched-results/
 repeated-neural-validation-results/
 repeated-neural-tuning-results/
+Original-Glucose-ML-datasets/
+Standardized-datasets/
+Standardized-metadata/
+upstream-glucose-ml/
+cgm-audit-summary/
+cgm-audit-results/
 
 # Notebook outputs
 notebook-results/
