@@ -5,6 +5,7 @@ participant identifiers, participant-level metrics, or raw CGM observations.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 import math
 import statistics
@@ -32,7 +33,17 @@ def _participant_file_summary(path: Path) -> dict[str, Any]:
     valid_timestamps = timestamps[valid_pair]
     timestamp_missing = int(timestamps.isna().sum())
     glucose_missing = int((~finite_glucose).sum())
-    duplicate_timestamps = int(valid_timestamps.duplicated().sum())
+    valid_frame = pd.DataFrame({
+        "timestamp": valid_timestamps.reset_index(drop=True),
+        "glucose": valid_glucose.reset_index(drop=True),
+    })
+    duplicate_groups = duplicate_rows = conflicting_duplicate_groups = 0
+    if not valid_frame.empty:
+        duplicate_summary = valid_frame.groupby("timestamp", sort=False)["glucose"].agg(["size", "nunique"])
+        duplicate_summary = duplicate_summary[duplicate_summary["size"] > 1]
+        duplicate_groups = int(len(duplicate_summary))
+        duplicate_rows = int((duplicate_summary["size"] - 1).sum())
+        conflicting_duplicate_groups = int((duplicate_summary["nunique"] > 1).sum())
     non_monotonic_steps = int(timestamps.diff().lt(pd.Timedelta(0)).sum())
     sorted_timestamps = valid_timestamps.sort_values()
     positive_deltas = sorted_timestamps.diff().dropna()
@@ -60,7 +71,10 @@ def _participant_file_summary(path: Path) -> dict[str, Any]:
     return {
         "schema_valid": True, "rows": int(len(frame)), "valid_pairs": int(valid_pair.sum()),
         "timestamp_missing": timestamp_missing, "glucose_missing_or_non_numeric": glucose_missing,
-        "duplicate_timestamps": duplicate_timestamps, "non_monotonic_steps": non_monotonic_steps,
+        "duplicate_timestamp_rows": duplicate_rows,
+        "duplicate_timestamp_groups": duplicate_groups,
+        "conflicting_duplicate_timestamp_groups": conflicting_duplicate_groups,
+        "non_monotonic_steps": non_monotonic_steps,
         "gap_count": int(gap_count), "median_interval_minutes": median_interval, "span_days": span_days,
         "mean_glucose": mean_glucose, "median_glucose": median_glucose, "sd_glucose": sd_glucose,
         "below_70_fraction": (below_70 / denominator) if denominator else None,
@@ -69,7 +83,24 @@ def _participant_file_summary(path: Path) -> dict[str, Any]:
         "out_of_range_readings": out_of_range,
     }
 
-def audit_dataset(dataset_name: str, input_dir: str | Path) -> dict[str, Any]:
+def _dataset_fingerprint(files: list[Path]) -> tuple[int, str]:
+    """Hash sorted harmonized CSV contents without exposing filenames."""
+    dataset_hash = hashlib.sha256()
+    total_bytes = 0
+    for path in files:
+        file_hash = hashlib.sha256()
+        file_bytes = 0
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                file_hash.update(chunk)
+                file_bytes += len(chunk)
+        dataset_hash.update(file_bytes.to_bytes(8, "big"))
+        dataset_hash.update(file_hash.digest())
+        total_bytes += file_bytes
+    return total_bytes, dataset_hash.hexdigest()
+
+
+def audit_dataset(dataset_name: str, input_dir: str | Path, upstream_revision: str | None = None) -> dict[str, Any]:
     root = Path(input_dir)
     if not root.is_dir():
         raise FileNotFoundError(f"Dataset directory does not exist: {root}")
@@ -92,12 +123,16 @@ def audit_dataset(dataset_name: str, input_dir: str | Path) -> dict[str, Any]:
         summaries.append(result)
     if not summaries:
         raise ValueError(f"No participant CSV files with the expected schema were found for dataset: {dataset_name}")
+    total_bytes, content_sha256 = _dataset_fingerprint(files)
     def total(key: str) -> int:
         return int(sum(int(item.get(key, 0)) for item in summaries))
     def vals(key: str) -> list[float]:
         return [float(item[key]) for item in summaries if item.get(key) is not None]
     return {
         "schema_version": 1, "dataset": dataset_name,
+        "upstream_glucose_ml_revision": upstream_revision,
+        "harmonized_csv_total_bytes": total_bytes,
+        "harmonized_csv_content_sha256": content_sha256,
         "input_layout": "Extracted-glucose-files" if extracted.is_dir() else "participant CSV files directly in dataset directory",
         "participant_files_found": len(files), "participants_with_valid_schema": len(summaries),
         "participants_with_valid_records": sum(1 for item in summaries if item["valid_pairs"] > 0),
@@ -105,9 +140,16 @@ def audit_dataset(dataset_name: str, input_dir: str | Path) -> dict[str, Any]:
         "record_count": total("rows"), "valid_timestamp_glucose_pairs": total("valid_pairs"),
         "missing_or_unparseable_timestamps": total("timestamp_missing"),
         "missing_or_non_numeric_glucose_values": total("glucose_missing_or_non_numeric"),
-        "duplicate_timestamp_rows": total("duplicate_timestamps"),
+        "duplicate_timestamp_rows": total("duplicate_timestamp_rows"),
+        "duplicate_timestamp_groups": total("duplicate_timestamp_groups"),
+        "conflicting_duplicate_timestamp_groups": total("conflicting_duplicate_timestamp_groups"),
+        "participants_with_duplicate_timestamps": sum(1 for item in summaries if item["duplicate_timestamp_rows"] > 0),
+        "participants_with_conflicting_duplicate_timestamps": sum(1 for item in summaries if item["conflicting_duplicate_timestamp_groups"] > 0),
         "non_monotonic_timestamp_steps_in_source_order": total("non_monotonic_steps"),
+        "participants_with_non_monotonic_timestamps": sum(1 for item in summaries if item["non_monotonic_steps"] > 0),
         "large_gap_count": total("gap_count"),
+        "participants_with_large_gaps": sum(1 for item in summaries if item["gap_count"] > 0),
+        "participants_with_out_of_range_readings": sum(1 for item in summaries if item["out_of_range_readings"] > 0),
         "large_gap_rule": "Within each participant, a gap is greater than 3 times that participant file's median positive sampling interval.",
         "median_participant_sampling_interval_minutes": _median(vals("median_interval_minutes")),
         "median_participant_observation_span_days": _median(vals("span_days")),
@@ -137,8 +179,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Create aggregate-only quality summaries for harmonized Glucose-ML CGM CSV files.")
     parser.add_argument("--dataset", action="append", type=parse_dataset_argument, required=True, metavar="NAME=PATH")
     parser.add_argument("--output", type=Path, required=True, help="Path for the aggregate JSON report.")
+    parser.add_argument("--upstream-revision", default=None, help="Git commit SHA of the upstream Glucose-ML tools.")
     args = parser.parse_args()
-    reports = [audit_dataset(name, path) for name, path in args.dataset]
+    reports = [audit_dataset(name, path, args.upstream_revision) for name, path in args.dataset]
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps({"audit_schema_version": 1, "datasets": reports}, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(f"Wrote aggregate-only audit for {len(reports)} dataset(s): {args.output}")
