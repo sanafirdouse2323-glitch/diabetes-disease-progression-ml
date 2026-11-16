@@ -76,6 +76,8 @@ def audit_dataset(dataset_name: str, input_dir: str | Path) -> dict[str, Any]:
     extracted = root / "Extracted-glucose-files"
     data_dir = extracted if extracted.is_dir() else root
     files = sorted(path for path in data_dir.glob("*.csv") if path.is_file())
+    if not files:
+        raise ValueError(f"No participant CSV files found in dataset directory: {data_dir}")
     summaries: list[dict[str, Any]] = []
     unreadable_files = schema_invalid_files = 0
     for path in files:
@@ -88,6 +90,8 @@ def audit_dataset(dataset_name: str, input_dir: str | Path) -> dict[str, Any]:
             schema_invalid_files += 1
             continue
         summaries.append(result)
+    if not summaries:
+        raise ValueError(f"No participant CSV files with the expected schema were found for dataset: {dataset_name}")
     def total(key: str) -> int:
         return int(sum(int(item.get(key, 0)) for item in summaries))
     def vals(key: str) -> list[float]:
@@ -96,6 +100,7 @@ def audit_dataset(dataset_name: str, input_dir: str | Path) -> dict[str, Any]:
         "schema_version": 1, "dataset": dataset_name,
         "input_layout": "Extracted-glucose-files" if extracted.is_dir() else "participant CSV files directly in dataset directory",
         "participant_files_found": len(files), "participants_with_valid_schema": len(summaries),
+        "participants_with_valid_records": sum(1 for item in summaries if item["valid_pairs"] > 0),
         "unreadable_files_count": unreadable_files, "schema_invalid_files_count": schema_invalid_files,
         "record_count": total("rows"), "valid_timestamp_glucose_pairs": total("valid_pairs"),
         "missing_or_unparseable_timestamps": total("timestamp_missing"),
