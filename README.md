@@ -184,6 +184,27 @@ Dataset source and licence: [UCI Machine Learning Repository — Diabetes 130-US
 
 The scope, prediction-time assumption, grouped evaluation, threshold-selection method, and limitations are documented separately in [READMISSION_STUDY_BRIEF.md](docs/READMISSION_STUDY_BRIEF.md).
 
+
+## MIMIC-IV clinical diabetes study (in progress; access required)
+
+A separate study has been scoped using **MIMIC-IV v3.1**, a de-identified hospital EHR dataset. The planned task is to study 30-day subsequent MIMIC-recorded inpatient admission among adult admissions with a documented diabetes diagnosis, using information available by discharge.
+
+This is a new clinical readmission task. It does **not** replace the scikit-learn one-year progression regression target and must not be described as external validation of that target. It is also **not** a simple-model-versus-neural-network comparison: the MIMIC-IV protocol specifies one primary prediction pipeline, selected and fixed using training data only.
+
+**Access is free of charge but controlled.** Researchers must obtain PhysioNet credentialing, complete the required CITI "Data or Specimens Only Research" training, and sign the MIMIC-IV Data Use Agreement. The CITI course is free through the MIT Affiliates route described by PhysioNet. Optional cloud computing/storage may have separate charges; local download is an option after approval.
+
+- [MIMIC-IV v3.1 on PhysioNet](https://physionet.org/content/mimiciv/3.1/)
+- [Official MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/)
+- [Official access instructions](https://mimic.mit.edu/docs/gettingstarted/)
+- [PhysioNet credentialing](https://physionet.org/settings/credentialing/)
+- [CITI training instructions](https://physionet.org/about/citi-course/)
+- [Study protocol and limitations](docs/MIMIC_IV_STUDY_PLAN.md)
+- [Initial cohort/label SQL](sql/mimic_iv_diabetes_readmission_cohort.sql)
+
+**Current status:** only the protocol and cohort-query scaffold have been committed. No MIMIC-IV records have been downloaded, queried, or analysed. Execution must wait until the researcher has their own approved access and the authorised files are available. The SQL query has not yet been validated against an actual MIMIC-IV database.
+
+MIMIC-IV files and patient-level query outputs must remain outside Git. The repository's `.gitignore` excludes `data/`; do not upload raw records, patient-level extracts, or restricted model artifacts to GitHub or public workflow artifacts. Read the DUA and current PhysioNet sharing rules before publishing any derived data or models.
+
 ## Project structure
 
 - `src/diabetes_ml/`: the Python package for loading the progression dataset, classical and neural regression experiments, repeated-seed validation, nested cross-validation, conformal prediction, subgroup error analysis and feature explanations. It also contains the separate UCI hospital-readmission classification experiment.
