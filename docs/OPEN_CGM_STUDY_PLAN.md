@@ -36,7 +36,7 @@ These decisions are conservative acquisition choices, not claims that all deferr
 
 Can open CGM records support reproducible, participant-level characterisation of glycaemic variability and short-horizon glucose dynamics, when analyses are kept separate by dataset and diabetes type?
 
-The first-batch acquisition and aggregate audit completed successfully on 16 November 2026. The workflow downloaded and harmonized ShanghaiT2DM and Bris-T1D Open, and the aggregate report found 100 valid Shanghai participant files and 20 valid Bris-T1D Open participant files. The full measured counts, data-quality findings, dataset fingerprints and blockers are in [OPEN_CGM_ACQUISITION_AUDIT.md](OPEN_CGM_ACQUISITION_AUDIT.md). No raw data or participant-level outputs were committed or uploaded.
+The first-batch acquisition and aggregate audit completed successfully on 16 November 2026. The workflow downloaded and harmonized ShanghaiT2DM and Bris-T1D Open, and a second source-workbook audit preserved Shanghai's 109 recording sessions across 100 participant filename prefixes. It reconciled 112,475 source rows to 112,462 valid glucose/timestamp pairs after identifying 13 missing CGM values. Full measured counts, session-boundary discrepancies, dataset fingerprints and blockers are in [OPEN_CGM_ACQUISITION_AUDIT.md](OPEN_CGM_ACQUISITION_AUDIT.md). No raw data or participant-level outputs were committed or uploaded.
 
 ## Data acquisition
 
@@ -45,7 +45,7 @@ The automated workflow clones the upstream Glucose-ML repository, installs its r
 - shanghai (the upstream archive contains both ShanghaiT1DM and ShanghaiT2DM; only ShanghaiT2DM is harmonized);
 - bris-t1d_open (the processed-state open deposit only).
 
-The source archive is not committed to this repository. The workflow calls the dataset-specific extraction scripts directly. The upstream wrapper currently constructs a path with different letter casing from the actual harmonization directory, which can fail on case-sensitive runners; the workflow avoids that wrapper and uses the verified paths.
+The source archive is not committed to this repository. The workflow calls the dataset-specific extraction scripts directly. The upstream wrapper currently constructs a path with different letter casing from the actual harmonization directory, which can fail on case-sensitive runners; the workflow avoids that wrapper and uses the verified paths. The upstream Shanghai extractor merges multiple recording workbooks into one participant CSV; do not use those merged files to construct forecasting windows. Use original workbooks as separate sessions, grouping sessions by participant before the train/test split.
 
 ## Quality audit
 
@@ -70,7 +70,7 @@ The audit reports, per dataset:
 
 The reported 70–180 metric is a fraction of readings, not a time-weighted time-in-range estimate. It must not be labelled TIR unless sampling intervals and duration weighting have been validated. Values outside 40–400 mg/dL are flagged only; the audit does not delete or impute records.
 
-The audit parses timestamps as UTC for elapsed-time calculations. Naive timestamps are interpreted as UTC; no local-calendar-day metrics are computed. This avoids inventing local timezone semantics but does not establish the source's actual timezone. Source timezone conventions must be checked before any calendar-based analysis.
+The audit parses timestamps as UTC for elapsed-time calculations. Naive timestamps are interpreted as UTC; no local-calendar-day metrics are computed. This avoids inventing local timezone semantics but does not establish the source's actual timezone. Source timezone conventions must be checked before any calendar-based analysis. The Shanghai source-workbook audit also preserves each workbook as a separate recording session and reports within-session gaps separately from gaps introduced by participant-level concatenation.
 
 The report contains aggregate dataset-level fields only. It does not contain participant identifiers, filenames, per-participant metrics, raw glucose readings, or demographic metadata.
 
@@ -92,4 +92,4 @@ No model family comparison is planned. No clinical utility, diagnosis, treatment
 
 ## Completion gate
 
-The first batch acquisition gate passed: both downloads and both dataset-specific harmonization scripts completed successfully, and the aggregate audit completed. The audit identified unresolved conflicting duplicate timestamps in Bris-T1D Open and source-order reversals/gaps in ShanghaiT2DM. These must be reviewed before forecasting. No CGM model result is claimed; no model has been trained.
+The first batch acquisition gate passed: both downloads and both dataset-specific harmonization scripts completed successfully, and both aggregate audits completed. The Shanghai source audit reconciled the 13 missing CGM values and identified multiple recording sessions that must remain separate. Bris-T1D Open has unresolved conflicting duplicate timestamps. These issues must be handled before forecasting. No CGM model result is claimed; no model has been trained.
