@@ -236,7 +236,7 @@ T1D-UOM is deferred until its public Zenodo record's Rights/License field is cla
 
 ### Automated acquisition and audit
 
-The first-batch workflow completed successfully. Shanghai source auditing found 109 recording workbooks across 100 participant prefixes; 13 rows had missing CGM values and the remaining 112,462 valid readings exactly matched the harmonized output. The upstream harmonizer merges multiple sessions per participant, so the original workbooks must be kept separate for time-series windowing. Bris-T1D Open has 309 conflicting duplicate timestamp groups across 13 files. See [the measured acquisition audit](docs/OPEN_CGM_ACQUISITION_AUDIT.md). Only aggregate JSON reports were uploaded; raw and participant-level data were not committed or uploaded.
+The first-batch workflow completed successfully. Shanghai source auditing found 109 recording workbooks across 100 participant prefixes; 13 rows had missing CGM values and the remaining 112,462 valid readings exactly matched the harmonized output. Session-preserving 30-minute forecast feasibility produced 109,972 windows. One fixed HistGradientBoostingRegressor was then trained on 70 participants and evaluated on 15 held-out participants; test participant-macro MAE was 9.382 mg/dL (95% participant-cluster bootstrap interval 8.417–10.305). No model-family or baseline comparison was performed. Bris-T1D Open has 309 conflicting duplicate timestamp groups across 13 files and was not used for modelling. See [the acquisition audit](docs/OPEN_CGM_ACQUISITION_AUDIT.md) and [forecast results](docs/OPEN_CGM_FORECAST_RESULTS.md). Only aggregate JSON reports were uploaded; raw and participant-level data were not committed or uploaded.
 
 The local audit can also be run manually after harmonization:
 
