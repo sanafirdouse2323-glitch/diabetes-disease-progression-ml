@@ -185,13 +185,15 @@ Dataset source and licence: [UCI Machine Learning Repository — Diabetes 130-US
 The scope, prediction-time assumption, grouped evaluation, threshold-selection method, and limitations are documented separately in [READMISSION_STUDY_BRIEF.md](docs/READMISSION_STUDY_BRIEF.md).
 
 
-## MIMIC-IV clinical diabetes study (in progress; access required)
+## MIMIC-IV longitudinal diabetes study (feasibility stage; access required)
 
-A separate study has been scoped using **MIMIC-IV v3.1**, a de-identified hospital EHR dataset. The planned task is to study 30-day subsequent MIMIC-recorded inpatient admission among adult admissions with a documented diabetes diagnosis, using information available by discharge.
+A separate feasibility study has been scoped using **MIMIC-IV v3.1**, a de-identified hospital EHR dataset. To stay closer to the existing disease-progression theme, the proposed outcome is **change in measured HbA1c between a baseline test and a same-unit follow-up test 180–365 days later** among adults with a recorded diabetes diagnosis.
 
-This is a new clinical readmission task. It does **not** replace the scikit-learn one-year progression regression target and must not be described as external validation of that target. It is also **not** a simple-model-versus-neural-network comparison: the MIMIC-IV protocol specifies one primary prediction pipeline, selected and fixed using training data only.
+This is a clinically observed glycaemic-control change, not the scikit-learn benchmark's original one-year progression score, not a complete measure of diabetes progression, and not a causal estimate of treatment effect. MIMIC-IV is primarily a hospital EHR rather than a dedicated longitudinal diabetes registry, so repeat HbA1c testing may be sparse and selective. The first step is therefore a feasibility count and review of item labels/units—not model training.
 
-**Access is free of charge but controlled.** Researchers must obtain PhysioNet credentialing, complete the required CITI "Data or Specimens Only Research" training, and sign the MIMIC-IV Data Use Agreement. The CITI course is free through the MIT Affiliates route described by PhysioNet. Optional cloud computing/storage may have separate charges; local download is an option after approval.
+The MIMIC-IV study will **not** compare simple models with neural networks or run a model-family bake-off. If the paired-measurement cohort is sufficiently large and defensible, the plan is to pre-specify one primary prediction pipeline and evaluate it with patient-level separation.
+
+**Access is free of charge but controlled.** Researchers must obtain PhysioNet credentialing, complete the required CITI "Data or Specimens Only Research" training, and sign the MIMIC-IV Data Use Agreement. PhysioNet states that the CITI course is free through the MIT Affiliates route. Optional cloud computing/storage may have separate charges; local download is available after approval.
 
 - [MIMIC-IV v3.1 on PhysioNet](https://physionet.org/content/mimiciv/3.1/)
 - [Official MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/)
@@ -199,11 +201,11 @@ This is a new clinical readmission task. It does **not** replace the scikit-lear
 - [PhysioNet credentialing](https://physionet.org/settings/credentialing/)
 - [CITI training instructions](https://physionet.org/about/citi-course/)
 - [Study protocol and limitations](docs/MIMIC_IV_STUDY_PLAN.md)
-- [Initial cohort/label SQL](sql/mimic_iv_diabetes_readmission_cohort.sql)
+- [HbA1c discovery and candidate-pair SQL](sql/mimic_iv_diabetes_hba1c_longitudinal_cohort.sql)
 
-**Current status:** only the protocol and cohort-query scaffold have been committed. No MIMIC-IV records have been downloaded, queried, or analysed. Execution must wait until the researcher has their own approved access and the authorised files are available. The SQL query has not yet been validated against an actual MIMIC-IV database.
+**Current status:** only the protocol and SQL feasibility scaffold have been committed. No MIMIC-IV records have been downloaded, queried, or analysed. The SQL has not been validated against an actual MIMIC-IV database. The number of eligible patients with repeat HbA1c measurements is unknown.
 
-MIMIC-IV files and patient-level query outputs must remain outside Git. The repository's `.gitignore` excludes `data/`; do not upload raw records, patient-level extracts, or restricted model artifacts to GitHub or public workflow artifacts. Read the DUA and current PhysioNet sharing rules before publishing any derived data or models.
+MIMIC-IV files and patient-level query outputs must remain outside Git. The repository's `.gitignore` excludes `data/`; do not upload raw records, patient-level extracts, or restricted model artifacts to GitHub or public workflow artifacts. Read the DUA and current PhysioNet sharing rules before publishing derived data or models.
 
 ## Project structure
 
