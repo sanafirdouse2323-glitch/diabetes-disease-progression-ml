@@ -6,7 +6,7 @@ This is a separate extension to the existing tabular diabetes progression benchm
 
 The new study examines longitudinal glycaemic dynamics from continuous glucose monitoring (CGM). It is not long-term diabetes disease progression, diagnosis, treatment response, complication prediction, or a causal study. CGM observations describe interstitial glucose over monitoring periods; they do not establish long-term changes in the underlying disease.
 
-There will be no simple-model-versus-neural-network bake-off. The first ShanghaiT2DM forecasting run is now complete using one fixed model after acquisition, source-workbook reconciliation, quality assessment, and participant-level window feasibility. Its specification and results are documented in OPEN_CGM_FORECAST_RESULTS.md. Bris-T1D Open remains excluded from modelling until its conflicting duplicate timestamps are resolved.
+There will be no simple-model-versus-neural-network bake-off. The first ShanghaiT2DM forecasting run is now complete using one fixed model after acquisition, source-workbook reconciliation, quality assessment, and participant-level window feasibility. Its specification and results are documented in OPEN_CGM_FORECAST_RESULTS.md. A 2025 publication already used ShanghaiT2DM with 20 prior readings and 30/60/90-minute horizons, so this run is a reproducibility/proof-of-pipeline exercise, not a novel forecasting method. Bris-T1D Open remains excluded from modelling until its conflicting duplicate timestamps are resolved.
 
 ## First acquisition batch
 
