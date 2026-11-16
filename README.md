@@ -185,27 +185,29 @@ Dataset source and licence: [UCI Machine Learning Repository — Diabetes 130-US
 The scope, prediction-time assumption, grouped evaluation, threshold-selection method, and limitations are documented separately in [READMISSION_STUDY_BRIEF.md](docs/READMISSION_STUDY_BRIEF.md).
 
 
-## MIMIC-IV longitudinal diabetes study (feasibility stage; access required)
+## Open-access longitudinal CGM study (feasibility stage)
 
-A separate feasibility study has been scoped using **MIMIC-IV v3.1**, a de-identified hospital EHR dataset. To stay closer to the existing disease-progression theme, the proposed outcome is **change in measured HbA1c between a baseline test and a same-unit follow-up test 180–365 days later** among adults with a recorded diabetes diagnosis.
+The next extension uses the **open-access subset of the Glucose-ML collection**, rather than MIMIC-IV. This avoids the PhysioNet credentialing, CITI training, and MIMIC-IV Data Use Agreement requirements.
 
-This is a clinically observed glycaemic-control change, not the scikit-learn benchmark's original one-year progression score, not a complete measure of diabetes progression, and not a causal estimate of treatment effect. MIMIC-IV is primarily a hospital EHR rather than a dedicated longitudinal diabetes registry, so repeat HbA1c testing may be sparse and selective. The first step is therefore a feasibility count and review of item labels/units—not model training.
+The proposed study examines **longitudinal glycaemic dynamics from continuous glucose monitoring (CGM)**. This is not long-term diabetes disease progression, diagnosis, treatment response, or a causal study. The first step is data acquisition and quality assessment, not model training.
 
-The MIMIC-IV study will **not** compare simple models with neural networks or run a model-family bake-off. If the paired-measurement cohort is sufficiently large and defensible, the plan is to pre-specify one primary prediction pipeline and evaluate it with patient-level separation.
+Initial open-access shortlist:
+- **ShanghaiT2DM:** catalogued 100 participants, approximately 13 days; primary type 2 diabetes cohort.
+- **CGMacros Dexcom and Libre:** catalogued 45 participants, approximately 11–12 days; includes type 2 diabetes, prediabetes, and no-diabetes groups. Participant overlap between device cohorts must be checked.
+- **Bris-T1D Open:** catalogued 20 participants, approximately 183 days; separate type 1 diabetes cohort.
+- **T1D-UOM:** catalogued 17 participants, approximately 96 days; separate type 1 diabetes cohort.
+- **AZT1D:** catalogued 25 participants, approximately 42 days; separate type 1 diabetes cohort.
 
-**Access is free of charge but controlled.** Researchers must obtain PhysioNet credentialing, complete the required CITI "Data or Specimens Only Research" training, and sign the MIMIC-IV Data Use Agreement. PhysioNet states that the CITI course is free through the MIT Affiliates route. Optional cloud computing/storage may have separate charges; local download is available after approval.
+Counts and durations are catalog summaries, not verified counts from a local download. Keep diabetes types and datasets separate; do not pool them as though they were one cohort. The project explicitly avoids a simple-versus-neural model comparison.
 
-- [MIMIC-IV v3.1 on PhysioNet](https://physionet.org/content/mimiciv/3.1/)
-- [Official MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/)
-- [Official access instructions](https://mimic.mit.edu/docs/gettingstarted/)
-- [PhysioNet credentialing](https://physionet.org/settings/credentialing/)
-- [CITI training instructions](https://physionet.org/about/citi-course/)
-- [Study protocol and limitations](docs/MIMIC_IV_STUDY_PLAN.md)
-- [HbA1c discovery and candidate-pair SQL](sql/mimic_iv_diabetes_hba1c_longitudinal_cohort.sql)
+- [Glucose-ML dataset catalog](https://www.glucose-ml-project.com/)
+- [Glucose-ML upstream repository and download tools](https://github.com/Augmented-Health-Lab/Glucose-ML-Project)
+- [Open-access download instructions](https://github.com/Augmented-Health-Lab/Glucose-ML-Project/blob/main/1_Auto-scripts/README.md)
+- [Study protocol, dataset shortlist and evaluation plan](docs/OPEN_CGM_STUDY_PLAN.md)
 
-**Current status:** only the protocol and SQL feasibility scaffold have been committed. No MIMIC-IV records have been downloaded, queried, or analysed. The SQL has not been validated against an actual MIMIC-IV database. The number of eligible patients with repeat HbA1c measurements is unknown.
+**Current status:** the open-data protocol is committed on a draft branch. The datasets have not yet been downloaded or analysed in this environment. Verify source terms, checksums, participant overlap, actual usable counts, sampling intervals, gaps, and data quality before any modelling.
 
-MIMIC-IV files and patient-level query outputs must remain outside Git. The repository's `.gitignore` excludes `data/`; do not upload raw records, patient-level extracts, or restricted model artifacts to GitHub or public workflow artifacts. Read the DUA and current PhysioNet sharing rules before publishing derived data or models.
+Download raw data locally only. Do not commit raw CGM files, participant-level records, predictions, or restricted metadata to this repository. Follow each dataset's licence, attribution, and usage terms.
 
 ## Project structure
 
