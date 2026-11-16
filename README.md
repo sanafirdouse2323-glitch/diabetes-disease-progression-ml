@@ -4,6 +4,12 @@ This repository documents a machine-learning study of a continuous measure of di
 
 The project uses a continuous disease-progression target. It does not predict whether a person has diabetes, diagnose a condition, or recommend treatment.
 
+## What the target variable means
+
+The model predicts a single continuous score — a quantitative measure of how much a patient's diabetes-related blood markers worsened one year after their baseline measurements. This score originates from Efron et al. (2004) and is derived from serum measurements. It is not a blood glucose level, HbA1c reading, insulin dose, or a diagnosis. The raw score ranges from approximately 25 to 346; a higher score indicates greater disease progression.
+
+This is an abstract benchmark quantity. The scikit-learn version of the dataset does not disclose which specific serum measurements constitute the composite score. The demo included in this repository uses illustrative standardised inputs; they are synthetic examples and must not be treated as measurements from real patients or as a clinically validated prediction tool.
+
 ## Interactive Streamlit demo
 
 The repository includes a locally runnable Streamlit application that demonstrates selected parts of the progression-regression workflow. The interface lets you:
@@ -44,15 +50,108 @@ I tried to keep the different stages of the experiments separate so that the tes
 
 ## Results
 
-The main finding was that the more complicated models did not automatically perform better on this dataset.
+The following results come from several separate experiments. They use different split designs and should not be combined into a single model ranking.
 
-In the single held-out test run, Lasso had the lowest mean absolute error (MAE), at 42.703. In the ten-seed matched-sample comparison, Linear Regression had a mean test MAE of 42.899 and Lasso had 42.927. The default PyTorch and TensorFlow networks had higher mean test MAEs of 53.964 and 57.204.
+### Single held-out test run (seed 42)
 
-I also ran a separate validation-based tuning experiment for the PyTorch network. Its mean test MAE was 44.934. This was an improvement over the default PyTorch network, but it did not show that the tuned network performed better than the simpler regression models. In the nested cross-validation experiment, the model-family selection procedure had a mean MAE of 44.854, compared with 44.483 for the fixed Linear Regression strategy. Model selection did not improve the result in that experiment.
+Outer split: 353 training observations and 89 held-out test observations. Classical path: 282 model-fitting observations and 71 separate calibration observations. Neural path: 225 model-fitting observations, 57 early-stopping validation observations, and 71 calibration observations.
 
-These results come from different experiment designs and should not be combined into a single model ranking. The repeated test splits also overlap, so the standard deviations reported in the results are descriptive measures of variation between splits, not confidence intervals.
+| Model | Test MAE | Test RMSE | Test R² |
+|---|---:|---:|---:|
+| **Lasso** | **42.703** | **52.941** | **0.471** |
+| Linear Regression | 42.908 | 53.952 | 0.451 |
+| Random Forest | 43.729 | 53.875 | 0.452 |
+| Ridge | 46.564 | 56.151 | 0.405 |
+| PyTorch MLP (16, 8) | 51.538 | 65.382 | 0.193 |
+| TensorFlow MLP (16, 8) | 50.458 | 66.376 | 0.168 |
+| Mean Baseline | 63.529 | 72.899 | −0.003 |
 
-The conformal intervals and subgroup analysis also need to be interpreted carefully. Conformal coverage is a marginal guarantee under the relevant exchangeability assumptions; it is not a probability statement about an individual person. The subgroup analysis is exploratory and limited to the two encoded levels of one standardised feature. It does not establish that a model is fair. Similarly, feature coefficients and importance scores describe how a fitted model behaves; they do not show that a feature causes disease progression.
+### Repeated-seed classical comparison (seeds 42–51, matched-sample design)
+
+Each seed used 225 model-fitting, 57 reserved validation, 71 calibration, and 89 test observations. The 57-observation validation subset was deliberately unused for classical models; it exists to match the neural training design. Values are mean ± sample standard deviation across ten seeds.
+
+| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+|---|---:|---:|---:|
+| **Linear Regression** | **42.899 ± 2.836** | 52.975 ± 3.632 | 0.491 ± 0.064 |
+| Lasso | 42.927 ± 3.138 | **52.790 ± 3.709** | **0.495 ± 0.064** |
+| Random Forest | 44.858 ± 3.332 | 55.540 ± 3.606 | 0.442 ± 0.051 |
+| Ridge | 49.015 ± 3.337 | 58.198 ± 3.233 | 0.387 ± 0.052 |
+| Mean Baseline | 64.492 ± 3.628 | 74.945 ± 3.536 | −0.014 ± 0.015 |
+
+### Repeated-seed neural validation (seeds 42–51)
+
+Same partition design as matched-sample classical (225 fitting, 57 validation, 71 calibration, 89 test). Fixed settings: 100-epoch maximum, patience 12, batch size 32, learning rate 0.001, dropout 0.10. Both models trained for the full 100-epoch budget on every seed.
+
+| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+|---|---:|---:|---:|
+| PyTorch MLP | 53.964 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
+| TensorFlow MLP | 57.204 ± 8.404 | 73.242 ± 10.420 | 0.015 ± 0.261 |
+
+With 225 model-fitting observations, the neural models did not outperform any of the four classical regressors on mean point-prediction metrics under these fixed settings. This outcome is a consequence of the small dataset size combined with the fixed architecture and training budget — not a general claim about neural networks. No hyperparameter search was applied in this baseline comparison.
+
+### Validation-selected PyTorch hyperparameter study (seeds 42–51)
+
+A controlled follow-up tested five predeclared learning-rate/dropout configurations using validation MAE for selection within each seed. Test observations were not used for selection.
+
+| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+|---|---:|---:|---:|
+| Original default PyTorch MLP (paired control) | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
+| **Validation-selected PyTorch MLP** | **44.934 ± 4.931** | **56.790 ± 6.019** | **0.410 ± 0.132** |
+
+The mean paired MAE reduction was 9.030 points; the higher learning rate (0.003) was selected in all ten seeds. The selected model's mean MAE (44.934) is substantially closer to the matched classical results but remains slightly above Linear Regression (42.899) and Lasso (42.927). This shows the original default MLP was sensitive to learning rate on this dataset — not that the tuned network outperforms classical models.
+
+### Target-standardised PyTorch study (seeds 42–51)
+
+A second follow-up extended the grid to ten candidates by pairing the same five configurations with and without target standardisation (300-epoch maximum, patience 25). The paired control is the default candidate from this expanded run, not the earlier 100-epoch baseline.
+
+| Metric | Validation-selected model | Paired default control |
+|---|---:|---:|
+| Test MAE (mean ± SD) | **43.408 ± 4.174** | 44.086 ± 3.365 |
+| Test RMSE (mean ± SD) | **54.312 ± 4.278** | 55.714 ± 4.038 |
+| Test R² (mean ± SD) | **0.464 ± 0.079** | 0.435 ± 0.086 |
+
+Target standardisation was selected in 7 of 10 seeds. The mean paired MAE change was −0.677 ± 2.523 target units. The selected model's mean MAE (43.408) is close to but still above the matched-sample Linear Regression mean (42.899). This is not evidence of neural superiority over classical models on this benchmark.
+
+### Nested cross-validation comparison (7 families)
+
+A separate nested benchmark evaluated seven families plus a mean-prediction baseline using five outer folds repeated three times (15 outer evaluations per family). Scale-sensitive estimators use a `StandardScaler` fitted only on each inner training fold.
+
+| Model family | Test MAE (mean ± SD) |
+|---|---:|
+| SVR-RBF | 44.414 ± 3.270 |
+| Linear Regression | 44.483 ± 2.626 |
+| ElasticNet | 44.548 ± 2.601 |
+| Ridge | 44.565 ± 2.606 |
+| Extra Trees | 45.584 ± 3.105 |
+| Random Forest | 46.437 ± 2.848 |
+| Histogram Gradient Boosting | 46.552 ± 3.208 |
+| Mean Baseline | 65.896 ± 3.771 |
+
+The inner-fold family-selection procedure had a mean outer-fold MAE of 44.854, compared with 44.483 for the fixed Linear Regression strategy. SVR-RBF was selected in 10 of 15 folds, but its advantage over Linear Regression was only 0.069 MAE units. Adding a model-selection step did not demonstrate an improvement over the simple linear strategy on this dataset.
+
+### Conformal prediction interval summary
+
+All conformal intervals target 90% marginal coverage (alpha = 0.10). Calibration observations are held out from model fitting. Coverage is a marginal guarantee under exchangeability assumptions, not a per-individual probability statement.
+
+Across the ten-seed matched-sample classical run, mean observed coverage was above 90% for all models, though individual seeds sometimes fell below the nominal level. Lasso had the lowest mean Winkler score (214.078), narrowly ahead of Linear Regression (216.084), reflecting slightly narrower intervals on average. Neural models had wider intervals and higher Winkler scores than the matched classical models.
+
+### Exploratory subgroup error analysis
+
+The analysis compares MAE across the two encoded float values of the benchmark's standardised `sex` feature (approximately −0.04464 and +0.05068). These are pre-processed encodings, not documented demographic labels. Permutation p-values use 1,000 relabellings with the plus-one Monte Carlo correction. No model showed a statistically significant MAE disparity; however, a non-significant result does not prove the absence of disparity. This analysis is exploratory and does not establish that any model is fair.
+
+| Model | MAE disparity between encoded groups | Permutation p-value |
+|---|---:|---:|
+| Mean Baseline | 3.373 | 0.6683 |
+| Linear Regression | 2.931 | 0.6683 |
+| Ridge | 0.474 | 0.9371 |
+| Lasso | 2.801 | 0.6573 |
+| Random Forest | 4.846 | 0.4735 |
+| PyTorch MLP (16, 8) | 12.120 | 0.1648 |
+| TensorFlow MLP (16, 8) | 3.728 | 0.6973 |
+
+### Cross-result interpretation
+
+These results come from different experiment designs — single-seed, repeated-seed, and nested cross-validation — and should not be combined into a single model ranking. The repeated test partitions overlap, so the standard deviations reported above are descriptive measures of variation between splits, not confidence intervals, and no formal test of statistical significance is made between models.
 
 The full metrics, experiment settings and run records are available in [RESULTS.md](RESULTS.md).
 
@@ -174,11 +273,11 @@ The positive class prevalence in the held-out folds was approximately 11.16%. Th
 | Logistic Regression | 0.6639 | 0.2127 | 0.0953 | 0.0098 | 0.07686 | 0.1424 | 0.8021 | 0.3931 | 0.4163 | 0.0213 |
 | Random Forest | 0.6752 | 0.2195 | 0.0961 | 0.0276 | 0.10015 | 0.1477 | 0.7999 | 0.4197 | 0.4246 | 0.0000 |
 
-The 0.5 cutoff therefore missed almost all positive encounters. The training-selected F2 thresholds raised test sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. In practical terms, the recall increase comes with many false-positive flags. The 10-bin ECE values are descriptive summaries of outer-test reliability bins; they do not establish calibration on new hospitals or clinical probability reliability. Random Forest's mean F2 was only modestly above the prior baseline, and its ROC-AUC/average precision indicate limited discrimination rather than a strong predictive system. These results do not establish clinical usefulness.
+The 0.5 cutoff missed almost all positive encounters. The training-selected F2 thresholds raised test sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. In practical terms, the recall increase comes with many false-positive flags. The 10-bin ECE values are descriptive summaries of outer-test reliability bins; they do not establish calibration on new hospitals or clinical probability reliability. Random Forest's mean F2 was only modestly above the prior baseline, and its ROC-AUC/average precision indicate limited discrimination rather than a strong predictive system. These results do not establish clinical usefulness.
 
 There are only three outer seeds, and their test partitions overlap. The reported across-seed standard deviations are descriptive split-sensitivity summaries, not confidence intervals; no inferential claim of model superiority is made. Full per-seed, subgroup, and provenance outputs are retained as the GitHub Actions artifact for the run.
 
-The output directory contains aggregate metrics, metadata, subgroup summaries and the per-seed `calibration_curve.csv` reliability-bin table; raw patient-level data and patient identifiers are not written to the repository or workflow artifacts. The metadata records a SHA-256 fingerprint of a canonical serialization of the retrieved UCI tables so that a changed upstream copy can be detected. The across-seed standard deviations are descriptive split-sensitivity summaries because test folds may overlap across seeds. Subgroup metrics use the same training-selected threshold as the overall model and remain exploratory; they do not establish fairness, clinical utility, or generalisability to other health systems.
+The output directory contains aggregate metrics, metadata, subgroup summaries and the per-seed `calibration_curve.csv` reliability-bin table; raw patient-level data and patient identifiers are not written to the repository or workflow artifacts. The metadata records a SHA-256 fingerprint of a canonical serialization of the retrieved UCI tables so that a changed upstream copy can be detected. Subgroup metrics use the same training-selected threshold as the overall model and remain exploratory; they do not establish fairness, clinical utility, or generalisability to other health systems.
 
 Dataset source and licence: [UCI Machine Learning Repository — Diabetes 130-US Hospitals](https://archive.ics.uci.edu/dataset/296/diabetes%2B130-us%2Bhospitals%2Bfor%2Byears%2B1999-2008). Please cite Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014), *Diabetes 130-US Hospitals for Years 1999-2008*, UCI Machine Learning Repository, DOI [10.24432/C5230J](https://doi.org/10.24432/C5230J).
 
@@ -201,6 +300,14 @@ GitHub Actions run the applicable tests and experiment checks when their workflo
 
 This project is an independent machine-learning study using a small, preprocessed public dataset and a separate historical hospital readmission dataset. The readmission study is a different prediction task and must not be interpreted as validating the disease-progression model. Neither study has been prospectively or independently validated for clinical use. The results do not establish clinical usefulness or support patient-care decisions.
 
+Key limitations of the progression benchmark:
+
+- **Dataset size:** 442 observations and 10 pre-standardised features are insufficient for clinical deployment or population-level generalisation.
+- **Pre-split standardisation:** features are scaled before the repository creates splits. Results are specific to scikit-learn's pre-processed benchmark form.
+- **Subgroup analysis scope:** only the two encoded values of the standardised `sex` feature are examined. This encoding is not documented as a clinical demographic variable. Age-group and broader fairness evaluations are not included.
+- **Explainability scope:** the implementation covers linear coefficients, Random Forest mean-decrease-in-impurity importances, and local perturbation-style contributions. SHAP, gradient attribution, and causal inference are not implemented. Local perturbation contributions for non-linear models do not form an additive decomposition.
+- **Neural architecture and search:** the neural baselines use one fixed MLP architecture. The hyperparameter studies use compact, predeclared grids. Neither is exhaustive.
+
 Further research should evaluate the models with contemporary, independently governed cohorts, pre-specified clinical endpoints, patient- and site-aware validation, calibration, decision-curve analysis, and a more complete assessment of subgroup performance. Access to any additional hospital data requires appropriate governance, permissions, and privacy review.
 
 ## References and licence
@@ -217,6 +324,6 @@ Further research should evaluate the models with contemporary, independently gov
 
 **Split-conformal prediction**
 
-- Lei, J., G’Sell, M., Rinaldo, A., Tibshirani, R. J., and Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116).
+- Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R. J., and Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116).
 
 This project is licensed under the MIT License.
