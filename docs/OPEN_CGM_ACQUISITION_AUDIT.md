@@ -56,6 +56,8 @@ The upstream Shanghai extractor combines multiple Excel recording workbooks into
 
 The source article's narrative session distribution states 94 participants with one period, 6 with two, and 1 with three; those counts sum to 101 participant entries. The actual source filenames, grouped using the same prefix rule as the upstream harmonizer, yield 92 with one workbook, 7 with two, and 1 with three (100 prefixes and 109 workbooks). This published-versus-file-level distribution discrepancy is unresolved and is recorded rather than silently reconciled.
 
+The merged participant CSVs show 11 large-gap flags and two non-monotonic steps. The source-workbook audit finds only two large gaps and zero non-monotonic steps within individual recordings. The nine additional merged-file gap flags equal the nine recording files beyond one per participant, consistent with session boundaries being counted as gaps after concatenation. The two ordering reversals also appear only after concatenation. The exact participant/session mapping has not been emitted in the aggregate report, so no participant-specific mapping is claimed.
+
 For Bris-T1D Open, the audit found 20 harmonized participant CSV files. This matches the Glucose-ML catalogue's 20-participant entry, but the official Bristol deposit describes 24 young adults enrolled in the study. The audit establishes the number of harmonized files, not why the enrolment and file counts differ. The median observed timestamp span of 206.30 days is an elapsed first-to-last timestamp span, not proof of continuous sensor wear.
 
 ## Glucose distribution summaries
@@ -81,9 +83,9 @@ These are descriptive proportions of recorded readings. They are **not duration-
 | Duplicate timestamp groups | 0 | 309 |
 | Duplicate groups with conflicting glucose values | 0 | 309 |
 | Participants with duplicate timestamps | 0 | 13 of 20 |
-| Non-monotonic timestamp steps in source order | 2 | 0 |
+| Non-monotonic timestamp steps in harmonized participant files (Shanghai sessions concatenated) | 2 | 0 |
 | Participants with non-monotonic timestamp steps | 2 | 0 |
-| Large gaps under the defined rule | 11 | 900 |
+| Large gaps in harmonized participant files (Shanghai includes session boundaries) | 11 | 900 |
 | Participants with at least one large gap | 10 of 100 | 20 of 20 |
 | Participants with readings outside 40–400 mg/dL | 19 of 100 | 17 of 20 |
 | Readings outside 40–400 mg/dL | 359 | 1,006 |
@@ -118,11 +120,17 @@ These SHA-256 values identify the harmonized CSV contents processed in this run.
 | ShanghaiT2DM | 2,989,625 | c8fc31277270935d8bd923af3bb6e7bc3e34d0ec8de0a02d99ca2390efea831a |
 | Bris-T1D Open | 21,951,250 | 9f49feef19b199cd801544a0cbad0e619fed40b59d1e7329bf4e35442883fede |
 
-The fingerprint is calculated from sorted participant CSV file contents and byte lengths. It does not expose the filenames. The upstream code revision is recorded above so that future harmonization changes can be distinguished from this run.
+The fingerprint is calculated from sorted participant CSV file contents and byte lengths. It does not expose the filenames. The original Shanghai workbook fingerprint is also recorded below; it identifies the downloaded source workbooks used for session-level reconciliation.
+
+| Source data | Total bytes | Content SHA-256 |
+|---|---:|---|
+| ShanghaiT2DM original Excel workbooks | 9,483,176 | e124124b8b77a8221f4a4a504bc01c68fbb0bf79082ae5d10d9dbf10fcb1915f |
+
+The upstream code revision is recorded above so that future harmonization changes can be distinguished from this run.
 
 ## Source records
 
-- Shanghai data: [Figshare DOI 10.6084/m9.figshare.20444397](https://doi.org/10.6084/m9.figshare.20444397). The [NLM Dataset Catalog](https://datasetcatalog.nlm.nih.gov/dataset?q=0002621900) records CC BY 4.0 for the Shanghai T1DM/T2DM data.
+- Shanghai data: [Figshare DOI 10.6084/m9.figshare.20444397](https://doi.org/10.6084/m9.figshare.20444397). The [NLM Dataset Catalog](https://datasetcatalog.nlm.nih.gov/dataset?q=0002621900) records CC BY 4.0 for the Shanghai T1DM/T2DM data. The source paper is [Chinese diabetes datasets for data-driven machine learning](https://doi.org/10.1038/s41597-023-01940-7).
 - Bris-T1D Open: [University of Bristol data record](https://doi.org/10.5523/bris.33z5jc8fa6tob21ptrugzqog08). The processed-state deposit is Open Access and CC BY 4.0. The separate raw-state deposit is restricted and was not used.
 - Upstream harmonization tools: [Glucose-ML-Project](https://github.com/Augmented-Health-Lab/Glucose-ML-Project), revision decf266461dd125ead7715bf524e5ffb9b9469c4.
 
