@@ -1,8 +1,8 @@
 # Diabetes Disease Progression with Machine Learning
 
-This repository documents a machine-learning study of a continuous measure of diabetes disease progression one year after baseline measurements. It covers data preparation, model development, evaluation, prediction uncertainty, and exploratory analysis of model errors. Several model families are included as part of the experimental methods; the project does not claim that one family is generally superior.
+I developed this project to compare classical and neural machine-learning methods for estimating a continuous diabetes disease-progression benchmark measure one year after baseline. It brings together model development, nested and repeated evaluation, split-conformal uncertainty estimation, exploratory error analysis, and reproducible research tooling. The experiments compare model families rather than assuming that a more complex model will perform better.
 
-The project uses a continuous disease-progression target. It does not predict whether a person has diabetes, diagnose a condition, or recommend treatment.
+The primary study is a regression benchmark, not a diabetes diagnosis or treatment system. A separate UCI hospital-readmission classification study is included as a distinct task; it is not validation of the progression model.
 
 
 ## Project snapshot
