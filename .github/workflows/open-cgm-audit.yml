@@ -9,9 +9,11 @@ on:
       - src/diabetes_ml/cgm_audit.py
       - src/diabetes_ml/cgm_source_audit.py
       - src/diabetes_ml/cgm_window_feasibility.py
+      - src/diabetes_ml/cgm_forecast.py
       - tests/test_cgm_audit.py
       - tests/test_cgm_source_audit.py
       - tests/test_cgm_window_feasibility.py
+      - tests/test_cgm_forecast.py
   workflow_dispatch:
 
 concurrency:
@@ -34,11 +36,11 @@ jobs:
           python-version: "3.11"
           cache: "pip"
       - name: Install audit and upstream harmonization dependencies
-        run: python -m pip install --upgrade pip pandas numpy requests openpyxl python-calamine pytest
+        run: python -m pip install --upgrade pip pandas numpy scikit-learn requests openpyxl python-calamine pytest
       - name: Test the aggregate-only audit
         env:
           PYTHONPATH: src
-        run: python -m pytest -q tests/test_cgm_audit.py tests/test_cgm_source_audit.py tests/test_cgm_window_feasibility.py
+        run: python -m pytest -q tests/test_cgm_audit.py tests/test_cgm_source_audit.py tests/test_cgm_window_feasibility.py tests/test_cgm_forecast.py
       - name: Clone the upstream Glucose-ML tools
         run: git clone --depth 1 https://github.com/Augmented-Health-Lab/Glucose-ML-Project.git upstream-glucose-ml
       - name: Download only the first-batch open datasets
@@ -68,6 +70,15 @@ jobs:
             --history-samples 20 --horizon-minutes 30 --interval-minutes 15 --seed 42 \
             --upstream-revision "$(git -C upstream-glucose-ml rev-parse HEAD)" \
             --output cgm-audit-summary/shanghai-window-feasibility.json
+      - name: Train one fixed ShanghaiT2DM CGM forecasting model
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          python -m diabetes_ml.cgm_forecast \
+            --raw-dir upstream-glucose-ml/1_Auto-scripts/Original-Glucose-ML-datasets/Shanghai_raw_data/Shanghai_T2DM \
+            --seed 42 --bootstrap-replicates 1000 \
+            --upstream-revision "$(git -C upstream-glucose-ml rev-parse HEAD)" \
+            --output cgm-audit-summary/shanghai-forecast-metrics.json
       - name: Run aggregate-only data quality audit
         env:
           PYTHONPATH: ${{ github.workspace }}/src
