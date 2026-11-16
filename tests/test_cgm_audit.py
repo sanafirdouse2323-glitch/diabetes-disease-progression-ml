@@ -1,0 +1,64 @@
+"""Tests for the aggregate-only CGM data quality audit."""
+import json
+import pandas as pd
+from diabetes_ml.cgm_audit import audit_dataset
+
+def test_audit_reports_dataset_aggregates_without_participant_ids(tmp_path):
+    dataset = tmp_path / "ShanghaiT2DM"
+    dataset.mkdir()
+    pd.DataFrame({"timestamp": ["2025-01-01T00:00:00", "2025-01-01T00:05:00", "2025-01-01T00:10:00", "2025-01-01T00:15:00"], "glucose_value_mg_dl": [100, 150, 190, 60]}).to_csv(dataset / "participant_PRIVATE_001.csv", index=False)
+    pd.DataFrame({"timestamp": ["2025-01-02T00:00:00", "2025-01-02T00:05:00"], "glucose_value_mg_dl": [110, 120]}).to_csv(dataset / "participant_PRIVATE_002.csv", index=False)
+    report = audit_dataset("shanghai_t2dm", dataset)
+    assert report["participant_files_found"] == 2
+    assert report["participants_with_valid_schema"] == 2
+    assert report["record_count"] == 6
+    assert report["valid_timestamp_glucose_pairs"] == 6
+    assert report["median_participant_sampling_interval_minutes"] == 5.0
+    assert report["median_reading_fraction_70_to_180_mg_dl"] == 0.75
+    assert "participant_PRIVATE_001" not in json.dumps(report)
+    assert report["fraction_policy"].startswith("Fractions are proportions")
+
+def test_audit_fails_closed_for_bad_schema_without_exposing_filename(tmp_path):
+    dataset = tmp_path / "bad"
+    dataset.mkdir()
+    pd.DataFrame({"time": ["2025-01-01"], "value": [100]}).to_csv(dataset / "sensitive_subject_name.csv", index=False)
+    import pytest
+    with pytest.raises(ValueError, match="No participant CSV files with the expected schema") as exc:
+        audit_dataset("bad_schema", dataset)
+    assert "sensitive_subject_name" not in str(exc.value)
+
+def test_audit_flags_missing_and_out_of_range_values(tmp_path):
+    dataset = tmp_path / "quality"
+    dataset.mkdir()
+    pd.DataFrame({"timestamp": ["2025-01-01T00:00:00", "bad-time", "2025-01-01T00:10:00"], "glucose_value_mg_dl": [100, 120, 450]}).to_csv(dataset / "p001.csv", index=False)
+    report = audit_dataset("quality", dataset)
+    assert report["missing_or_unparseable_timestamps"] == 1
+    assert report["readings_outside_40_to_400_mg_dl_flagged_not_removed"] == 1
+    assert report["valid_timestamp_glucose_pairs"] == 2
+
+def test_audit_rejects_empty_dataset_folder(tmp_path):
+    dataset = tmp_path / "empty"
+    dataset.mkdir()
+    import pytest
+    with pytest.raises(ValueError, match="No participant CSV files"):
+        audit_dataset("empty", dataset)
+
+def test_audit_distinguishes_duplicate_timestamp_groups_and_conflicts(tmp_path):
+    dataset = tmp_path / "duplicates"
+    dataset.mkdir()
+    pd.DataFrame({
+        "timestamp": [
+            "2025-01-01T00:00:00",
+            "2025-01-01T00:05:00",
+            "2025-01-01T00:05:00",
+            "2025-01-01T00:10:00",
+        ],
+        "glucose_value_mg_dl": [100, 110, 130, 120],
+    }).to_csv(dataset / "p001.csv", index=False)
+    report = audit_dataset("duplicates", dataset, upstream_revision="abc123")
+    assert report["duplicate_timestamp_rows"] == 1
+    assert report["duplicate_timestamp_groups"] == 1
+    assert report["conflicting_duplicate_timestamp_groups"] == 1
+    assert report["participants_with_conflicting_duplicate_timestamps"] == 1
+    assert report["upstream_glucose_ml_revision"] == "abc123"
+    assert len(report["harmonized_csv_content_sha256"]) == 64

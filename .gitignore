@@ -46,3 +46,11 @@ notebook-results/
 .ipynb_checkpoints/
 
 .DS_Store
+
+# Open CGM dataset downloads and generated audit reports
+Original-Glucose-ML-datasets/
+Standardized-datasets/
+Standardized-metadata/
+upstream-glucose-ml/
+cgm-audit-summary/
+cgm-audit-results/

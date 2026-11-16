@@ -220,3 +220,62 @@ Further research should evaluate the models with contemporary, independently gov
 - Lei, J., G’Sell, M., Rinaldo, A., Tibshirani, R. J., and Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116).
 
 This project is licensed under the MIT License.
+
+
+## Open-access longitudinal CGM extension (separate study)
+
+The new extension examines **longitudinal glycaemic dynamics from continuous glucose monitoring (CGM)**. It is not long-term diabetes disease progression, diagnosis, treatment response, or a causal study.
+
+The first automated acquisition batch is deliberately limited to:
+- **ShanghaiT2DM:** public Figshare source; CC BY 4.0 is recorded by the NLM Dataset Catalog for the Shanghai T1DM/T2DM data. Only the T2DM subfolder is harmonized.
+- **Bris-T1D Open:** University of Bristol processed-state open deposit; official record states Open Access and CC BY 4.0. The separate raw-state deposit is restricted and is not used.
+
+There is a source-count discrepancy for Bris-T1D Open: Glucose-ML lists 20 participants/about 183 days, while the Bristol record describes 24 enrolled young adults/six months. Actual downloaded file counts and usable coverage must be measured rather than inferred from either summary.
+
+T1D-UOM is deferred until its public Zenodo record's Rights/License field is clarified. CGMacros, AZT1D and BIG IDEAs are deferred from the first batch due to download size/source checks; UCHTT1DM and T1DiabetesGranada are excluded for licence/access reasons. See [data-source decisions](docs/OPEN_CGM_DATA_SOURCES.md).
+
+### Automated acquisition and audit
+
+The first-batch workflow completed successfully. Shanghai source auditing found 109 recording workbooks across 100 participant prefixes; 13 rows had missing CGM values and the remaining 112,462 valid readings exactly matched the harmonized output. Session-preserving 30-minute forecast feasibility produced 109,972 windows. One fixed HistGradientBoostingRegressor was then trained on 70 participants and evaluated on 15 held-out participants; test participant-macro MAE was 9.382 mg/dL (95% participant-cluster bootstrap interval 8.417–10.305). No model-family or baseline comparison was performed. The Bris source-level audit found 309 conflicting duplicate timestamp groups across 13 files; all conflicts share one recorded device label, and the processed-state files do not retain enough row-level provenance to select the correct value. The separate raw-state deposit is restricted, so Bris was not used for modelling. See [the acquisition audit](docs/OPEN_CGM_ACQUISITION_AUDIT.md) and [forecast results](docs/OPEN_CGM_FORECAST_RESULTS.md). Only aggregate JSON reports were uploaded; raw and participant-level data were not committed or uploaded.
+
+The local audit can also be run manually after harmonization:
+
+    PYTHONPATH=src python -m diabetes_ml.cgm_audit \
+      --dataset shanghai_t2dm=path/to/Standardized-datasets/ShanghaiT2DM \
+      --dataset bris_t1d_open=path/to/Standardized-datasets/Bris-T1D_Open \
+      --output cgm-audit-summary/audit-summary.json
+
+The audit checks schema, missingness, duplicate/non-monotonic timestamps, sampling intervals, long gaps, observation span, glucose distributions and out-of-range flags. Fractions below 70, 70–180 and above 180 mg/dL are fractions of readings, not duration-weighted time-in-range estimates. A separate forecasting step in the same workflow fits one fixed ShanghaiT2DM HistGradientBoostingRegressor; it does not perform a model-family or baseline comparison.
+
+The session-aware source and forecasting steps can also be run separately:
+
+    PYTHONPATH=src python -m diabetes_ml.cgm_source_audit \
+      --raw-dir path/to/Original-Glucose-ML-datasets/Shanghai_raw_data/Shanghai_T2DM \
+      --harmonized-dir path/to/Standardized-datasets/ShanghaiT2DM \
+      --output cgm-audit-summary/shanghai-source-audit.json
+
+    PYTHONPATH=src python -m diabetes_ml.cgm_bris_source_audit \
+      --raw-dir path/to/Bris-T1D_Open_raw_data \
+      --harmonized-dir path/to/Standardized-datasets/Bris-T1D_Open \
+      --output cgm-audit-summary/bris-source-audit.json
+
+    PYTHONPATH=src python -m diabetes_ml.cgm_window_feasibility \
+      --raw-dir path/to/Original-Glucose-ML-datasets/Shanghai_raw_data/Shanghai_T2DM \
+      --history-samples 20 --horizon-minutes 30 --interval-minutes 15 --seed 42 \
+      --output cgm-audit-summary/shanghai-window-feasibility.json
+
+    PYTHONPATH=src python -m diabetes_ml.cgm_forecast \
+      --raw-dir path/to/Original-Glucose-ML-datasets/Shanghai_raw_data/Shanghai_T2DM \
+      --seed 42 --bootstrap-replicates 1000 \
+      --output cgm-audit-summary/shanghai-forecast-metrics.json
+
+No simple-versus-neural bake-off is planned.
+
+- [CGM study protocol](docs/OPEN_CGM_STUDY_PLAN.md)
+- [Dataset source, licence and exclusion decisions](docs/OPEN_CGM_DATA_SOURCES.md)
+- [Upstream Glucose-ML repository](https://github.com/Augmented-Health-Lab/Glucose-ML-Project)
+- [Glucose-ML dataset catalogue](https://www.glucose-ml-project.com/)
+
+## Scope and interpretation
+
+The two existing studies and the CGM extension have different datasets, outcomes and analysis methods. Their metrics must never be combined into one table or described as validation of one another. The CGM extension is limited to glycaemic dynamics and must not be presented as long-term diabetes progression or clinical decision support.
