@@ -1,18 +1,25 @@
 """Tests for the session-preserving Shanghai source workbook audit."""
+from pathlib import Path
 import pandas as pd
 from diabetes_ml.cgm_source_audit import audit_shanghai_source
 
-def test_source_audit_preserves_recording_sessions_and_reconciles_rows(tmp_path):
+def test_source_audit_preserves_recording_sessions_and_reconciles_rows(tmp_path, monkeypatch):
     raw = tmp_path / "raw"
     raw.mkdir()
-    pd.DataFrame({
-        "Date": pd.date_range("2025-01-01", periods=3, freq="15min"),
-        "CGM (mg / dl)": [100, 110, 120],
-    }).to_excel(raw / "P001_1_20250101.xlsx", index=False)
-    pd.DataFrame({
-        "Date": pd.date_range("2025-02-01", periods=2, freq="15min"),
-        "CGM (mg / dl)": [130, 140],
-    }).to_excel(raw / "P001_2_20250201.xlsx", index=False)
+    names = ["P001_1_20250101.xlsx", "P001_2_20250201.xlsx"]
+    for name in names:
+        (raw / name).write_bytes(b"test workbook placeholder")
+    frames = {
+        names[0]: pd.DataFrame({
+            "Date": pd.date_range("2025-01-01", periods=3, freq="15min"),
+            "CGM (mg / dl)": [100, 110, 120],
+        }),
+        names[1]: pd.DataFrame({
+            "Date": pd.date_range("2025-02-01", periods=2, freq="15min"),
+            "CGM (mg / dl)": [130, 140],
+        }),
+    }
+    monkeypatch.setattr(pd, "read_excel", lambda path: frames[Path(path).name].copy())
     harmonized = tmp_path / "harmonized"
     harmonized.mkdir()
     pd.DataFrame({
