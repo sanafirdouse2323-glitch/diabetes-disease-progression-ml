@@ -18,15 +18,14 @@ def test_audit_reports_dataset_aggregates_without_participant_ids(tmp_path):
     assert "participant_PRIVATE_001" not in json.dumps(report)
     assert report["fraction_policy"].startswith("Fractions are proportions")
 
-def test_audit_flags_bad_schema_without_exposing_filename(tmp_path):
+def test_audit_fails_closed_for_bad_schema_without_exposing_filename(tmp_path):
     dataset = tmp_path / "bad"
     dataset.mkdir()
     pd.DataFrame({"time": ["2025-01-01"], "value": [100]}).to_csv(dataset / "sensitive_subject_name.csv", index=False)
-    report = audit_dataset("bad_schema", dataset)
-    assert report["participant_files_found"] == 1
-    assert report["schema_invalid_files_count"] == 1
-    assert report["participants_with_valid_schema"] == 0
-    assert "sensitive_subject_name" not in json.dumps(report)
+    import pytest
+    with pytest.raises(ValueError, match="No participant CSV files with the expected schema") as exc:
+        audit_dataset("bad_schema", dataset)
+    assert "sensitive_subject_name" not in str(exc.value)
 
 def test_audit_flags_missing_and_out_of_range_values(tmp_path):
     dataset = tmp_path / "quality"
