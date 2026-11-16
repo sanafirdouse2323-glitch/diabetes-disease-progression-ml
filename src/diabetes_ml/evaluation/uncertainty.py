@@ -1,8 +1,39 @@
 """Split-conformal prediction intervals for regression.
 
-The implementation uses absolute residual scores and the finite-sample
-order-statistic correction. Coverage is marginal over exchangeable future
-observations; it is not a patient-specific probability statement.
+Mathematical Foundations of Split-Conformal Inference:
+-------------------------------------------------------
+The finite-sample coverage guarantee relies on the exchangeability of nonconformity
+scores (Z_1, ..., Z_n, Z_{n+1}), where Z_i = |Y_i - \hat{\mu}(X_i)|:
+1. Sample Composition:
+   - n calibration nonconformity scores Z_1, ..., Z_n are computed on held-out calibration data.
+   - 1 unobserved test nonconformity score Z_{n+1} arrives with future test query X_{n+1}.
+   - In total, there are n + 1 exchangeable random variables.
+2. Rank Distribution:
+   - Under the exchangeability assumption (implied by i.i.d. sampling) and assuming continuous
+     scores with probability zero of ties, the rank of Z_{n+1} among {Z_1, ..., Z_n, Z_{n+1}}
+     is discrete uniform over {1, 2, ..., n + 1}.
+   - Therefore, for any ordered rank index k in {1, ..., n + 1}:
+         P(Z_{n+1} <= Z_{(k)}) = k / (n + 1).
+3. Why the '+1' in ceil((n + 1) * (1 - alpha)) is Mandatory:
+   - To guarantee marginal coverage P(Y_{n+1} in C(X_{n+1})) >= 1 - alpha:
+         k / (n + 1) >= 1 - alpha  ==>  k >= (n + 1) * (1 - alpha).
+   - Selecting the minimal integer rank yields:
+         k = ceil((n + 1) * (1 - alpha)).
+   - The '+1' factor directly accounts for the unobserved test observation Z_{n+1}.
+     Omitting the '+1' (e.g. using n * (1 - alpha)) would treat the calibration set as
+     an asymptotic empirical distribution, underestimating the quantile and violating
+     the finite-sample valid coverage theorem (Lei et al., 2018; Vovk et al., 2005).
+4. Threshold when k > n:
+   - If k = ceil((n + 1) * (1 - alpha)) > n, even the maximum calibration residual Z_{(n)}
+     has rank n / (n + 1) < 1 - alpha. In this case, the theoretically exact threshold
+     is +infinity to preserve the conservative validity guarantee.
+5. Marginal vs. Conditional Validity:
+   - The guarantee is marginal across random calibration and test draws:
+         P(Y_{n+1} in C(X_{n+1})) >= 1 - alpha.
+   - It is not a conditional probability statement P(Y in C(X) | X = x) for a single individual.
+   - The symmetric interval [y_hat - q, y_hat + q] assumes residual dispersion is approximately
+     symmetric around zero; constant width q_hat reflects global marginal uncertainty rather
+     than input-dependent local heteroscedasticity.
 """
 
 from __future__ import annotations
@@ -148,6 +179,7 @@ class ConformalRegressor:
         self.cal_scores_ = scores
 
         # Exact finite-sample rank: k = ceil((n + 1) * (1 - alpha)).
+        # The '+1' factor incorporates the unobserved test observation into the exchangeable set.
         # If k > n, the valid split-conformal threshold is positive infinity.
         n_cal = scores.size
         rank = int(np.ceil((n_cal + 1) * (1.0 - self.alpha)))
