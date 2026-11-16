@@ -46,6 +46,15 @@ jobs:
         run: |
           python 2_Harmonize-cgm-datasets/ShanghaiT2DM/ShanghaiT2DM_extract-glucose-data.py 1_Auto-scripts/Original-Glucose-ML-datasets/Shanghai_raw_data/Shanghai_T2DM
           python 2_Harmonize-cgm-datasets/Bris-T1D_Open/Bris-T1D_Open_extract-glucose-data.py 1_Auto-scripts/Original-Glucose-ML-datasets/Bris-T1D_Open_raw_data
+      - name: Audit original Shanghai workbooks without merging recording sessions
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          python -m diabetes_ml.cgm_source_audit \
+            --raw-dir upstream-glucose-ml/1_Auto-scripts/Original-Glucose-ML-datasets/Shanghai_raw_data/Shanghai_T2DM \
+            --harmonized-dir upstream-glucose-ml/Standardized-datasets/ShanghaiT2DM \
+            --upstream-revision "$(git -C upstream-glucose-ml rev-parse HEAD)" \
+            --output cgm-audit-summary/shanghai-source-audit.json
       - name: Run aggregate-only data quality audit
         env:
           PYTHONPATH: ${{ github.workspace }}/src
@@ -60,6 +69,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open-cgm-aggregate-audit
-          path: cgm-audit-summary/audit-summary.json
+          path: cgm-audit-summary/*.json
           if-no-files-found: ignore
           retention-days: 14
