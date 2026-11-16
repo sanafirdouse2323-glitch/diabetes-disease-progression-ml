@@ -107,7 +107,7 @@ Values outside 40–400 mg/dL were flagged, not removed or imputed. Their presen
 3. **Shanghai session-boundary gate is now explicit:** 8 participants have multiple recording workbooks. Future windows must be created within individual workbooks/sessions, not across the upstream merged participant CSVs.
 4. **Bris-T1D Open is not yet ready for forecasting** because of 309 conflicting duplicate timestamp groups across 13 of 20 files. No deduplication decision has been made.
 5. The 359 Shanghai and 1,006 Bris readings outside 40–400 mg/dL were flagged, not filtered. Source-aware review remains necessary.
-6. No forecasting model was trained, no model comparison was performed, and no clinical utility or long-term disease-progression claim is made.
+6. One fixed ShanghaiT2DM forecasting model was trained; no model-family comparison or baseline comparison was performed. No clinical utility or long-term disease-progression claim is made.
 
 The first-batch acquisition and audit are a feasibility result only. The next stage is session-preserving window feasibility for ShanghaiT2DM and source-level duplicate review for Bris-T1D Open—not a model-family bake-off.
 
