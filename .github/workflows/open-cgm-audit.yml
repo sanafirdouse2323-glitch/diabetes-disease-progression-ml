@@ -6,6 +6,10 @@ on:
       - research/mimic-iv-glycemic-trajectory
   workflow_dispatch:
 
+concurrency:
+  group: open-cgm-acquisition-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
