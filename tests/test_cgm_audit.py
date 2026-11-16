@@ -42,3 +42,23 @@ def test_audit_rejects_empty_dataset_folder(tmp_path):
     import pytest
     with pytest.raises(ValueError, match="No participant CSV files"):
         audit_dataset("empty", dataset)
+
+def test_audit_distinguishes_duplicate_timestamp_groups_and_conflicts(tmp_path):
+    dataset = tmp_path / "duplicates"
+    dataset.mkdir()
+    pd.DataFrame({
+        "timestamp": [
+            "2025-01-01T00:00:00",
+            "2025-01-01T00:05:00",
+            "2025-01-01T00:05:00",
+            "2025-01-01T00:10:00",
+        ],
+        "glucose_value_mg_dl": [100, 110, 130, 120],
+    }).to_csv(dataset / "p001.csv", index=False)
+    report = audit_dataset("duplicates", dataset, upstream_revision="abc123")
+    assert report["duplicate_timestamp_rows"] == 1
+    assert report["duplicate_timestamp_groups"] == 1
+    assert report["conflicting_duplicate_timestamp_groups"] == 1
+    assert report["participants_with_conflicting_duplicate_timestamps"] == 1
+    assert report["upstream_glucose_ml_revision"] == "abc123"
+    assert len(report["harmonized_csv_content_sha256"]) == 64
