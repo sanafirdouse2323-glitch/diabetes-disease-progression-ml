@@ -4,6 +4,43 @@ This repository documents a machine-learning study of a continuous measure of di
 
 The project uses a continuous disease-progression target. It does not predict whether a person has diabetes, diagnose a condition, or recommend treatment.
 
+
+## Project snapshot
+
+This is an independent medical machine-learning portfolio project. Its primary study compares regression methods for a **continuous one-year diabetes disease-progression benchmark score**. A second, separate study examines **30-day hospital readmission after discharge** using a historical UCI dataset. The readmission experiment is not external validation of the progression model.
+
+| Study | Dataset | Prediction task | Methods demonstrated |
+|---|---|---|---|
+| **Primary: disease progression** | scikit-learn diabetes benchmark; 442 observations and 10 baseline features | Estimate a continuous one-year follow-up progression measure | Classical regression, PyTorch and TensorFlow MLPs, repeated validation, nested cross-validation, split-conformal intervals and exploratory error analysis |
+| **Separate: hospital readmission** | UCI Diabetes 130-US Hospitals; 101,766 historical encounters from 1999–2008 | Classify recorded readmission within 30 days, using information available at discharge | Patient-grouped splitting, train-fitted preprocessing, training-only threshold selection and classification/calibration metrics |
+
+### What this portfolio demonstrates
+
+- **Model development:** comparisons between linear, regularised, tree-based, kernel and neural regression methods, with a mean-prediction baseline.
+- **Evaluation design:** held-out testing, repeated train/test splits, nested model selection and explicit separation of fitting, validation, calibration and test data.
+- **Prediction uncertainty:** split-conformal intervals with the finite-sample order-statistic correction.
+- **Responsible interpretation:** exploratory subgroup error analysis and explicit boundaries around causality, fairness and clinical use.
+- **Research engineering:** a Python package, automated tests, locked dependencies, notebooks, GitHub Actions and a non-root Docker demo.
+
+### Scientific scope and evaluation caveat
+
+The primary benchmark estimates an outcome from baseline features; it does **not** identify a biological mechanism, model a longitudinal disease trajectory, diagnose diabetes or recommend treatment. It is a small, preprocessed public benchmark, not a patient-care system.
+
+The currently published progression experiments load the benchmark with `scaled=True`, which standardises features using the complete 442-row feature matrix before repository-level splits. This is unsupervised full-dataset preprocessing, not target-label leakage, but it means the published evaluation is not fully fold-isolated from raw features. The repository discloses this limitation; a fold-local `scaled=False` analysis and a complete rerun are still needed before describing the evaluation as fully preprocessing-leakage-controlled. See the [technical audit](docs/TECHNICAL_AUDIT_2026-11-16.md).
+
+### Research and portfolio navigation
+
+- [Experimental results and run settings](RESULTS.md)
+- [Progression research brief](docs/RESEARCH_BRIEF.md)
+- [PhD demonstration guide](docs/PHD_DEMO_GUIDE.md)
+- [Separate readmission study methods and limitations](docs/READMISSION_STUDY_BRIEF.md)
+- [Technical audit and prioritised remediation plan](docs/TECHNICAL_AUDIT_2026-11-16.md)
+- [Source package](src/diabetes_ml/)
+- [Automated tests](tests/)
+- [GitHub Actions workflows](.github/workflows/)
+
+For an interview, start with the progression study, explain the held-out evaluation and conformal interval, then discuss why the simple regression baselines remained competitive. Present the readmission work as a distinct extension rather than as validation of the progression model.
+
 ## Interactive Streamlit demo
 
 The repository includes a locally runnable Streamlit application that demonstrates selected parts of the progression-regression workflow. The interface lets you:
