@@ -7,13 +7,15 @@ on:
     paths:
       - .github/workflows/open-cgm-audit.yml
       - src/diabetes_ml/cgm_audit.py
+      - src/diabetes_ml/cgm_bris_source_audit.py
       - src/diabetes_ml/cgm_source_audit.py
       - src/diabetes_ml/cgm_window_feasibility.py
       - src/diabetes_ml/cgm_forecast.py
       - tests/test_cgm_audit.py
+      - tests/test_cgm_bris_source_audit.py
       - tests/test_cgm_source_audit.py
       - tests/test_cgm_window_feasibility.py
-      - tests/test_cgm_forecast.py
+      - tests/test_cgm_forecast.py tests/test_cgm_bris_source_audit.py
   workflow_dispatch:
 
 concurrency:
@@ -61,6 +63,15 @@ jobs:
             --harmonized-dir upstream-glucose-ml/Standardized-datasets/ShanghaiT2DM \
             --upstream-revision "$(git -C upstream-glucose-ml rev-parse HEAD)" \
             --output cgm-audit-summary/shanghai-source-audit.json
+      - name: Audit BrisT1D source device labels and duplicate timestamps
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: |
+          python -m diabetes_ml.cgm_bris_source_audit \
+            --raw-dir upstream-glucose-ml/1_Auto-scripts/Original-Glucose-ML-datasets/Bris-T1D_Open_raw_data \
+            --harmonized-dir upstream-glucose-ml/Standardized-datasets/Bris-T1D_Open \
+            --upstream-revision "$(git -C upstream-glucose-ml rev-parse HEAD)" \
+            --output cgm-audit-summary/bris-source-audit.json
       - name: Count Shanghai 30-minute forecast windows without crossing sessions
         env:
           PYTHONPATH: ${{ github.workspace }}/src
