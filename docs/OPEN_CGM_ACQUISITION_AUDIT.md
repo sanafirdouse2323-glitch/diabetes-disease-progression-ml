@@ -1,0 +1,103 @@
+# Open CGM first-batch acquisition and quality audit
+
+## Status
+
+<badge>Acquisition and aggregate audit succeeded</badge>
+
+The first-batch GitHub Actions workflow completed successfully on 16 November 2026. It downloaded the open Shanghai archive and Bris-T1D Open archive, harmonized only ShanghaiT2DM and the Bris-T1D Open processed-state data, ran the aggregate-only audit, and uploaded one aggregate JSON artifact.
+
+- Workflow run: https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/43795713498
+- Repository commit tested: 66c1310f0b22276ba99460c4d3215f0bd08aa633
+- Upstream Glucose-ML revision: decf266461dd125ead7715bf524e5ffb9b9469c4
+- Audit artifact SHA-256: b9b3f4100341be4759495e46a7e41dbe3516c677d3bda020a74ab37688d12daa
+- The artifact contains only dataset-level aggregates. Raw data and participant-level CSVs were not committed or uploaded.
+
+The five focused audit tests passed. The repository CI, neural-framework, Docker smoke-test, and notebook-execution workflows also passed for the tested PR commit.
+
+## Observed cohort and file counts
+
+| Audit field | ShanghaiT2DM | Bris-T1D Open |
+|---|---:|---:|
+| Participant CSV files found | 100 | 20 |
+| Files with valid schema | 100 | 20 |
+| Files with valid timestamp/glucose records | 100 | 20 |
+| Unreadable files | 0 | 0 |
+| Invalid-schema files | 0 | 0 |
+| CGM records | 112,462 | 848,574 |
+| Valid timestamp/glucose pairs | 112,462 | 848,574 |
+| Missing/unparseable timestamps | 0 | 0 |
+| Missing/non-numeric glucose values | 0 | 0 |
+| Median participant sampling interval | 15 minutes | 5 minutes |
+| Median participant observation span | 12.68 days | 206.30 days |
+
+The Bris-T1D Open audit found 20 harmonized participant CSV files. This matches the Glucose-ML catalogue's 20-participant entry, but the official Bristol deposit describes 24 young adults enrolled in the study. The audit establishes the number of harmonized files, not why the enrolment and file counts differ. The median observed timestamp span of 206.30 days is an elapsed first-to-last timestamp span, not proof of continuous sensor wear.
+
+## Glucose distribution summaries
+
+The following values are medians across participant-level statistics, not pooled statistics across all CGM readings.
+
+| Participant-level statistic | ShanghaiT2DM | Bris-T1D Open |
+|---|---:|---:|
+| Median of participant mean glucose (mg/dL) | 139.50 | 153.25 |
+| Median of participant median glucose (mg/dL) | 131.40 | 146.70 |
+| Median of participant glucose SD (mg/dL) | 37.63 | 55.45 |
+| Median participant fraction of readings below 70 mg/dL | 0.44% | 1.57% |
+| Median participant fraction of readings from 70–180 mg/dL inclusive | 83.61% | 69.54% |
+| Median participant fraction of readings above 180 mg/dL | 14.36% | 27.41% |
+
+These are descriptive proportions of recorded readings. They are **not duration-weighted time-in-range (TIR) estimates**, not clinical targets, and not evidence of treatment effectiveness. Medians of separate participant-level fractions need not sum to 100%.
+
+## Data-quality findings
+
+| Quality check | ShanghaiT2DM | Bris-T1D Open |
+|---|---:|---:|
+| Duplicate timestamp rows | 0 | 309 |
+| Duplicate timestamp groups | 0 | 309 |
+| Duplicate groups with conflicting glucose values | 0 | 309 |
+| Participants with duplicate timestamps | 0 | 13 of 20 |
+| Non-monotonic timestamp steps in source order | 2 | 0 |
+| Participants with non-monotonic timestamp steps | 2 | 0 |
+| Large gaps under the defined rule | 11 | 900 |
+| Participants with at least one large gap | 10 of 100 | 20 of 20 |
+| Participants with readings outside 40–400 mg/dL | 19 of 100 | 17 of 20 |
+| Readings outside 40–400 mg/dL | 359 | 1,006 |
+
+A large gap is an interval greater than three times that participant file's median positive sampling interval. This is a data-continuity flag, not a count of known missing samples or proof of sensor failure.
+
+### Important Bris-T1D Open blocker
+
+All 309 Bris duplicate timestamp groups contain more than one glucose value at the same parsed timestamp, across 13 participant files. The audit did **not** choose the first value, last value, mean, or median; it preserved and counted the observations. These conflicting duplicate timestamps must be traced to the source records and a handling rule pre-specified before Bris data are used for time-series modelling. Until then, Bris-derived glucose distribution summaries remain preliminary.
+
+ShanghaiT2DM has no duplicate timestamps, but two non-monotonic steps occur in source order across two participant files. The time-series pipeline must inspect and chronologically order those records without silently changing the underlying readings. The 11 large-gap flags also require review.
+
+Values outside 40–400 mg/dL were flagged, not removed or imputed. Their presence is not automatically evidence that the readings are erroneous; source context and device conventions must be checked.
+
+## Interpretation and next gate
+
+1. **Acquisition passed** for the first batch: both downloads and both dataset-specific extraction scripts completed successfully.
+2. **Schema and missingness checks passed** for all 120 participant CSV files: no unreadable files, invalid schemas, missing timestamps, or missing/non-numeric glucose values were found.
+3. **Bris-T1D Open is not yet ready for forecasting** because of 309 conflicting duplicate timestamp groups. No deduplication decision has been made.
+4. **ShanghaiT2DM needs a small ordering/gap review** before forecasting because two source-order reversals and 11 large-gap flags were found.
+5. The out-of-range readings require source-aware review. The audit did not filter them.
+6. No forecasting model was trained, no model comparison was performed, and no clinical utility or long-term disease-progression claim is made.
+
+The first-batch acquisition and audit are a feasibility result only. The next research stage is a source-aware quality review and a frozen participant-level analysis protocol—not a model-family bake-off.
+
+## Reproducibility fingerprints
+
+These SHA-256 values identify the harmonized CSV contents processed in this run. The audit does not publish filenames or participant identifiers.
+
+| Dataset | Total harmonized CSV bytes | Content SHA-256 |
+|---|---:|---|
+| ShanghaiT2DM | 2,989,625 | c8fc31277270935d8bd923af3bb6e7bc3e34d0ec8de0a02d99ca2390efea831a |
+| Bris-T1D Open | 21,951,250 | 9f49feef19b199cd801544a0cbad0e619fed40b59d1e7329bf4e35442883fede |
+
+The fingerprint is calculated from sorted participant CSV file contents and byte lengths. It does not expose the filenames. The upstream code revision is recorded above so that future harmonization changes can be distinguished from this run.
+
+## Source records
+
+- Shanghai data: [Figshare DOI 10.6084/m9.figshare.20444397](https://doi.org/10.6084/m9.figshare.20444397). The NLM Dataset Catalog records CC BY 4.0 for the Shanghai T1DM/T2DM data.
+- Bris-T1D Open: [University of Bristol data record](https://doi.org/10.5523/bris.33z5jc8fa6tob21ptrugzqog08). The processed-state deposit is Open Access and CC BY 4.0. The separate raw-state deposit is restricted and was not used.
+- Upstream harmonization tools: [Glucose-ML-Project](https://github.com/Augmented-Health-Lab/Glucose-ML-Project), revision decf266461dd125ead7715bf524e5ffb9b9469c4.
+
+The original tabular benchmark's historical metrics remain in RESULTS.md. These CGM audit outputs are separate and must not be merged into those benchmark results.
