@@ -84,22 +84,38 @@ The audit parses timestamps as UTC for elapsed-time calculations. Naive timestam
 
 The report contains aggregate dataset-level fields only. It does not contain participant identifiers, filenames, per-participant metrics, raw glucose readings, or demographic metadata.
 
-## Modelling gate (not yet authorised by this protocol)
+## Modelling and evaluation protocol
 
-Only after source terms, actual file counts, schema, units, sampling cadence, timestamp semantics, missingness, duplicate handling, and participant-level cohort feasibility have been reviewed should a single primary forecasting method be selected. The method must be frozen before held-out evaluation. Any forecasting windows must be split by participant, with chronology preserved within each participant. Adjacent windows from one participant must never be split across train/validation/test sets.
+The first ShanghaiT2DM model run is complete. It uses one fixed HistGradientBoostingRegressor with 20 past CGM readings as inputs and a 30-minute target horizon. The original Excel workbook is the recording-session boundary. All sessions belonging to one participant are assigned to the same split.
 
-A later forecast horizon must be specified before model fitting. Report participant-clustered uncertainty, not sample-level confidence intervals. If an independent cohort supports external testing, preserve it as a separate dataset and report its results separately. Keep T1D and T2D analyses separate.
+- Participant split: 70 train, 15 validation, 15 held-out test (seed 42).
+- Valid windows: 109,972; no window crosses a recording-session boundary.
+- Model parameters are fixed in advance; no hyperparameter search is performed.
+- Validation data are reported but are not used for fitting, early stopping or selection.
+- Test uncertainty is estimated by resampling held-out participants as clusters.
+- No model-family comparison and no baseline comparison are performed.
+- Full metrics and limitations are in [OPEN_CGM_FORECAST_RESULTS.md](OPEN_CGM_FORECAST_RESULTS.md).
 
-No model-family comparison is planned. The completed Shanghai run uses one fixed HistGradientBoostingRegressor and a 70/15/15 participant-level split; it does not establish superiority over a baseline or another model. No clinical utility, diagnosis, treatment benefit, causal effect, or long-term progression claim may be made from retrospective CGM metrics.
+This experiment is a reproducibility/proof-of-pipeline exercise, not a novel forecasting method. A 2025 publication already used ShanghaiT2DM with 20 prior CGM readings and 30/60/90-minute horizons. The protocols differ, so results must not be compared directly. No novelty or superiority claim is made.
+
+The model predicts short-horizon CGM glucose only. It does not predict long-term diabetes progression, diagnosis, complications, treatment response or clinical outcomes. No clinical utility or patient-level decision support is established.
+
+## Remaining research gates
+
+1. **Independent T2D validation:** identify another genuinely open T2D CGM cohort with compatible units, cadence, rights and participant-level identifiers. Bris-T1D Open is T1D and must not be presented as external validation for the Shanghai T2D model.
+2. **Bris-T1D duplicate resolution:** trace the 309 conflicting duplicate timestamp groups across 13 files to the source records. Do not deduplicate by first/last/mean/median until the cause and rule are documented.
+3. **Source timestamp semantics:** confirm timezone conventions before any local-calendar or circadian analysis. The current forecast uses elapsed intervals only.
+4. **Out-of-range sensitivity:** the 359 Shanghai readings outside 40–400 mg/dL were retained. A separate, pre-specified sensitivity analysis may be needed before drawing conclusions.
+5. **Independent evaluation:** any further model claims require an untouched external cohort and participant-clustered uncertainty. No production or clinical-readiness claim is justified.
 
 ## Reproducibility and governance
 
 - Cite each original dataset and the Glucose-ML harmonization resource.
 - Follow source licence, attribution and non-commercial/derivative restrictions.
 - Keep raw and participant-level files outside Git and public workflow artifacts.
-- The GitHub Actions workflow uploads only an aggregate audit JSON, never raw files or participant-level outputs.
+- The GitHub Actions workflow uploads only aggregate JSON reports, never raw files or participant-level outputs.
 - The original benchmark results remain in RESULTS.md and are not mixed with CGM outputs.
 
-## Completion gate
+## Completion status
 
-The first batch acquisition gate passed: both downloads and both dataset-specific harmonization scripts completed successfully, and both aggregate audits completed. The Shanghai source audit reconciled the 13 missing CGM values and identified multiple recording sessions that must remain separate. Bris-T1D Open has unresolved conflicting duplicate timestamps. These issues must be handled before forecasting. No CGM model result is claimed; no model has been trained.
+The first-batch acquisition, source-workbook reconciliation, aggregate quality audit, session-preserving window-feasibility check and one fixed ShanghaiT2DM forecasting experiment all completed successfully. The Bris-T1D Open duplicate issue and independent T2D validation remain open research gates. The original diabetes progression benchmark and its historical results remain unchanged.
