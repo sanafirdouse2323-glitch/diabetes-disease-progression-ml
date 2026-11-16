@@ -49,18 +49,18 @@ def build_session_windows(frame: pd.DataFrame, history_samples: int = 20, horizo
     clean = clean.sort_values("timestamp").reset_index(drop=True)
     if clean.empty:
         return np.empty((0, history_samples), dtype=float), np.empty((0,), dtype=float)
-    time_ns = pd.DatetimeIndex(clean["timestamp"]).asi8
+    time_index = pd.DatetimeIndex(clean["timestamp"])
     glucose_values = clean["glucose"].to_numpy(dtype=float)
-    expected_ns = int(interval_minutes * 60 * 1_000_000_000)
+    expected_interval = pd.Timedelta(minutes=interval_minutes)
     features: list[np.ndarray] = []
     targets: list[float] = []
     first_target = history_samples - 1 + horizon_steps
     for target_index in range(first_target, len(clean)):
         start_index = target_index - horizon_steps - history_samples + 1
-        time_window = time_ns[start_index:target_index + 1]
+        time_window = time_index[start_index:target_index + 1]
         if len(time_window) != history_samples + horizon_steps:
             continue
-        if not np.all(np.diff(time_window) == expected_ns):
+        if not bool(((time_window[1:] - time_window[:-1]) == expected_interval).all()):
             continue
         input_end = target_index - horizon_steps
         features.append(glucose_values[start_index:input_end + 1])
