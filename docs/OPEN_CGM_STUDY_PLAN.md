@@ -36,7 +36,7 @@ These decisions are conservative acquisition choices, not claims that all deferr
 
 Can open CGM records support reproducible, participant-level characterisation of glycaemic variability and short-horizon glucose dynamics, when analyses are kept separate by dataset and diabetes type?
 
-The first completed stage is data acquisition and quality audit only. The audit records dataset-level counts and distributions without exporting participant identifiers or participant-level rows.
+The first-batch acquisition and aggregate audit completed successfully on 16 November 2026. The workflow downloaded and harmonized ShanghaiT2DM and Bris-T1D Open, and the aggregate report found 100 valid Shanghai participant files and 20 valid Bris-T1D Open participant files. The full measured counts, data-quality findings, dataset fingerprints and blockers are in [OPEN_CGM_ACQUISITION_AUDIT.md](OPEN_CGM_ACQUISITION_AUDIT.md). No raw data or participant-level outputs were committed or uploaded.
 
 ## Data acquisition
 
@@ -92,4 +92,4 @@ No model family comparison is planned. No clinical utility, diagnosis, treatment
 
 ## Completion gate
 
-The first batch is considered acquired only if both downloads and both dataset-specific harmonization scripts exit successfully. It is considered audited only if the aggregate audit completes and the output is inspected for plausible counts, units, intervals, gaps and source inconsistencies. A workflow failure is not a successful download. No CGM model result is claimed until a separate, verified modelling stage has actually run.
+The first batch acquisition gate passed: both downloads and both dataset-specific harmonization scripts completed successfully, and the aggregate audit completed. The audit identified unresolved conflicting duplicate timestamps in Bris-T1D Open and source-order reversals/gaps in ShanghaiT2DM. These must be reviewed before forecasting. No CGM model result is claimed; no model has been trained.
