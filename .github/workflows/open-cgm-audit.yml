@@ -49,6 +49,7 @@ jobs:
           python -m diabetes_ml.cgm_audit \
             --dataset shanghai_t2dm=upstream-glucose-ml/Standardized-datasets/ShanghaiT2DM \
             --dataset bris_t1d_open=upstream-glucose-ml/Standardized-datasets/Bris-T1D_Open \
+            --upstream-revision "$(git -C upstream-glucose-ml rev-parse HEAD)" \
             --output cgm-audit-summary/audit-summary.json
       - name: Upload aggregate audit report only
         if: always()
