@@ -2,7 +2,7 @@
 
 ## Status
 
-<badge>Acquisition and aggregate audit succeeded</badge>
+**Status: Acquisition and aggregate audit succeeded.**
 
 The first-batch GitHub Actions workflow completed successfully on 16 November 2026. It downloaded the open Shanghai archive and Bris-T1D Open archive, harmonized only ShanghaiT2DM and the Bris-T1D Open processed-state data, ran the aggregate-only audit, and uploaded one aggregate JSON artifact.
 
@@ -96,7 +96,7 @@ The fingerprint is calculated from sorted participant CSV file contents and byte
 
 ## Source records
 
-- Shanghai data: [Figshare DOI 10.6084/m9.figshare.20444397](https://doi.org/10.6084/m9.figshare.20444397). The NLM Dataset Catalog records CC BY 4.0 for the Shanghai T1DM/T2DM data.
+- Shanghai data: [Figshare DOI 10.6084/m9.figshare.20444397](https://doi.org/10.6084/m9.figshare.20444397). The [NLM Dataset Catalog](https://datasetcatalog.nlm.nih.gov/dataset?q=0002621900) records CC BY 4.0 for the Shanghai T1DM/T2DM data.
 - Bris-T1D Open: [University of Bristol data record](https://doi.org/10.5523/bris.33z5jc8fa6tob21ptrugzqog08). The processed-state deposit is Open Access and CC BY 4.0. The separate raw-state deposit is restricted and was not used.
 - Upstream harmonization tools: [Glucose-ML-Project](https://github.com/Augmented-Health-Lab/Glucose-ML-Project), revision decf266461dd125ead7715bf524e5ffb9b9469c4.
 
