@@ -1,8 +1,35 @@
 """Exploratory subgroup error analysis for regression models.
 
-This module reports descriptive per-group regression errors and a Monte Carlo
-permutation test for a difference in mean absolute error. It does not establish
-that a model is fair, unbiased, or clinically appropriate.
+Mathematical Foundations of the Permutation Test:
+-------------------------------------------------
+The Monte Carlo permutation test evaluates disparity between two subgroups using:
+    p = (1 + sum_{b=1}^B I(T_b >= T_obs)) / (B + 1)
+
+Why the '+1' in both Numerator and Denominator is Required:
+1. Exchangeability under the Null Hypothesis (H_0):
+   - Under H_0, the prediction errors are conditionally exchangeable across subgroup labels.
+   - The observed test statistic T_obs and the B randomly permuted statistics T_1, ..., T_B
+     together form a set of B + 1 exchangeable draws from the null distribution.
+2. The Observed Sample is a Valid Realization:
+   - T_obs itself represents one equally valid configuration under H_0.
+   - Because T_obs trivially satisfies T_obs >= T_obs, it contributes 1 to the count of
+     exceedances (the '+1' in the numerator).
+   - The total number of evaluated configurations is B permuted + 1 observed = B + 1 (the '+1' in denominator).
+3. Exact Type I Error Control:
+   - If one used exceedances / B:
+     * The estimated p-value could equal 0, falsely claiming impossibility of the null event.
+     * The test would be anti-conservative (liberal): P(p <= alpha | H_0) > alpha.
+   - The '+1' formulation guarantees exact finite-B validity:
+         P(p <= alpha | H_0) <= alpha for all alpha in (0, 1)
+     (Davison & Hinkley, 1997; Phipson & Smyth, 2010).
+
+Statistical Power and Sample Size Considerations:
+-------------------------------------------------
+- On small test sets (e.g. N = 89 with n_A = 48, n_B = 41), the test has inherently limited
+  statistical power to reject H_0 unless the effect size is very large.
+- A non-significant p-value (p > 0.05) must not be interpreted as evidence of fairness or parity;
+  it indicates only that the observed sample size is insufficient to distinguish the observed
+  disparity from random partitioning noise.
 """
 
 from __future__ import annotations
