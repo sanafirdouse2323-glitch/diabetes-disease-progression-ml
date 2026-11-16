@@ -174,6 +174,7 @@ The fingerprint is calculated from sorted participant CSV file contents and byte
 | Source data | Total bytes | Content SHA-256 |
 |---|---:|---|
 | ShanghaiT2DM original Excel workbooks | 9,483,176 | e124124b8b77a8221f4a4a504bc01c68fbb0bf79082ae5d10d9dbf10fcb1915f |
+| Bris-T1D Open processed-state CSV files | 145,976,654 | 678b2080cd156a0f36f4a06af2fe72e754d7b731d9787f1422bd8ec043e10a14 |
 
 The upstream code revision is recorded above so that future harmonization changes can be distinguished from this run.
 
