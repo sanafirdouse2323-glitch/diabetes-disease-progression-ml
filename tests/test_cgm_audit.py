@@ -36,3 +36,10 @@ def test_audit_flags_missing_and_out_of_range_values(tmp_path):
     assert report["missing_or_unparseable_timestamps"] == 1
     assert report["readings_outside_40_to_400_mg_dl_flagged_not_removed"] == 1
     assert report["valid_timestamp_glucose_pairs"] == 2
+
+def test_audit_rejects_empty_dataset_folder(tmp_path):
+    dataset = tmp_path / "empty"
+    dataset.mkdir()
+    import pytest
+    with pytest.raises(ValueError, match="No participant CSV files"):
+        audit_dataset("empty", dataset)
