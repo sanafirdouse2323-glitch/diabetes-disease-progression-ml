@@ -236,7 +236,7 @@ T1D-UOM is deferred until its public Zenodo record's Rights/License field is cla
 
 ### Automated acquisition and audit
 
-A GitHub Actions workflow on the research branch downloads only the first-batch open datasets, uses the upstream dataset-specific extraction scripts, and runs the local aggregate-only quality audit. It uploads only a dataset-level summary JSON; raw and participant-level data are not committed or uploaded as artifacts.
+The first-batch workflow completed successfully: ShanghaiT2DM and Bris-T1D Open were downloaded and harmonized, and the aggregate audit passed. It found 100 valid Shanghai participant files (112,462 records) and 20 valid Bris-T1D Open files (848,574 records). The Bris cohort has 309 conflicting duplicate timestamp groups; Shanghai has two non-monotonic source-order steps. These issues must be resolved before forecasting. See [the measured acquisition audit](docs/OPEN_CGM_ACQUISITION_AUDIT.md). The workflow uploaded only a dataset-level aggregate JSON; raw and participant-level data were not committed or uploaded as artifacts.
 
 The local audit can also be run manually after harmonization:
 
