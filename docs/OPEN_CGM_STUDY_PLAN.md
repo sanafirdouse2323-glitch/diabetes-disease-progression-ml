@@ -6,7 +6,7 @@ This is a separate extension to the existing tabular diabetes progression benchm
 
 The new study examines longitudinal glycaemic dynamics from continuous glucose monitoring (CGM). It is not long-term diabetes disease progression, diagnosis, treatment response, complication prediction, or a causal study. CGM observations describe interstitial glucose over monitoring periods; they do not establish long-term changes in the underlying disease.
 
-There will be no simple-model-versus-neural-network bake-off. No predictive model is to be trained until acquisition, licence checks, data-quality assessment, cohort definition, and participant-level split feasibility have been completed.
+There will be no simple-model-versus-neural-network bake-off. The first ShanghaiT2DM forecasting run is now complete using one fixed model after acquisition, source-workbook reconciliation, quality assessment, and participant-level window feasibility. Its specification and results are documented in OPEN_CGM_FORECAST_RESULTS.md. Bris-T1D Open remains excluded from modelling until its conflicting duplicate timestamps are resolved.
 
 ## First acquisition batch
 
@@ -90,7 +90,7 @@ Only after source terms, actual file counts, schema, units, sampling cadence, ti
 
 A later forecast horizon must be specified before model fitting. Report participant-clustered uncertainty, not sample-level confidence intervals. If an independent cohort supports external testing, preserve it as a separate dataset and report its results separately. Keep T1D and T2D analyses separate.
 
-No model family comparison is planned. No clinical utility, diagnosis, treatment benefit, causal effect, or long-term progression claim may be made from retrospective CGM metrics.
+No model-family comparison is planned. The completed Shanghai run uses one fixed HistGradientBoostingRegressor and a 70/15/15 participant-level split; it does not establish superiority over a baseline or another model. No clinical utility, diagnosis, treatment benefit, causal effect, or long-term progression claim may be made from retrospective CGM metrics.
 
 ## Reproducibility and governance
 
