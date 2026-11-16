@@ -21,6 +21,8 @@ This document records the source-level checks used to select the first acquisiti
 
 ## Upstream processing caveat
 
+The Shanghai data descriptor reports 100 participants, 109 recording files and 112,475 CGM measurements at 15-minute intervals ([source paper](https://doi.org/10.1038/s41597-023-01940-7)). The downloaded source-workbook audit found 109 readable workbooks, 100 filename prefixes, and 112,475 rows; 13 rows had missing CGM values, leaving 112,462 valid pairs. Those 112,462 pairs exactly match the harmonized CSV row count. The source paper's narrative breakdown of 94 one-session, 6 two-session and 1 three-session participants sums to 101; the actual file-prefix audit yields 92/7/1 (100 prefixes, 109 workbooks). The discrepancy is recorded in the acquisition audit rather than silently resolved.
+
 The Glucose-ML downloader and dataset-specific harmonizers are third-party tools. The acquisition workflow calls the dataset-specific extraction scripts directly rather than the upstream harmonization wrapper. The wrapper's current source computes a 2_Harmonize-CGM-datasets path, while the repository directory is named 2_Harmonize-cgm-datasets; this case mismatch can fail on case-sensitive runners. The direct calls use the actual repository path.
 
 The Bris-T1D Open extraction script converts its source bg field from mmol/L to mg/dL by multiplying by 18, as implemented upstream. The ShanghaiT2DM extractor reads the source Excel files and retains the CGM (mg / dl) field (with a fallback column spelling for one participant). These transformations are upstream behavior and must be checked against the generated audit and source documentation; this project does not silently modify the source data.
