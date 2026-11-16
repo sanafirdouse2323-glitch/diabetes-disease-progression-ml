@@ -1,99 +1,95 @@
 # Open-access CGM study: longitudinal glycaemic dynamics
 
-## Status and data access
+## Status and research boundary
 
-This protocol replaces the earlier MIMIC-IV proposal. It uses only datasets listed as **open access** in the Glucose-ML collection. No PhysioNet credentialing, CITI training, MIMIC-IV DUA, or institutional data-access approval is intended for the selected downloads.
+This is a separate extension to the existing tabular diabetes progression benchmark. It does not replace or rewrite the original 442-observation scikit-learn diabetes benchmark, the separate UCI hospital-readmission analysis, or their recorded results in RESULTS.md.
 
-Glucose-ML catalog: https://www.glucose-ml-project.com/
-Glucose-ML repository: https://github.com/Augmented-Health-Lab/Glucose-ML-Project
-Download instructions: https://github.com/Augmented-Health-Lab/Glucose-ML-Project/blob/main/1_Auto-scripts/README.md
+The new study examines longitudinal glycaemic dynamics from continuous glucose monitoring (CGM). It is not long-term diabetes disease progression, diagnosis, treatment response, complication prediction, or a causal study. CGM observations describe interstitial glucose over monitoring periods; they do not establish long-term changes in the underlying disease.
 
-The Glucose-ML project reports 20+ datasets overall and provides automated download/harmonisation scripts for its open-access subset. Controlled-access datasets must be excluded even if the project provides a harmonisation script for them.
+There will be no simple-model-versus-neural-network bake-off. No predictive model is to be trained until acquisition, licence checks, data-quality assessment, cohort definition, and participant-level split feasibility have been completed.
 
-## Dataset shortlist
+## First acquisition batch
 
-The first download batch should be limited to the following catalogued open-access cohorts:
+The first batch is deliberately restricted to two smaller cohorts with source-level open-access evidence:
 
-| Dataset | Population in catalog | Participants | Approximate CGM duration | Intended role |
-|---|---|---:|---:|---|
-| ShanghaiT2DM | Type 2 diabetes | 100 | 13 days | Primary T2D cohort |
-| CGMacros Dexcom | Type 2, prediabetes, no diabetes | 45 | 11 days | Device/cohort comparison; verify participant overlap with Libre |
-| CGMacros Libre | Type 2, prediabetes, no diabetes | 45 | 12 days | Device/cohort comparison; verify participant overlap with Dexcom |
-| Bris-T1D Open | Type 1 diabetes | 20 | 183 days | Longer-duration, separate T1D cohort |
-| T1D-UOM | Type 1 diabetes | 17 | 96 days | Separate T1D cohort |
-| AZT1D | Type 1 diabetes | 25 | 42 days | Additional T1D cohort |
+| Dataset | Population | Catalogue/source description | First-batch role |
+|---|---|---|---|
+| ShanghaiT2DM | Type 2 diabetes | Glucose-ML catalogue reports 100 participants and about 13 days; NLM catalog records CC BY 4.0 for the Shanghai T1DM/T2DM dataset | Primary T2D feasibility cohort |
+| Bris-T1D Open | Type 1 diabetes | University of Bristol marks the processed-state deposit Open Access and CC BY 4.0; its record describes 24 enrolled young adults and a six-month study | Separate T1D feasibility cohort |
 
-Participant counts and durations are catalog summaries, not independently verified row counts. Confirm the dataset cards, source terms, actual downloaded files, participant IDs, dates, and usable-data counts before analysis. Do not add all cohorts into one undifferentiated population. Keep type 1 and type 2 analyses distinct, and do not count CGMacros Dexcom and Libre as independent people until participant overlap is checked.
+Important count discrepancy: Glucose-ML reports 20 participants and about 183 days for Bris-T1D Open, while the official Bristol record describes 24 young adults in a six-month study. Do not choose one count by assumption. The downloaded file count and usable CGM coverage must be computed and reported separately from enrolment/catalogue counts.
 
-## Research question and scope
+Source records, exclusions, rights decisions and upstream processing caveats are documented in OPEN_CGM_DATA_SOURCES.md.
 
-**Primary question:** Can continuous glucose monitoring time series support reproducible characterisation and short-horizon forecasting of glucose dynamics in people with diabetes, with evaluation separated by dataset and diabetes type?
+## Explicit exclusions from the first batch
 
-This is a study of **glycaemic dynamics**, not long-term diabetes disease progression, diagnosis, treatment response, or causal effect. CGM records measure interstitial glucose over time. They do not, by themselves, establish changes in complications or the underlying progression of diabetes.
+- T1D-UOM: excluded until its public Zenodo record's blank Rights/License field is resolved.
+- CGMacros: deferred because the upstream archive is approximately 2.14 GB and its download endpoint is PhysioNet; confirm the source's access route and licence before a later batch.
+- AZT1D: deferred from the first batch because the upstream archive is approximately 1.56 GB.
+- BIG IDEAs: excluded from the first batch because the upstream estimate is approximately 41.9 GB and its source is PhysioNet.
+- UCHTT1DM: excluded pending resolution of its no-derivatives licence restriction.
+- T1DiabetesGranada: excluded because it requires permission and acceptance of a data-use agreement.
 
-## Initial execution workflow
+These decisions are conservative acquisition choices, not claims that all deferred datasets are inaccessible.
 
-Clone the upstream Glucose-ML repository and install its documented dependencies. Use only the open-access download keys:
+## Primary research question
 
-```bash
-git clone https://github.com/Augmented-Health-Lab/Glucose-ML-Project.git
-cd Glucose-ML-Project
-pip install -r dependencies.txt
-cd 1_Auto-scripts
+Can open CGM records support reproducible, participant-level characterisation of glycaemic variability and short-horizon glucose dynamics, when analyses are kept separate by dataset and diabetes type?
 
-# T2D-oriented first batch plus independent longitudinal T1D cohorts
-python auto-download-open-datasets.py shanghai cgmacros bris-t1d_open t1d-uom azt1d
+The first completed stage is data acquisition and quality audit only. The audit records dataset-level counts and distributions without exporting participant identifiers or participant-level rows.
 
-# Harmonise only the open-access datasets downloaded above
-python auto-harmonize-CGM-datasets.py shanghait2dm cgmacros_dexcom cgmacros_libre bris-t1d_open t1d-uom azt1d
-```
+## Data acquisition
 
-The upstream downloader asks for confirmation and estimates the download size. The Shanghai download bundle contains both Shanghai T1DM and T2DM; the harmonisation command selects the requested cohort. CGMacros downloads both device datasets. Do not commit downloaded raw data or participant-level records to this repository.
+The automated workflow clones the upstream Glucose-ML repository, installs its required packages plus openpyxl for Shanghai Excel files, and downloads only:
 
-## Feasibility and data-quality checks before modelling
+- shanghai (the upstream archive contains both ShanghaiT1DM and ShanghaiT2DM; only ShanghaiT2DM is harmonized);
+- bris-t1d_open (the processed-state open deposit only).
 
-1. Verify the upstream dataset source, access label, licence/terms, citation, and revision for each selected cohort.
-2. Record download URL, retrieval date, archive size, SHA-256 checksum, and upstream commit/revision.
-3. Inspect schema, units, timestamp timezone conventions, sensor sampling frequency, gaps, duplicate timestamps, impossible values, and missingness.
-4. Count participants and valid CGM days after cleaning; report distributions rather than relying on catalog totals.
-5. Verify participant overlap between CGMacros Dexcom and Libre before any combined analysis.
-6. Confirm diabetes type from documented metadata; do not infer type from glucose traces alone.
-7. Keep each dataset and diabetes type identifiable throughout analysis. Do not silently harmonise incompatible variables or protocols.
-8. Create participant-level train/validation/test partitions. Never split adjacent time windows from the same participant across partitions.
-9. Use chronological ordering within each participant. Fit all preprocessing and any tuning using training participants only.
-10. Freeze the analysis protocol before evaluating the held-out participants.
+The source archive is not committed to this repository. The workflow calls the dataset-specific extraction scripts directly. The upstream wrapper currently constructs a path with different letter casing from the actual harmonization directory, which can fail on case-sensitive runners; the workflow avoids that wrapper and uses the verified paths.
 
-If a selected source unexpectedly requires an account, approval, credentialing, or an additional data-use agreement, stop and exclude it from the no-gated-access analysis unless its terms are independently checked and accepted. Do not attempt to bypass access controls.
+## Quality audit
 
-## Analysis plan
+Run the local aggregate-only audit after the upstream harmonization scripts have created participant CSV files:
 
-There will be **no simple-model-versus-neural-network bake-off**. Pre-specify one primary time-series method after inspecting the data structure and missingness. Do not select a method based on held-out test performance.
+    PYTHONPATH=src python -m diabetes_ml.cgm_audit \
+      --dataset shanghai_t2dm=path/to/Standardized-datasets/ShanghaiT2DM \
+      --dataset bris_t1d_open=path/to/Standardized-datasets/Bris-T1D_Open \
+      --output cgm-audit-summary/audit-summary.json
 
-The first analysis should characterise:
-- mean/median glucose and distribution;
-- time in range (70–180 mg/dL) and time below/above range, where sampling and clinical context support those metrics;
-- within-person glucose variability;
-- daily and participant-level patterns;
-- missingness, sensor gaps, and effective observation duration.
+The audit reports, per dataset:
 
-A secondary forecasting experiment may predict glucose at a pre-specified short horizon (for example, 30 or 60 minutes) using only past observations. Evaluate with participant-held-out and, where possible, cross-dataset testing. Report MAE/RMSE and clinically interpretable error summaries, but do not claim clinical utility from retrospective metrics.
+1. Number of participant CSV files found and number with the expected schema.
+2. Total source rows and valid timestamp/glucose pairs.
+3. Missing or unparseable timestamps and missing/non-numeric glucose values.
+4. Duplicate timestamps and non-monotonic timestamp steps in source order.
+5. Large gaps, where a gap is more than three times that participant file's median positive sampling interval.
+6. Median participant sampling interval and median participant observation span.
+7. Median across-participant mean, median, and standard deviation of glucose.
+8. Median across-participant proportions of readings below 70, from 70 to 180 inclusive, and above 180 mg/dL.
+9. Count of readings outside 40–400 mg/dL, flagged but not removed.
 
-Use appropriate glucose units and document all transformations. Avoid treating every CGM sample as an independent patient-level observation. Confidence intervals should account for participant clustering (e.g., participant-level bootstrap), not sample-level resampling.
+The reported 70–180 metric is a fraction of readings, not a time-weighted time-in-range estimate. It must not be labelled TIR unless sampling intervals and duration weighting have been validated. Values outside 40–400 mg/dL are flagged only; the audit does not delete or impute records.
 
-## Limitations
+The audit parses timestamps as UTC for elapsed-time calculations. Naive timestamps are interpreted as UTC; no local-calendar-day metrics are computed. This avoids inventing local timezone semantics but does not establish the source's actual timezone. Source timezone conventions must be checked before any calendar-based analysis.
 
-- The selected open cohorts are modest in participant count and vary in duration, population, device, protocol, and metadata.
-- The strongest long-duration open cohorts in this shortlist are predominantly type 1 diabetes; the T2D-focused Shanghai cohort has a shorter monitoring window.
-- CGM is a measure of glucose dynamics, not a complete measure of diabetes progression.
-- Short monitoring windows do not establish long-term progression or complication risk.
-- Sensor data are subject to gaps, device-specific error, and differences in sampling and collection protocols.
-- Cross-dataset generalisation may be limited by population and device differences.
-- Results are research analyses, not diagnosis, treatment recommendations, or evidence of clinical effectiveness.
+The report contains aggregate dataset-level fields only. It does not contain participant identifiers, filenames, per-participant metrics, raw glucose readings, or demographic metadata.
+
+## Modelling gate (not yet authorised by this protocol)
+
+Only after source terms, actual file counts, schema, units, sampling cadence, timestamp semantics, missingness, duplicate handling, and participant-level cohort feasibility have been reviewed should a single primary forecasting method be selected. The method must be frozen before held-out evaluation. Any forecasting windows must be split by participant, with chronology preserved within each participant. Adjacent windows from one participant must never be split across train/validation/test sets.
+
+A later forecast horizon must be specified before model fitting. Report participant-clustered uncertainty, not sample-level confidence intervals. If an independent cohort supports external testing, preserve it as a separate dataset and report its results separately. Keep T1D and T2D analyses separate.
+
+No model family comparison is planned. No clinical utility, diagnosis, treatment benefit, causal effect, or long-term progression claim may be made from retrospective CGM metrics.
 
 ## Reproducibility and governance
 
-Keep downloaded datasets outside Git. Store local files under an ignored data directory and verify that no patient-level data, participant-level predictions, or restricted metadata enter commits, issues, workflow artifacts, or public logs. Follow each dataset's licence, attribution, and usage conditions even when it is openly downloadable. Publish code and only those aggregate outputs permitted by the source terms.
+- Cite each original dataset and the Glucose-ML harmonization resource.
+- Follow source licence, attribution and non-commercial/derivative restrictions.
+- Keep raw and participant-level files outside Git and public workflow artifacts.
+- The GitHub Actions workflow uploads only an aggregate audit JSON, never raw files or participant-level outputs.
+- The original benchmark results remain in RESULTS.md and are not mixed with CGM outputs.
 
 ## Completion gate
 
-The dataset selection is considered feasible only after downloads succeed without gated approval, licences/terms are recorded, source files are verified, and participant-level data-quality summaries are generated. No model results or participant counts are claimed in this repository until those steps have actually run.
+The first batch is considered acquired only if both downloads and both dataset-specific harmonization scripts exit successfully. It is considered audited only if the aggregate audit completes and the output is inspected for plausible counts, units, intervals, gaps and source inconsistencies. A workflow failure is not a successful download. No CGM model result is claimed until a separate, verified modelling stage has actually run.
