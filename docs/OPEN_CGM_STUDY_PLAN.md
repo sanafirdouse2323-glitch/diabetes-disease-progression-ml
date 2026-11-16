@@ -70,6 +70,16 @@ The audit reports, per dataset:
 
 The reported 70–180 metric is a fraction of readings, not a time-weighted time-in-range estimate. It must not be labelled TIR unless sampling intervals and duration weighting have been validated. Values outside 40–400 mg/dL are flagged only; the audit does not delete or impute records.
 
+For ShanghaiT2DM, run the source-workbook audit as well. It treats each Excel workbook as one recording session and reports the number of sessions per participant prefix, source rows, missing CGM values, within-session gaps, and reconciliation against the harmonized CSV output:
+
+    PYTHONPATH=src python -m diabetes_ml.cgm_source_audit \
+      --raw-dir path/to/Original-Glucose-ML-datasets/Shanghai_raw_data/Shanghai_T2DM \
+      --harmonized-dir path/to/Standardized-datasets/ShanghaiT2DM \
+      --upstream-revision UPSTREAM_GIT_SHA \
+      --output cgm-audit-summary/shanghai-source-audit.json
+
+The source-workbook audit is necessary because the upstream Shanghai extractor concatenates multiple recording workbooks for some participants. For any future forecasting windows, preserve workbook boundaries and split participants—not individual windows—between train and test.
+
 The audit parses timestamps as UTC for elapsed-time calculations. Naive timestamps are interpreted as UTC; no local-calendar-day metrics are computed. This avoids inventing local timezone semantics but does not establish the source's actual timezone. Source timezone conventions must be checked before any calendar-based analysis. The Shanghai source-workbook audit also preserves each workbook as a separate recording session and reports within-session gaps separately from gaps introduced by participant-level concatenation.
 
 The report contains aggregate dataset-level fields only. It does not contain participant identifiers, filenames, per-participant metrics, raw glucose readings, or demographic metadata.
