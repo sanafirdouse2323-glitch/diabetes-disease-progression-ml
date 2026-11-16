@@ -104,12 +104,32 @@ Values outside 40–400 mg/dL were flagged, not removed or imputed. Their presen
 
 1. **Acquisition passed** for the first batch: both downloads and both dataset-specific extraction scripts completed successfully.
 2. **Shanghai source reconciliation passed:** 109 workbooks, 100 participant prefixes, 112,475 source rows, 13 missing CGM values, and 112,462 valid pairs exactly matching the harmonized output.
-3. **Shanghai session-boundary gate is now explicit:** 8 participants have multiple recording workbooks. Future windows must be created within individual workbooks/sessions, not across the upstream merged participant CSVs.
+3. **Shanghai session-boundary gate passed:** 8 participants have multiple recording workbooks. All 109,972 windows were created within individual workbooks/sessions, never across merged participant CSVs.
 4. **Bris-T1D Open is not yet ready for forecasting** because of 309 conflicting duplicate timestamp groups across 13 of 20 files. No deduplication decision has been made.
 5. The 359 Shanghai and 1,006 Bris readings outside 40–400 mg/dL were flagged, not filtered. Source-aware review remains necessary.
 6. One fixed ShanghaiT2DM forecasting model was trained; no model-family comparison or baseline comparison was performed. No clinical utility or long-term disease-progression claim is made.
 
-The first-batch acquisition and audit are a feasibility result only. The next stage is session-preserving window feasibility for ShanghaiT2DM and source-level duplicate review for Bris-T1D Open—not a model-family bake-off.
+The first-batch acquisition, quality audit, window-feasibility check and one fixed Shanghai forecast are complete. The next scientific gates are independent T2D cohort validation and source-level resolution of Bris-T1D Open's conflicting duplicate timestamps. Bris is T1D and must not be treated as external validation for the Shanghai T2D model. No model-family bake-off is planned.
+
+
+## Session-preserving forecast feasibility
+
+The fixed feasibility configuration used 20 consecutive readings at 15-minute cadence and a 30-minute target horizon. It generated 109,972 valid windows without crossing workbook/session boundaries.
+
+| Split | Participants | Sessions | Windows |
+|---|---:|---:|---:|
+| Training | 70 | 75 | 75,045 |
+| Validation | 15 | 15 | 16,939 |
+| Held-out test | 15 | 19 | 17,988 |
+| **Total** | **100** | **109** | **109,972** |
+
+All 109 sessions and all 100 participants had at least one valid window. No recording-session intervals overlapped within a participant. The full window specification and counting policy are recorded in [OPEN_CGM_FORECAST_RESULTS.md](OPEN_CGM_FORECAST_RESULTS.md).
+
+## Single-model forecasting result
+
+One fixed HistGradientBoostingRegressor was trained on ShanghaiT2DM using only 20 past CGM readings and evaluated on held-out participants. Test participant-macro MAE was 9.382 mg/dL (95% participant-cluster bootstrap interval 8.417–10.305); participant-macro RMSE was 12.949 mg/dL (95% interval 11.568–14.189). Pooled-window MAE was 9.521 mg/dL, RMSE 13.310 mg/dL and R² 0.938.
+
+No baseline or competing model was evaluated, no hyperparameter search was performed, and the validation set was not used for model selection. This result is an internal reproducibility/proof-of-pipeline experiment, not external validation or a novelty claim. A 2025 publication has already used ShanghaiT2DM with 20 prior CGM readings and 30/60/90-minute horizons; protocols differ, so metrics are not directly comparable. See [full forecast results and limitations](OPEN_CGM_FORECAST_RESULTS.md).
 
 ## Reproducibility fingerprints
 
