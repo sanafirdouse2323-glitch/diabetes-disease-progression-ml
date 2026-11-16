@@ -1,45 +1,30 @@
 # Diabetes Disease Progression with Machine Learning
 
-I developed this project to compare classical and neural machine-learning methods for estimating a continuous diabetes disease-progression benchmark measure one year after baseline. It brings together model development, nested and repeated evaluation, split-conformal uncertainty estimation, exploratory error analysis, and reproducible research tooling. The experiments compare model families rather than assuming that a more complex model will perform better.
+I built this project to practise and explore how different machine-learning methods perform on a diabetes disease-progression dataset. I wanted to compare traditional regression models with neural networks, understand how to evaluate them properly, and see whether more complex models actually give better results.
 
-The primary study is a regression benchmark, not a diabetes diagnosis or treatment system. A separate UCI hospital-readmission classification study is included as a distinct task; it is not validation of the progression model.
+For the main study, I used the diabetes dataset available through scikit-learn. It has 442 observations, 10 baseline features and a continuous target representing a measure of disease progression one year after baseline. This is a regression task. It does not diagnose diabetes, predict whether someone has diabetes, or recommend treatment.
 
+I worked with Linear Regression, Ridge, Lasso, ElasticNet, Support Vector Regression, Random Forest, Extra Trees and Histogram Gradient Boosting. I also built small neural networks using PyTorch and TensorFlow/Keras. I tested the models using held-out data, repeated splits and nested cross-validation. I added split-conformal prediction intervals to look at prediction uncertainty, and explored differences in model errors across the two encoded values of the dataset's standardised `sex` feature.
 
-## Project snapshot
+One thing I learned from the experiments is that using a more complicated model does not automatically lead to better results. On this small dataset, the simpler regression models performed better than the default neural networks in the matched-sample comparison. Tuning improved the PyTorch model, but it still did not outperform the best classical models.
 
-This is an independent medical machine-learning portfolio project. Its primary study compares regression methods for a **continuous one-year diabetes disease-progression benchmark score**. A second, separate study examines **30-day hospital readmission after discharge** using a historical UCI dataset. The readmission experiment is not external validation of the progression model.
+The repository also contains a separate experiment on 30-day hospital readmission using the UCI Diabetes 130-US Hospitals dataset. This is a different prediction task with a different dataset and outcome. It is not external validation of the one-year disease-progression model.
 
-| Study | Dataset | Prediction task | Methods demonstrated |
-|---|---|---|---|
-| **Primary: disease progression** | scikit-learn diabetes benchmark; 442 observations and 10 baseline features | Estimate a continuous one-year follow-up progression measure | Classical regression, PyTorch and TensorFlow MLPs, repeated validation, nested cross-validation, split-conformal intervals and exploratory error analysis |
-| **Separate: hospital readmission** | UCI Diabetes 130-US Hospitals; 101,766 historical encounters from 1999–2008 | Classify recorded readmission within 30 days, using information available at discharge | Patient-grouped splitting, train-fitted preprocessing, training-only threshold selection and classification/calibration metrics |
+## A note about the current evaluation
 
-### What this portfolio demonstrates
+The primary experiments currently use scikit-learn's `load_diabetes(scaled=True)`. This means the feature values are standardised using the full dataset before the repository creates its train/test and cross-validation splits. This is not target-label leakage, but it does mean that the preprocessing is not fully isolated within each training fold. I have documented this limitation in the [technical audit](docs/TECHNICAL_AUDIT_2026-11-16.md). The results below should be read with that limitation in mind. A proper raw-feature rerun using `scaled=False` and fold-specific preprocessing is still needed before I make a stronger claim about the evaluation.
 
-- **Model development:** comparisons between linear, regularised, tree-based, kernel and neural regression methods, with a mean-prediction baseline.
-- **Evaluation design:** held-out testing, repeated train/test splits, nested model selection and explicit separation of fitting, validation, calibration and test data.
-- **Prediction uncertainty:** split-conformal intervals with the finite-sample order-statistic correction.
-- **Responsible interpretation:** exploratory subgroup error analysis and explicit boundaries around causality, fairness and clinical use.
-- **Research engineering:** a Python package, automated tests, locked dependencies, notebooks, GitHub Actions and a non-root Docker demo.
+## What is included
 
-### Scientific scope and evaluation caveat
+- Data preparation and regression experiments using scikit-learn.
+- Neural-network experiments using PyTorch and TensorFlow/Keras.
+- Held-out testing, repeated-seed validation and nested cross-validation.
+- Split-conformal prediction intervals.
+- Exploratory subgroup error analysis and feature-importance methods.
+- A Streamlit demo that uses illustrative synthetic inputs.
+- Automated tests, notebooks, GitHub Actions workflows and a Docker setup.
 
-The primary benchmark estimates an outcome from baseline features; it does **not** identify a biological mechanism, model a longitudinal disease trajectory, diagnose diabetes or recommend treatment. It is a small, preprocessed public benchmark, not a patient-care system.
-
-The currently published progression experiments load the benchmark with `scaled=True`, which standardises features using the complete 442-row feature matrix before repository-level splits. This is unsupervised full-dataset preprocessing, not target-label leakage, but it means the published evaluation is not fully fold-isolated from raw features. The repository discloses this limitation; a fold-local `scaled=False` analysis and a complete rerun are still needed before describing the evaluation as fully preprocessing-leakage-controlled. See the [technical audit](docs/TECHNICAL_AUDIT_2026-11-16.md).
-
-### Research and portfolio navigation
-
-- [Experimental results and run settings](RESULTS.md)
-- [Progression research brief](docs/RESEARCH_BRIEF.md)
-- [PhD demonstration guide](docs/PHD_DEMO_GUIDE.md)
-- [Separate readmission study methods and limitations](docs/READMISSION_STUDY_BRIEF.md)
-- [Technical audit and prioritised remediation plan](docs/TECHNICAL_AUDIT_2026-11-16.md)
-- [Source package](src/diabetes_ml/)
-- [Automated tests](tests/)
-- [GitHub Actions workflows](.github/workflows/)
-
-For an interview, start with the progression study, explain the held-out evaluation and conformal interval, then discuss why the simple regression baselines remained competitive. Present the readmission work as a distinct extension rather than as validation of the progression model.
+The detailed metrics and experiment settings are in [RESULTS.md](RESULTS.md). The [research brief](docs/RESEARCH_BRIEF.md) explains the main study, and the [PhD demonstration guide](docs/PHD_DEMO_GUIDE.md) gives a short walkthrough of the project.
 
 ## Interactive Streamlit demo
 
