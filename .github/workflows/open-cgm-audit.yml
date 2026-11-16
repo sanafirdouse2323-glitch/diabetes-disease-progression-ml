@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - research/mimic-iv-glycemic-trajectory
+    paths:
+      - .github/workflows/open-cgm-audit.yml
+      - src/diabetes_ml/cgm_audit.py
+      - tests/test_cgm_audit.py
   workflow_dispatch:
 
 concurrency:
