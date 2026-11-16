@@ -94,7 +94,36 @@ A large gap is an interval greater than three times that participant file's medi
 
 ### Important Bris-T1D Open blocker
 
-All 309 Bris duplicate timestamp groups contain more than one glucose value at the same parsed timestamp, across 13 participant files. The audit did **not** choose the first value, last value, mean, or median; it preserved and counted the observations. These conflicting duplicate timestamps must be traced to the source records and a handling rule pre-specified before Bris data are used for time-series modelling. Until then, Bris-derived glucose distribution summaries remain preliminary.
+All 309 Bris duplicate timestamp groups contain more than one glucose value at the same parsed timestamp, across 13 participant files. The audit did **not** choose the first value, last value, mean, or median; it preserved and counted the observations.
+
+#### Source-level duplicate/device investigation
+
+A second audit examined the original open `processed_state` files, not just the harmonized CSVs:
+
+| Source-level field | Observed value |
+|---|---:|
+| Processed-state CSV files | 20 |
+| Total multimodal source rows | 2,875,613 |
+| Rows with a usable timestamp and numeric BG value | 848,574 |
+| Rows with no BG value | 2,027,039 |
+| Duplicate timestamp groups | 309 |
+| Conflicting duplicate timestamp groups | 309 |
+| Duplicate groups with more than one recorded device label | 0 |
+| Duplicate groups with one recorded device label | 309 |
+| Duplicate groups with missing/unknown device label | 0 |
+| Participants with at least one duplicate group | 13 of 20 |
+| Median glucose difference within a conflicting group | 27.00 mg/dL |
+| 95th percentile of within-group glucose difference | 116.28 mg/dL |
+| Maximum within-group glucose difference | 163.80 mg/dL |
+| Difference between valid source BG pairs and harmonized rows | 0 |
+
+The 2,027,039 rows without a BG value are rows in a multimodal processed-state table that also contains non-glucose events; they must not be interpreted as 2 million missing CGM readings. The 848,574 valid timestamp/BG pairs match the harmonized output exactly.
+
+The source processing notebook retains a `device` field, sorts the merged data and removes exact duplicate rows. Its final full-row duplicate removal does not remove two records that share a timestamp but have different BG values. Some source-specific extractors also round timestamps to the nearest minute. The Glucose-ML extractor then selects only `timestamp` and `bg`, dropping the device label. The source-level audit shows that all 309 conflicting groups already exist in the processed-state files and each group has one recorded device label; none is explained by two distinct device labels.
+
+This narrows the issue but does not identify which glucose value is correct or which original export generated each row. The processed-state files do not retain enough per-row source provenance to resolve the conflicts. The separate raw-state deposit is restricted and was not used. No deduplication, averaging, interpolation or row selection has been applied. Bris-T1D Open remains excluded from modelling until the dataset maintainers or a documented source-level rule resolve these conflicts.
+
+Source processing code: [BrisT1D raw-to-processed notebook](https://github.com/SamAJames/brist1d_processing/blob/main/notebooks/raw_to_processed.ipynb). The [Glucose-ML Bris extractor](https://github.com/Augmented-Health-Lab/Glucose-ML-Project/blob/main/2_Harmonize-cgm-datasets/Bris-T1D_Open/Bris-T1D_Open_extract-glucose-data.py) retains only timestamp and BG.
 
 ShanghaiT2DM has no duplicate timestamps or non-monotonic steps within any of the 109 source workbooks. The merged participant CSVs show two non-monotonic steps and 11 large-gap flags; the session-preserving source audit finds zero within-session reversals and only two within-session large gaps. The nine additional large-gap flags equal the nine extra recording workbooks beyond one per participant, consistent with session boundaries being counted as long gaps after concatenation. The two merged-file reversals also appear only after concatenation. This confirms that the merged participant CSVs must not be used as if each were one continuous session.
 
