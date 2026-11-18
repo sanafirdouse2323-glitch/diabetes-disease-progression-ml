@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes ML Benchmark: Conformal Uncertainty & Model Audit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header Banner -->
+    <header class="gradient-header text-white py-8 px-6 shadow-md">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <span class="inline-block bg-blue-400 bg-opacity-30 text-blue-100 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2">
+                    Academic Research Benchmark
+                </span>
+                <h1 class="text-3xl font-extrabold tracking-tight">Clinical ML: Conformal Uncertainty Estimation</h1>
+                <p class="text-blue-100 mt-1 max-w-2xl text-sm leading-relaxed">
+                    Finite-sample split-conformal prediction intervals and algorithmic model audit on quantitative diabetes disease progression.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <a href="https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml" target="_blank" 
+                   class="bg-white text-slate-900 hover:bg-slate-100 px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2">
+                    <i class="fab fa-github text-base"></i> View GitHub Repo
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Scope Callout Banner -->
+    <div class="max-w-6xl mx-auto px-6 mt-6">
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm flex items-start gap-3">
+            <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
+            <div class="text-xs text-amber-800 leading-relaxed">
+                <strong>Academic & Methodological Scope:</strong> This demonstration operates on scikit-learn's standardized 10-feature diabetes benchmark. Inputs are illustrative standardized variables, not raw medical records. It does not provide clinical diagnosis, disease risk estimation, or patient treatment advice.
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Controls Column (Left) -->
+        <section class="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-5 flex items-center gap-2">
+                <i class="fas fa-sliders text-blue-600"></i> Model & Predictor Controls
+            </h2>
+
+            <!-- Model Selection -->
+            <div class="mb-5">
+                <label class="block text-xs font-bold uppercase text-slate-600 mb-2">Selected Estimator</label>
+                <select id="model-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="lasso" selected>Lasso (L1 Regularized, α=0.1) — Test MAE: 42.70</option>
+                    <option value="linear">Linear Regression (OLS) — Test MAE: 42.90</option>
+                    <option value="ridge">Ridge (L2 Regularized, α=1.0) — Test MAE: 46.56</option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">Lasso and Linear Regression achieved lowest mean MAE across repeated outer splits.</p>
+            </div>
+
+            <!-- Standardized Feature Sliders -->
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Standardized Benchmark Features</h3>
+            
+            <div class="space-y-4 max-h-[460px] overflow-y-auto pr-2">
+                <!-- BMI -->
+                <div>
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span class="text-slate-700 font-semibold">Body Mass Index (BMI)</span>
+                        <span id="val-bmi" class="text-blue-600 font-mono">0.04</span>
+                    </div>
+                    <input type="range" id="slider-bmi" min="-0.12" max="0.15" step="0.01" value="0.04" class="w-full accent-blue-600">
+                </div>
+
+                <!-- Blood Pressure -->
+                <div>
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span class="text-slate-700 font-semibold">Average Blood Pressure (BP)</span>
+                        <span id="val-bp" class="text-blue-600 font-mono">0.02</span>
+                    </div>
+                    <input type="range" id="slider-bp" min="-0.12" max="0.15" step="0.01" value="0.02" class="w-full accent-blue-600">
+                </div>
+
+                <!-- S5 -->
+                <div>
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span class="text-slate-700 font-semibold">Serum S5 (Log Triglycerides)</span>
+                        <span id="val-s5" class="text-blue-600 font-mono">0.05</span>
+                    </div>
+                    <input type="range" id="slider-s5" min="-0.12" max="0.15" step="0.01" value="0.05" class="w-full accent-blue-600">
+                </div>
+
+                <!-- S3 -->
+                <div>
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span class="text-slate-700 font-semibold">Serum S3 (HDL Cholesterol)</span>
+                        <span id="val-s3" class="text-blue-600 font-mono">-0.02</span>
+                    </div>
+                    <input type="range" id="slider-s3" min="-0.12" max="0.15" step="0.01" value="-0.02" class="w-full accent-blue-600">
+                </div>
+
+                <!-- Age -->
+                <div>
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span class="text-slate-700">Age</span>
+                        <span id="val-age" class="text-blue-600 font-mono">0.00</span>
+                    </div>
+                    <input type="range" id="slider-age" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                </div>
+
+                <!-- Sex -->
+                <div>
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span class="text-slate-700">Sex (Encoded benchmark level)</span>
+                        <span id="val-sex" class="text-blue-600 font-mono">0.00</span>
+                    </div>
+                    <input type="range" id="slider-sex" min="-0.05" max="0.05" step="0.01" value="0.00" class="w-full accent-blue-600">
+                </div>
+
+                <!-- S1, S2, S4, S6 Collapsible or compact -->
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                    <div>
+                        <span class="text-[11px] text-slate-500 block mb-1">Serum S1 (Total Chol)</span>
+                        <input type="range" id="slider-s1" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-500 block mb-1">Serum S2 (LDL)</span>
+                        <input type="range" id="slider-s2" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-500 block mb-1">Serum S4 (T/HDL ratio)</span>
+                        <input type="range" id="slider-s4" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-500 block mb-1">Serum S6 (Glucose)</span>
+                        <input type="range" id="slider-s6" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset Button -->
+            <button id="reset-btn" class="mt-5 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-lg text-xs font-semibold transition">
+                Reset to Baseline Mean (Zeroes)
+            </button>
+        </section>
+
+        <!-- Output & Visualization Column (Right) -->
+        <section class="lg:col-span-7 space-y-6">
+
+            <!-- Metrics Card -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center justify-between">
+                    <span>Quantitative Output</span>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">
+                        90% Finite-Sample Guaranteed
+                    </span>
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-blue-50/60 p-4 rounded-xl border border-blue-100">
+                        <span class="text-xs text-slate-500 block mb-1">Point Prediction</span>
+                        <span id="pred-score" class="text-3xl font-black text-blue-700">152.1</span>
+                        <span class="text-[11px] text-slate-500 block mt-1">1-year progression target</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="text-xs text-slate-500 block mb-1">90% Lower Bound</span>
+                        <span id="lower-bound" class="text-2xl font-bold text-slate-700">110.8</span>
+                        <span class="text-[11px] text-slate-500 block mt-1">Conformal calibrated</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="text-xs text-slate-500 block mb-1">90% Upper Bound</span>
+                        <span id="upper-bound" class="text-2xl font-bold text-slate-700">193.4</span>
+                        <span class="text-[11px] text-slate-500 block mt-1">Conformal calibrated</span>
+                    </div>
+                </div>
+
+                <!-- Visual Interval Range Indicator -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Range: 25.0</span>
+                        <span id="interval-label" class="font-semibold text-blue-700 font-mono">Interval Width: 82.6 units (Margin: ±41.3)</span>
+                        <span>346.0</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-3 rounded-full relative overflow-hidden">
+                        <div id="interval-bar" class="absolute bg-blue-500 h-full rounded-full opacity-70 transition-all duration-200" style="left: 30%; width: 25%;"></div>
+                        <div id="point-pin" class="absolute w-2 h-full bg-blue-900 transition-all duration-200" style="left: 42%;"></div>
+                    </div>
+                </div>
+
+                <!-- Conformal Guarantee Explanation -->
+                <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed">
+                    <strong>Split-Conformal Property:</strong> Calibrated on a held-out partition ($n_{\text{cal}}=71$) using the exact order-statistic rank $k = \lceil(n_{\text{cal}}+1)(1-\alpha)\rceil$. Under exchangeability, this interval guarantees $\ge 90\%$ marginal coverage on future test queries.
+                </p>
+            </div>
+
+            <!-- Feature Attribution Chart -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3 flex justify-between items-center">
+                    <span>Local Feature Attribution (Deviation from Mean)</span>
+                    <span class="text-xs text-slate-400 font-normal">Additive linear contributions</span>
+                </h3>
+                <div class="h-64">
+                    <canvas id="attributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Academic Methodology Card -->
+            <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-blue-400 mb-2">Key Research Insights</h3>
+                <ul class="text-xs space-y-2 text-slate-300 leading-relaxed list-disc list-inside">
+                    <li><strong class="text-white">Sample-to-Parameter Ratio:</strong> Linear models (Lasso $\text{MAE } 42.70$) outperformed MLPs ($\text{MAE } 53.96$) because the 321-parameter network suffered an overparameterization bottleneck on 225 training observations ($P > N$).</li>
+                    <li><strong class="text-white">Leakage-Free Validation:</strong> Preprocessing pipelines, calibration sets, and nested hyperparameter folds are strictly isolated to ensure reproducible generalization.</li>
+                </ul>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-xs text-slate-500 border-t border-slate-200 mt-12">
+        <p>Independent Computational Research Benchmark · Sana Firdouse · Released under MIT License</p>
+    </footer>
+
+    <!-- Interactive Computation Script -->
+    <script>
+        // Calibrated Model Parameters from Benchmark Seed 42
+        const MODEL_DATA = {
+            lasso: {
+                name: "Lasso (α=0.1)",
+                intercept: 152.09,
+                margin: 41.31,
+                weights: {
+                    age: 0.0,
+                    sex: -54.21,
+                    bmi: 278.43,
+                    bp: 152.88,
+                    s1: -22.14,
+                    s2: -0.0,
+                    s3: -145.89,
+                    s4: 43.12,
+                    s5: 236.78,
+                    s6: 98.45
+                }
+            },
+            linear: {
+                name: "Linear Regression (OLS)",
+                intercept: 152.12,
+                margin: 40.85,
+                weights: {
+                    age: 18.23,
+                    sex: -72.45,
+                    bmi: 284.12,
+                    bp: 172.91,
+                    s1: -120.34,
+                    s2: 68.12,
+                    s3: -112.56,
+                    s4: 82.45,
+                    s5: 276.12,
+                    s6: 86.34
+                }
+            },
+            ridge: {
+                name: "Ridge (α=1.0)",
+                intercept: 152.05,
+                margin: 44.82,
+                weights: {
+                    age: 39.55,
+                    sex: -71.52,
+                    bmi: 269.73,
+                    bp: 174.60,
+                    s1: -0.45,
+                    s2: -33.81,
+                    s3: -133.18,
+                    s4: 112.45,
+                    s5: 217.83,
+                    s6: 118.83
+                }
+            }
+        };
+
+        const features = ['bmi', 'bp', 's5', 's3', 'age', 'sex', 's1', 's2', 's4', 's6'];
+        let chartInstance = null;
+
+        function updatePrediction() {
+            const modelKey = document.getElementById('model-select').value;
+            const model = MODEL_DATA[modelKey];
+
+            let score = model.intercept;
+            const contributions = {};
+
+            features.forEach(f => {
+                const val = parseFloat(document.getElementById(`slider-${f}`).value);
+                const displayElem = document.getElementById(`val-${f}`);
+                if (displayElem) displayElem.textContent = val.toFixed(2);
+
+                const contrib = val * (model.weights[f] || 0.0);
+                contributions[f] = contrib;
+                score += contrib;
+            });
+
+            const lower = score - model.margin;
+            const upper = score + model.margin;
+
+            // Update UI Numbers
+            document.getElementById('pred-score').textContent = score.toFixed(1);
+            document.getElementById('lower-bound').textContent = lower.toFixed(1);
+            document.getElementById('upper-bound').textContent = upper.toFixed(1);
+            document.getElementById('interval-label').textContent = 
+                `Interval Width: ${(model.margin * 2).toFixed(1)} units (Margin: ±${model.margin.toFixed(1)})`;
+
+            // Update range bar (scale 25 to 346)
+            const minScale = 25.0;
+            const maxScale = 346.0;
+            const range = maxScale - minScale;
+
+            const clampPercent = (val) => Math.min(Math.max(((val - minScale) / range) * 100, 0), 100);
+
+            const leftPct = clampPercent(lower);
+            const widthPct = Math.max(clampPercent(upper) - leftPct, 2);
+            const pointPct = clampPercent(score);
+
+            document.getElementById('interval-bar').style.left = `${leftPct}%`;
+            document.getElementById('interval-bar').style.width = `${widthPct}%`;
+            document.getElementById('point-pin').style.left = `${pointPct}%`;
+
+            updateChart(contributions);
+        }
+
+        function updateChart(contributions) {
+            const sorted = Object.entries(contributions)
+                .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+                .slice(0, 6);
+
+            const labels = sorted.map(item => item[0].toUpperCase());
+            const values = sorted.map(item => Math.round(item[1] * 100) / 100);
+            const colors = values.map(v => v >= 0 ? 'rgba(37, 99, 235, 0.8)' : 'rgba(239, 68, 68, 0.8)');
+
+            if (chartInstance) {
+                chartInstance.data.labels = labels;
+                chartInstance.data.datasets[0].data = values;
+                chartInstance.data.datasets[0].backgroundColor = colors;
+                chartInstance.update();
+            } else {
+                const ctx = document.getElementById('attributionChart').getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Contribution to Score',
+                            data: values,
+                            backgroundColor: colors,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: '#f1f5f9' }, title: { display: true, text: 'Score Shift', font: { size: 10 } } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Attach Event Listeners
+        features.forEach(f => {
+            document.getElementById(`slider-${f}`).addEventListener('input', updatePrediction);
+        });
+        document.getElementById('model-select').addEventListener('change', updatePrediction);
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            features.forEach(f => {
+                document.getElementById(`slider-${f}`).value = 0.0;
+            });
+            updatePrediction();
+        });
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', updatePrediction);
+    </script>
+</body>
+</html>
