@@ -10,6 +10,18 @@ The model predicts a single continuous score — a quantitative measure of how m
 
 This is an abstract benchmark quantity. The scikit-learn version of the dataset does not disclose which specific serum measurements constitute the composite score. The demo included in this repository uses illustrative standardised inputs; they are synthetic examples and must not be treated as measurements from real patients or as a clinically validated prediction tool.
 
+
+## Interactive Demos & Quick Access
+
+Choose how you want to inspect or execute the benchmark:
+
+| Mode | Platform | Description | Link |
+|---|---|---|---|
+| **Zero-Install Web Dashboard** | Web (GitHub Pages) | Pure client-side interactive dashboard with model selection, feature sliders, and 90% conformal intervals. | [**Launch Live Web Demo**](https://sanafirdouse2323-glitch.github.io/diabetes-disease-progression-ml) |
+| **Interactive Colab Notebook** | Google Colab | 1-click executable Jupyter notebook running model comparison and uncertainty estimation in the cloud. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sanafirdouse2323-glitch/diabetes-disease-progression-ml/blob/main/notebooks/02_model_comparison.ipynb) |
+| **Gradio Research App** | Hugging Face / Local | Academic ML demo interface built with Gradio for model auditing and prediction interval display. | [demo/gradio_app.py](demo/gradio_app.py) |
+| **Streamlit Research Demo** | Local Streamlit | Feature attribution, conformal interval visualizer, and exploratory subgroup disparity audit. | [demo/app.py](demo/app.py) |
+
 ## Interactive Streamlit demo
 
 The repository includes a locally runnable Streamlit application that demonstrates selected parts of the progression-regression workflow. The interface lets you:
@@ -327,3 +339,5 @@ Further research should evaluate the models with contemporary, independently gov
 - Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R. J., and Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116).
 
 This project is licensed under the MIT License.
+
+
