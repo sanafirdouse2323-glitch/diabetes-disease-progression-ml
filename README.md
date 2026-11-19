@@ -1,8 +1,30 @@
 # Diabetes Disease Progression with Machine Learning
 
-This repository documents a machine-learning study of a continuous measure of diabetes disease progression one year after baseline measurements. It covers data preparation, model development, evaluation, prediction uncertainty, and exploratory analysis of model errors. Several model families are included as part of the experimental methods; the project does not claim that one family is generally superior.
+I built this project to practise and explore how different machine-learning methods perform on a diabetes disease-progression dataset. I wanted to compare traditional regression models with neural networks, understand how to evaluate them properly, and see whether more complex models actually give better results.
 
-The project uses a continuous disease-progression target. It does not predict whether a person has diabetes, diagnose a condition, or recommend treatment.
+For the main study, I used the diabetes dataset available through scikit-learn. It has 442 observations, 10 baseline features and a continuous target representing a measure of disease progression one year after baseline. This is a regression task. It does not diagnose diabetes, predict whether someone has diabetes, or recommend treatment.
+
+I worked with Linear Regression, Ridge, Lasso, ElasticNet, Support Vector Regression, Random Forest, Extra Trees and Histogram Gradient Boosting. I also built small neural networks using PyTorch and TensorFlow/Keras. I tested the models using held-out data, repeated splits and nested cross-validation. I added split-conformal prediction intervals to look at prediction uncertainty, and explored differences in model errors across the two encoded values of the dataset's standardised `sex` feature.
+
+One thing I learned from the experiments is that using a more complicated model does not automatically lead to better results. On this small dataset, the simpler regression models performed better than the default neural networks in the matched-sample comparison. Tuning improved the PyTorch model, but it still did not outperform the best classical models.
+
+The repository also contains a separate experiment on 30-day hospital readmission using the UCI Diabetes 130-US Hospitals dataset. This is a different prediction task with a different dataset and outcome. It is not external validation of the one-year disease-progression model.
+
+## A note about the current evaluation
+
+The primary experiments currently use scikit-learn's `load_diabetes(scaled=True)`. This means the feature values are standardised using the full dataset before the repository creates its train/test and cross-validation splits. This is not target-label leakage, but it does mean that the preprocessing is not fully isolated within each training fold. I have documented this limitation in the [technical audit](docs/TECHNICAL_AUDIT_2026-11-16.md). The results below should be read with that limitation in mind. A proper raw-feature rerun using `scaled=False` and fold-specific preprocessing is still needed before I make a stronger claim about the evaluation.
+
+## What is included
+
+- Data preparation and regression experiments using scikit-learn.
+- Neural-network experiments using PyTorch and TensorFlow/Keras.
+- Held-out testing, repeated-seed validation and nested cross-validation.
+- Split-conformal prediction intervals.
+- Exploratory subgroup error analysis and feature-importance methods.
+- A Streamlit demo that uses illustrative synthetic inputs.
+- Automated tests, notebooks, GitHub Actions workflows and a Docker setup.
+
+The detailed metrics and experiment settings are in [RESULTS.md](RESULTS.md). The [research brief](docs/RESEARCH_BRIEF.md) explains the main study, and the [PhD demonstration guide](docs/PHD_DEMO_GUIDE.md) gives a short walkthrough of the project.
 
 ## What the target variable means
 
