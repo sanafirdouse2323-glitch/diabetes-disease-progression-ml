@@ -1,372 +1,158 @@
-# Diabetes Disease Progression with Machine Learning
+# Diabetes disease progression: a machine-learning study
 
-This repository documents a machine-learning study of a continuous measure of diabetes disease progression one year after baseline measurements. It covers data preparation, model development, evaluation, prediction uncertainty, and exploratory analysis of model errors. Several model families are included as part of the experimental methods; the project does not claim that one family is generally superior.
+I built this repository to compare regression methods on the public diabetes disease-progression dataset included in scikit-learn. The work covers data preparation, classical regression, small neural networks, model evaluation, prediction intervals and exploratory analysis of model errors.
 
-The project uses a continuous disease-progression target. It does not predict whether a person has diabetes, diagnose a condition, or recommend treatment.
+The task is regression. The target is a continuous measure of disease progression one year after baseline. It is not a diabetes diagnosis, a prediction of whether someone has diabetes, or a recommendation for treatment.
 
-## What the target variable means
+## The dataset
 
-The model predicts a single continuous score — a quantitative measure of how much a patient's diabetes-related blood markers worsened one year after their baseline measurements. This score originates from Efron et al. (2004) and is derived from serum measurements. It is not a blood glucose level, HbA1c reading, insulin dose, or a diagnosis. The raw score ranges from approximately 25 to 346; a higher score indicates greater disease progression.
+The scikit-learn dataset contains 442 observations and 10 baseline features. The target is a quantitative disease-progression measure recorded one year after the baseline measurements. It is not a glucose reading, an HbA1c value or a diagnosis.
 
-This is an abstract benchmark quantity. The scikit-learn version of the dataset does not disclose which specific serum measurements constitute the composite score. The demos use illustrative synthetic values in the dataset's unstandardized source feature representation. They are not measurements from real patients and the demos are not clinically validated prediction tools.
+In the current implementation I load the dataset with `load_diabetes(as_frame=True, scaled=False)`. This returns the dataset's unstandardized feature representation and avoids calculating feature means and standard deviations across all 442 observations before the data is split. The source features are still a prepared benchmark representation; they are not raw hospital records.
 
+## What I implemented
 
-## Interactive Demos & Quick Access
+I compared Linear Regression, Ridge, Lasso, ElasticNet, Support Vector Regression, Random Forest, Extra Trees and Histogram Gradient Boosting. I also trained small multilayer perceptrons with PyTorch and TensorFlow/Keras.
 
-Choose how you want to inspect or execute the benchmark:
+For the classical models, I put `StandardScaler` inside the estimator pipeline for the scale-sensitive linear methods. That means the scaler is fitted on the observations used to fit the model. During cross-validation, each training fold gets its own fitted scaler. The neural-network workflow follows the same boundary: its scaler is fitted only on the model-fitting subset, then applied unchanged to the validation, calibration and test subsets. Tree-based models and the mean baseline do not need feature scaling.
 
-| Mode | Platform | Description | Link |
-|---|---|---|---|
-| **Zero-Install Web Dashboard** | Web (GitHub Pages) | Pure client-side interactive dashboard with model selection, feature sliders, and 90% conformal intervals. | [**Launch Live Web Demo**](https://sanafirdouse2323-glitch.github.io/diabetes-disease-progression-ml) |
-| **Interactive Colab Notebook** | Google Colab | 1-click executable Jupyter notebook running model comparison and uncertainty estimation in the cloud. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sanafirdouse2323-glitch/diabetes-disease-progression-ml/blob/main/notebooks/02_model_comparison.ipynb) |
-| **Gradio Research App** | Hugging Face / Local | Academic ML demo interface built with Gradio for model auditing and prediction interval display. | [demo/gradio_app.py](demo/gradio_app.py) |
-| **Streamlit Research Demo** | Local Streamlit | Feature attribution, conformal interval visualizer, and exploratory subgroup disparity audit. | [demo/app.py](demo/app.py) |
+I also implemented split-conformal prediction intervals, a small subgroup error audit across the two coded values of the dataset's `sex` feature, and model-based feature summaries. These analyses are exploratory. The subgroup comparison is not a complete fairness assessment, and model coefficients or feature importance do not establish cause and effect.
 
-## Interactive Streamlit demo
+## Interactive demos
 
-The repository includes a locally runnable Streamlit application that demonstrates selected parts of the progression-regression workflow. The interface lets you:
+The repository contains three ways to explore the regression benchmark. The [GitHub Pages dashboard](https://sanafirdouse2323-glitch.github.io/diabetes-disease-progression-ml) is published from `main`; updates from this branch will appear there after the pull request is merged and the site is refreshed. The [Colab notebook](https://colab.research.google.com/github/sanafirdouse2323-glitch/diabetes-disease-progression-ml/blob/research/fold-isolated-preprocessing-20261121/notebooks/02_model_comparison.ipynb) runs the classical comparison in the cloud. The repository also includes a [Gradio interface](demo/gradio_app.py) and a [Streamlit app](demo/app.py) that you can run locally.
 
-- Select one of the implemented regression models (Ridge, Linear Regression, Lasso or Random Forest).
-- Adjust illustrative values in the dataset's unstandardized source feature representation and view a point prediction with a 90% split-conformal prediction interval.
-- Inspect local feature-attribution output relative to the model-fitting reference baseline.
-- Explore a held-out benchmark subgroup error audit across the two coded source levels of the `sex` feature.
+The sliders in the demos use illustrative values in the dataset's unstandardized source feature representation. They are not real patient measurements. A displayed prediction is a benchmark model output, not a personal disease-risk estimate or a clinical result. The conformal interval is designed to provide marginal coverage across future observations under exchangeability assumptions; it is not a 90% probability statement about one individual. The subgroup view is exploratory and does not prove fairness.
 
-**Important:** the controls use illustrative synthetic benchmark inputs, not real patient measurements. The displayed prediction is a benchmark regression output, not a diagnosis, personal disease-risk estimate, treatment recommendation or clinically validated decision. The conformal interval targets marginal coverage under its assumptions; it is not a 90% probability statement about an individual. The subgroup audit is exploratory and does not establish fairness.
-
-**Source:** [`demo/app.py`](demo/app.py)
-
-To install the optional demo dependencies and launch the application from the repository root:
+To run the Streamlit app locally, install the demo dependencies and start it from the repository root:
 
 ```bash
 pip install -e ".[demo]"
 streamlit run demo/app.py
 ```
 
-This documents a local application included in the repository; it does not imply that a public hosted demo is currently available.
+## Results from the corrected experiments
 
-## Dataset
+The results below were generated after the preprocessing change described above. The repeated hold-out experiments use seeds 42–51. In the matched-sample design, each seed has 225 model-fitting observations, 57 reserved validation observations, 71 calibration observations and 89 test observations. The 57-row validation subset is reserved but is not used to fit or select the classical models, so the sample sizes match the neural baseline design.
 
-I use the diabetes dataset provided by scikit-learn. It contains 442 observations and 10 unstandardized source features. The target is a continuous measure of disease progression one year after the baseline measurements.
+### Classical models and fixed neural baselines
 
-**Preprocessing in the current code:** the loader calls `load_diabetes(as_frame=True, scaled=False)`, so no dataset-wide scaling is performed before splitting. Linear Regression, Ridge and Lasso are evaluated as pipelines containing a `StandardScaler`; each scaler is fitted only on its applicable model-fitting data, and cross-validation fits a separate scaler inside each training fold. The neural-network preparation code fits its scaler only on the neural model-fitting partition. The nested benchmark also fits scaling inside each inner-fold training pipeline. Tree-based and mean-baseline estimators do not require feature scaling. See [the fold-isolated preprocessing note](docs/FOLD_ISOLATED_PREPROCESSING.md).
+The table shows mean test performance and sample standard deviation across the ten repeated splits. Lower MAE and RMSE are better; a higher R² is better.
 
-This is a small public benchmark dataset, not a collection of raw hospital records. The demos use synthetic examples in the unstandardized source feature representation. They are not measurements from real patients.
-
-## What I worked on
-
-I prepared the data and compared several regression approaches: Linear Regression, Ridge, Lasso, ElasticNet, Support Vector Regression, Random Forest, Extra Trees and Histogram Gradient Boosting. I also implemented small neural networks using PyTorch and TensorFlow/Keras.
-
-I evaluated the models using held-out test data and repeated train/test splits. I added nested cross-validation to examine whether selecting between model families improved performance. For prediction uncertainty, I implemented split-conformal prediction intervals, keeping the calibration data separate from the data used to fit the models. I also looked at prediction errors across the two coded values of the dataset's unstandardized `sex` source feature and examined model coefficients and feature importance.
-
-I tried to keep the different stages of the experiments separate so that the test data was not used to fit the models or make tuning decisions. The detailed split sizes and experiment settings are recorded in [RESULTS.md](RESULTS.md).
-
-## Results
-
-The corrected fold-isolated experiments and their provenance are presented first. The older numerical tables that follow are retained only as a historical record; they were generated using the earlier `scaled=True` implementation and must not be cited as results from the corrected protocol.
-
-### Corrected fold-isolated results (10 seeds: 42–51; 21 November 2026)
-
-The corrected runs use `scaled=False`; no feature scaling is computed on the full 442-observation dataset. The matched-sample design uses 225 model-fitting, 57 reserved validation, 71 conformal-calibration, and 89 held-out test observations per seed. The 57-row classical validation reservation is deliberately unused for fitting or selection so the classical and neural baseline partitions have matching sizes. Linear Regression, Ridge and Lasso use a StandardScaler fitted only inside the model pipeline; neural scaling is fitted only on its model-fitting subset.
-
-**Matched-sample classical results and fixed neural baselines (mean ± sample SD over ten repeated splits):**
-
-| Model | Test MAE | Test RMSE | Test R² |
+| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
 |---|---:|---:|---:|
-| Ridge | 42.822 ± 2.870 | 52.893 ± 3.636 | 0.493 ± 0.064 |
-| Lasso | 42.844 ± 2.845 | 52.890 ± 3.652 | 0.493 ± 0.065 |
+| Ridge | **42.822 ± 2.870** | 52.893 ± 3.636 | 0.493 ± 0.064 |
+| Lasso | 42.844 ± 2.845 | **52.890 ± 3.652** | 0.493 ± 0.065 |
 | Linear Regression | 42.899 ± 2.836 | 52.975 ± 3.632 | 0.491 ± 0.064 |
 | Random Forest | 44.851 ± 3.289 | 55.532 ± 3.580 | 0.442 ± 0.051 |
 | PyTorch MLP (fixed baseline) | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
 | TensorFlow MLP (fixed baseline) | 57.204 ± 8.404 | 73.242 ± 10.420 | 0.015 ± 0.261 |
 | Mean baseline | 64.492 ± 3.627 | 74.945 ± 3.536 | −0.014 ± 0.015 |
 
-The neural baseline used a 100-epoch maximum, patience 12, batch size 32, learning rate 0.001 and dropout 0.10. Both framework models reached the 100-epoch maximum in every seed; the validation partition remained separate from the 71-row conformal calibration set.
+For the neural baseline, I used a maximum of 100 epochs, patience of 12, batch size of 32, learning rate of 0.001 and dropout of 0.10. Both frameworks reached the epoch limit in all ten seeds. Under these settings and with this small dataset, the fixed neural baselines had higher mean errors than the classical regressors. This is a result for these experiments, not a general conclusion about neural networks.
 
-**Validation-selected PyTorch tuning study (same outer seed and partition sizes):** a predeclared ten-candidate grid was selected using validation MSE only; calibration data was used after selection, and test data only for final evaluation. The selected model achieved MAE **43.408 ± 4.174**, RMSE **54.312 ± 4.278** and R² **0.464 ± 0.079**. Target standardisation was selected in 7 of 10 seeds. Its paired default-control MAE was 44.086 ± 3.365; the mean paired change was −0.677 ± 2.523 target units. This tuned model remained behind the three linear estimators on mean MAE, although it was below Random Forest's mean MAE. These are descriptive repeated-split comparisons, not proof of statistical superiority.
+### Validation-selected PyTorch study
 
-Across-seed standard deviations are **descriptive split-sensitivity summaries, not confidence intervals**: repeated random hold-out test partitions overlap. The conformal results target marginal coverage under exchangeability; they are not per-person probability statements. None of these results establishes clinical validity or utility.
+I ran a separate ten-seed tuning study with a predeclared ten-candidate grid. The configuration was selected using validation MSE only. The calibration subset was kept separate, and the outer test subset was used only for the final evaluation.
 
-**Run provenance:** [classical ten-seed run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566461), [neural ten-seed run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566361), [validation-selected tuning run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566377). Source commit: `9504b686ddbdc072054356bbb295a76f7b359727`. The nested-CV workflow is still running and will be reported separately when complete.
-
----
-
-### Historical results from the earlier pre-standardized protocol
-
-
-### Single held-out test run (seed 42)
-
-Outer split: 353 training observations and 89 held-out test observations. Classical path: 282 model-fitting observations and 71 separate calibration observations. Neural path: 225 model-fitting observations, 57 early-stopping validation observations, and 71 calibration observations.
-
-| Model | Test MAE | Test RMSE | Test R² |
-|---|---:|---:|---:|
-| **Lasso** | **42.703** | **52.941** | **0.471** |
-| Linear Regression | 42.908 | 53.952 | 0.451 |
-| Random Forest | 43.729 | 53.875 | 0.452 |
-| Ridge | 46.564 | 56.151 | 0.405 |
-| PyTorch MLP (16, 8) | 51.538 | 65.382 | 0.193 |
-| TensorFlow MLP (16, 8) | 50.458 | 66.376 | 0.168 |
-| Mean Baseline | 63.529 | 72.899 | −0.003 |
-
-### Repeated-seed classical comparison (seeds 42–51, matched-sample design)
-
-Each seed used 225 model-fitting, 57 reserved validation, 71 calibration, and 89 test observations. The 57-observation validation subset was deliberately unused for classical models; it exists to match the neural training design. Values are mean ± sample standard deviation across ten seeds.
-
-| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
-|---|---:|---:|---:|
-| **Linear Regression** | **42.899 ± 2.836** | 52.975 ± 3.632 | 0.491 ± 0.064 |
-| Lasso | 42.927 ± 3.138 | **52.790 ± 3.709** | **0.495 ± 0.064** |
-| Random Forest | 44.858 ± 3.332 | 55.540 ± 3.606 | 0.442 ± 0.051 |
-| Ridge | 49.015 ± 3.337 | 58.198 ± 3.233 | 0.387 ± 0.052 |
-| Mean Baseline | 64.492 ± 3.628 | 74.945 ± 3.536 | −0.014 ± 0.015 |
-
-### Repeated-seed neural validation (seeds 42–51)
-
-Same partition design as matched-sample classical (225 fitting, 57 validation, 71 calibration, 89 test). Fixed settings: 100-epoch maximum, patience 12, batch size 32, learning rate 0.001, dropout 0.10. Both models trained for the full 100-epoch budget on every seed.
-
-| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
-|---|---:|---:|---:|
-| PyTorch MLP | 53.964 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
-| TensorFlow MLP | 57.204 ± 8.404 | 73.242 ± 10.420 | 0.015 ± 0.261 |
-
-With 225 model-fitting observations, the neural models did not outperform any of the four classical regressors on mean point-prediction metrics under these fixed settings. This outcome is a consequence of the small dataset size combined with the fixed architecture and training budget — not a general claim about neural networks. No hyperparameter search was applied in this baseline comparison.
-
-### Validation-selected PyTorch hyperparameter study (seeds 42–51)
-
-A controlled follow-up tested five predeclared learning-rate/dropout configurations using validation MAE for selection within each seed. Test observations were not used for selection.
-
-| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
-|---|---:|---:|---:|
-| Original default PyTorch MLP (paired control) | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
-| **Validation-selected PyTorch MLP** | **44.934 ± 4.931** | **56.790 ± 6.019** | **0.410 ± 0.132** |
-
-The mean paired MAE reduction was 9.030 points; the higher learning rate (0.003) was selected in all ten seeds. The selected model's mean MAE (44.934) is substantially closer to the matched classical results but remains slightly above Linear Regression (42.899) and Lasso (42.927). This shows the original default MLP was sensitive to learning rate on this dataset — not that the tuned network outperforms classical models.
-
-### Target-standardised PyTorch study (seeds 42–51)
-
-A second follow-up extended the grid to ten candidates by pairing the same five configurations with and without target standardisation (300-epoch maximum, patience 25). The paired control is the default candidate from this expanded run, not the earlier 100-epoch baseline.
-
-| Metric | Validation-selected model | Paired default control |
+| Metric | Validation-selected model (mean ± SD) | Paired default control (mean ± SD) |
 |---|---:|---:|
-| Test MAE (mean ± SD) | **43.408 ± 4.174** | 44.086 ± 3.365 |
-| Test RMSE (mean ± SD) | **54.312 ± 4.278** | 55.714 ± 4.038 |
-| Test R² (mean ± SD) | **0.464 ± 0.079** | 0.435 ± 0.086 |
+| Test MAE | **43.408 ± 4.174** | 44.086 ± 3.365 |
+| Test RMSE | **54.312 ± 4.278** | 55.714 ± 4.038 |
+| Test R² | **0.464 ± 0.079** | 0.435 ± 0.086 |
 
-Target standardisation was selected in 7 of 10 seeds. The mean paired MAE change was −0.677 ± 2.523 target units. The selected model's mean MAE (43.408) is close to but still above the matched-sample Linear Regression mean (42.899). This is not evidence of neural superiority over classical models on this benchmark.
+Target standardisation was selected in seven of the ten seeds. The mean paired change in MAE was −0.677 ± 2.523 target units. The tuned model improved on its paired control, but its mean MAE remained higher than Ridge, Lasso and Linear Regression in the matched-sample comparison. It was lower than the Random Forest mean in this particular comparison. These are descriptive results, not a statistical proof that one model is superior.
 
-### Nested cross-validation comparison (7 families)
+The paired default control in this tuning study is not the same as the fixed 100-epoch neural baseline in the previous table; it comes from the expanded candidate study.
 
-A separate nested benchmark evaluated seven families plus a mean-prediction baseline using five outer folds repeated three times (15 outer evaluations per family). Scale-sensitive estimators use a `StandardScaler` fitted only on each inner training fold.
+### Nested cross-validation
 
-| Model family | Test MAE (mean ± SD) |
+I also compared seven model families plus a mean baseline using five outer folds repeated three times. Within each outer training partition, three inner folds were used to tune the candidate models. All scaling for scale-sensitive models was fitted inside the corresponding inner training fold. This produced 15 outer-fold evaluations for each model family.
+
+| Model family | Outer-fold test MAE (mean ± SD) |
 |---|---:|
-| SVR-RBF | 44.414 ± 3.270 |
+| SVR-RBF | **44.414 ± 3.270** |
 | Linear Regression | 44.483 ± 2.626 |
 | ElasticNet | 44.548 ± 2.601 |
 | Ridge | 44.565 ± 2.606 |
 | Extra Trees | 45.584 ± 3.105 |
-| Random Forest | 46.437 ± 2.848 |
-| Histogram Gradient Boosting | 46.552 ± 3.208 |
-| Mean Baseline | 65.896 ± 3.771 |
+| Random Forest | 46.449 ± 2.798 |
+| Histogram Gradient Boosting | 46.524 ± 3.186 |
+| Mean baseline | 65.896 ± 3.771 |
 
-The inner-fold family-selection procedure had a mean outer-fold MAE of 44.854, compared with 44.483 for the fixed Linear Regression strategy. SVR-RBF was selected in 10 of 15 folds, but its advantage over Linear Regression was only 0.069 MAE units. Adding a model-selection step did not demonstrate an improvement over the simple linear strategy on this dataset.
+The nested procedure also selected a model family separately in each outer fold, using inner-fold MAE. SVR-RBF was selected in 10 of the 15 folds. The selected-family procedure had a mean outer-fold MAE of 44.854 ± 3.105, compared with 44.483 ± 2.626 for the fixed Linear Regression strategy. Across the 15 paired folds, the selector's MAE was higher in seven folds, lower in seven and equal in one. In this experiment, adding a model-selection step did not show a clear improvement over keeping Linear Regression fixed.
 
-### Conformal prediction interval summary
+This nested benchmark does not calculate conformal intervals. Its results are not directly interchangeable with the repeated hold-out results above.
 
-All conformal intervals target 90% marginal coverage (alpha = 0.10). Calibration observations are held out from model fitting. Coverage is a marginal guarantee under exchangeability assumptions, not a per-individual probability statement.
+### Prediction intervals
 
-Across the ten-seed matched-sample classical run, mean observed coverage was above 90% for all models, though individual seeds sometimes fell below the nominal level. Lasso had the lowest mean Winkler score (214.078), narrowly ahead of Linear Regression (216.084), reflecting slightly narrower intervals on average. Neural models had wider intervals and higher Winkler scores than the matched classical models.
+The repeated classical experiment uses a separate 71-observation calibration subset for each seed and targets 90% marginal coverage. The mean empirical coverages were 91.8% for Lasso, 91.7% for Ridge, 91.6% for Linear Regression and 91.2% for Random Forest. Individual splits varied, and some observed coverages were below 90%.
 
-### Exploratory subgroup error analysis
+Split-conformal coverage is a marginal property under exchangeability assumptions. It does not mean that a particular person's outcome has a 90% probability of falling inside the displayed interval.
 
-The analysis compares MAE across the two encoded float values of the benchmark's standardised `sex` feature (approximately −0.04464 and +0.05068). These are pre-processed encodings, not documented demographic labels. Permutation p-values use 1,000 relabellings with the plus-one Monte Carlo correction. No model showed a statistically significant MAE disparity; however, a non-significant result does not prove the absence of disparity. This analysis is exploratory and does not establish that any model is fair.
+### How to read these results
 
-| Model | MAE disparity between encoded groups | Permutation p-value |
-|---|---:|---:|
-| Mean Baseline | 3.373 | 0.6683 |
-| Linear Regression | 2.931 | 0.6683 |
-| Ridge | 0.474 | 0.9371 |
-| Lasso | 2.801 | 0.6573 |
-| Random Forest | 4.846 | 0.4735 |
-| PyTorch MLP (16, 8) | 12.120 | 0.1648 |
-| TensorFlow MLP (16, 8) | 3.728 | 0.6973 |
+The standard deviations above describe variation across repeated splits. They are not confidence intervals, because the test partitions overlap across seeds. The nested outer folds also overlap across repeats. The experiments use different split designs, so their numbers should not be combined into a single league table. None of these results establishes clinical validity, clinical utility or performance in a new hospital or patient population.
 
-### Cross-result interpretation
-
-These results come from different experiment designs — single-seed, repeated-seed, and nested cross-validation — and should not be combined into a single model ranking. The repeated test partitions overlap, so the standard deviations reported above are descriptive measures of variation between splits, not confidence intervals, and no formal test of statistical significance is made between models.
-
-The full metrics, experiment settings and run records are available in [RESULTS.md](RESULTS.md).
+The detailed per-seed results, calibration metrics, experiment settings and historical comparison tables are in [RESULTS.md](RESULTS.md). The current experiments were run from commit `e134cc1eff415da6d4847f8c4918e644b41978d7`. The associated [classical validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212219), [neural validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212166), [neural tuning](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212238) and [nested-CV run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212335) completed successfully.
 
 ## Running the project
 
-### Reproducible environment (recommended)
-
-The committed `uv.lock` resolves the project and every declared optional extra, including the CPU PyTorch and TensorFlow stacks. Use the pinned uv release and locked sync to recreate an environment without re-resolving package versions:
+I use `uv` and the committed `uv.lock` when I need a repeatable environment. The GitHub Actions workflows use uv 0.13.8 and Python 3.11.
 
 ```bash
-# Install uv 0.13.8 using the official installer for your platform:
-# https://docs.astral.sh/uv/getting-started/installation/
-
 uv python install 3.11
-uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra dev --extra demo
+uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra dev
 uv run --locked pytest -v
 uv run --locked python -m diabetes_ml.experiment --output results
 ```
 
-To install every optional component, including neural, notebook, and external-dataset tooling:
+To install all optional components, including the neural, notebook and external-data dependencies, run:
 
 ```bash
 uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --all-extras
 ```
 
-The lockfile pins resolved package versions and artifact hashes across supported environments. The Python interpreter, operating system, and external UCI data service remain separate runtime inputs; the external-data experiment records a SHA-256 fingerprint of the retrieved dataset tables.
-
-### Install with pip (version ranges)
-
-Python 3.10 through 3.13 is supported by the current lockfile. The following commands install compatible versions from the ranges in `pyproject.toml`; use the uv instructions above when exact dependency locking is required.
+You can also install the project with pip, using the compatible version ranges in `pyproject.toml`:
 
 ```bash
 python -m venv .venv
-
-# Windows PowerShell
-.venv\\Scripts\\Activate.ps1
-
-# Windows Command Prompt
-.venv\\Scripts\\activate.bat
-
-# Linux or macOS
-source .venv/bin/activate
-
+# Activate .venv for your operating system, then:
 python -m pip install --upgrade pip
 pip install -e .
 ```
 
-Run the main experiment:
+The main experiment and the additional experiment commands are:
 
 ```bash
 python -m diabetes_ml.experiment --output results
-```
-
-To run the neural-network experiment, install the optional neural dependencies:
-
-```bash
-pip install -e ".[neural]"
-python -m diabetes_ml.neural.neural_experiment --output results --epochs 200 --patience 20
-```
-
-Other experiment commands are available for the repeated classical comparison, nested model comparison and repeated neural-network studies:
-
-```bash
 python -m diabetes_ml.repeated_validation --output repeated-validation
 python -m diabetes_ml.nested_tabular_benchmark --output nested-tabular-benchmark
+python -m diabetes_ml.neural.neural_experiment --output neural-results --epochs 200 --patience 20
 python -m diabetes_ml.repeated_neural_validation --output repeated-neural-validation
 python -m diabetes_ml.repeated_neural_tuning --output repeated-neural-tuning
 ```
 
-The neural commands require the optional neural dependencies. The interactive demo has its own optional dependencies:
+The neural commands require the `neural` extra. The Streamlit app requires the `demo` extra. To execute the notebooks, install the `notebooks` extra as well. To run the test suite with pip, install the `dev` extra and run `pytest -v`.
 
-```bash
-pip install -e ".[demo]"
-streamlit run demo/app.py
-```
+## Separate study: 30-day hospital readmission
 
-To execute the notebooks, install the notebook and neural extras:
+The repository also includes a separate classification experiment using the UCI *Diabetes 130-US Hospitals for Years 1999–2008* dataset (UCI dataset 296; DOI [10.24432/C5230J](https://doi.org/10.24432/C5230J)). It works at the hospital-encounter level and studies recorded readmission within 30 days. This is a different dataset and prediction task. It is not external validation of the one-year disease-progression regression benchmark. The study design, data limitations and results are described in [READMISSION_STUDY_BRIEF.md](docs/READMISSION_STUDY_BRIEF.md).
 
-```bash
-pip install -e ".[notebooks,neural]"
-jupyter nbconvert --to notebook --execute notebooks/01_exploration.ipynb
-```
+## Repository layout
 
-To run the tests:
+The `src/diabetes_ml/` directory contains the data loader, classical models, evaluation methods, neural trainers, repeated validation, nested cross-validation and the separate readmission experiment. The `demo/` directory contains the Streamlit and Gradio interfaces. The three notebooks cover data exploration, classical model comparison and neural-network training. Tests are in `tests/`, experiment documentation is in `docs/`, and the workflows in `.github/workflows/` run the automated checks and research experiments.
 
-```bash
-pip install -e ".[dev]"
-pytest -v
-```
-
-## External dataset study: hospital readmission (different target)
-
-The repository includes a separate experiment using the UCI *Diabetes 130-US Hospitals for Years 1999-2008* dataset (UCI dataset 296; DOI [10.24432/C5230J](https://doi.org/10.24432/C5230J)). UCI describes 101,766 hospital encounters from 130 US hospitals and a 30-day early-readmission classification task. The dataset is licensed CC BY 4.0. It contains demographic information, including age, gender, and race.
-
-This study is **not** external validation of the original one-year disease-progression regression model: the cohort, unit of observation, outcome, and task differ. It is a related external-cohort classification study that broadens the project beyond the 442-row scikit-learn regression benchmark.
-
-Install the optional data connector and run the experiment:
-
-```bash
-uv sync --locked --no-build-isolation-package diabetes-ml --python 3.11 --extra build --extra external-data
-uv run --locked python -m diabetes_ml.external_readmission --output external-readmission-results --seeds 42 43 44
-```
-
-The experiment uses `readmitted == "<30"` as the positive label; `">30"` and `"NO"` are negative for the within-30-day endpoint. It uses `patient_nbr` only to form stratified patient-grouped folds and never as a model feature. All encounters for a patient stay in one partition. Race, gender, and age are excluded from the predictive feature matrix in this pre-specified baseline, and are retained only for exploratory subgroup reporting. Numeric/categorical preprocessing is fitted on each training partition. The model comparison includes a prior-only baseline, logistic regression, and a random forest.
-
-The intended prediction time for this experiment is **at discharge**, because the predictor set includes discharge disposition and encounter-level information that is not necessarily available at admission. The experiment therefore should not be described as an admission-time prediction model.
-
-This experiment uses the UCI label `NO` as a negative value because the source defines it as no recorded readmission. The underlying Health Facts database did not capture encounters from out-of-network providers, so `NO` must not be interpreted as proof that no readmission occurred anywhere. Readmission capture may be incomplete outside participating systems.
-
-Threshold handling is explicit because the positive class is uncommon. A 0.5 cutoff is retained as a reference, not treated as an appropriate clinical operating point. For each outer split and model, a threshold is selected by maximising F2 (beta=2) on three-fold, patient-grouped out-of-fold probabilities generated only within the outer training partition. The selected threshold is then evaluated once on the untouched outer test partition. This avoids choosing a threshold from test labels. F2 weights recall more heavily than precision, but it is an experimental operating-point criterion, not a clinically justified decision rule. Results report discrimination and probability metrics as well as sensitivity, specificity, precision, and F2 at both the 0.5 reference cutoff and the training-selected threshold. The classifier evaluation also reports Brier score and a 10-bin equal-frequency expected calibration error (ECE). A per-seed reliability-bin table is written to `calibration_curve.csv`; it is calculated from each outer test fold solely for evaluation and does not fit or adjust the predicted probabilities. ECE depends on the chosen binning and is descriptive, not proof that probabilities are clinically calibrated.
-
-### Results from the current three-seed run
-
-The positive class prevalence in the held-out folds was approximately 11.16%. The following are means across seeds 42–44; the thresholds were selected inside the corresponding outer training partitions and evaluated on their untouched test folds.
-
-| Model | ROC-AUC | Average precision | Brier score | 10-bin ECE | Mean selected threshold | Precision | Sensitivity | Specificity | F2 | Sensitivity at 0.5 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Prior baseline | 0.5000 | 0.1116 | 0.0992 | 0.00003 | 0.11159 | 0.1116 | 1.0000 | 0.0000 | 0.3858 | 0.0000 |
-| Logistic Regression | 0.6639 | 0.2127 | 0.0953 | 0.0098 | 0.07686 | 0.1424 | 0.8021 | 0.3931 | 0.4163 | 0.0213 |
-| Random Forest | 0.6752 | 0.2195 | 0.0961 | 0.0276 | 0.10015 | 0.1477 | 0.7999 | 0.4197 | 0.4246 | 0.0000 |
-
-The 0.5 cutoff missed almost all positive encounters. The training-selected F2 thresholds raised test sensitivity to about 80%, but precision remained about 14–15% and specificity about 39–42%. In practical terms, the recall increase comes with many false-positive flags. The 10-bin ECE values are descriptive summaries of outer-test reliability bins; they do not establish calibration on new hospitals or clinical probability reliability. Random Forest's mean F2 was only modestly above the prior baseline, and its ROC-AUC/average precision indicate limited discrimination rather than a strong predictive system. These results do not establish clinical usefulness.
-
-There are only three outer seeds, and their test partitions overlap. The reported across-seed standard deviations are descriptive split-sensitivity summaries, not confidence intervals; no inferential claim of model superiority is made. Full per-seed, subgroup, and provenance outputs are retained as the GitHub Actions artifact for the run.
-
-The output directory contains aggregate metrics, metadata, subgroup summaries and the per-seed `calibration_curve.csv` reliability-bin table; raw patient-level data and patient identifiers are not written to the repository or workflow artifacts. The metadata records a SHA-256 fingerprint of a canonical serialization of the retrieved UCI tables so that a changed upstream copy can be detected. Subgroup metrics use the same training-selected threshold as the overall model and remain exploratory; they do not establish fairness, clinical utility, or generalisability to other health systems.
-
-Dataset source and licence: [UCI Machine Learning Repository — Diabetes 130-US Hospitals](https://archive.ics.uci.edu/dataset/296/diabetes%2B130-us%2Bhospitals%2Bfor%2Byears%2B1999-2008). Please cite Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014), *Diabetes 130-US Hospitals for Years 1999-2008*, UCI Machine Learning Repository, DOI [10.24432/C5230J](https://doi.org/10.24432/C5230J).
-
-The scope, prediction-time assumption, grouped evaluation, threshold-selection method, and limitations are documented separately in [READMISSION_STUDY_BRIEF.md](docs/READMISSION_STUDY_BRIEF.md).
-
-## Project structure
-
-- `src/diabetes_ml/`: the Python package for loading the progression dataset, classical and neural regression experiments, repeated-seed validation, nested cross-validation, conformal prediction, subgroup error analysis and feature explanations. It also contains the separate UCI hospital-readmission classification experiment.
-- `tests/`: automated tests for the data, models, evaluation methods, demo and experiment workflows.
-- `notebooks/`: three notebooks covering exploration, model comparison and neural-network experiments.
-- `demo/app.py`: the Streamlit research demonstration, using synthetic inputs in the unstandardized source feature representation rather than real patient measurements.
-- `docs/`: the research brief, PhD demonstration guide, fold-isolated preprocessing note and separate readmission-study brief.
-- `reports/ci-run-2026-11-02/`: a dated snapshot of outputs from an earlier successful neural CI run. These are historical reproducibility records, not the latest experiment results.
-- `.github/workflows/`: workflows for tests, neural checks, notebook execution, repeated validation, the nested benchmark, the optional external readmission study and the Docker smoke test.
-- `Dockerfile`: the container definition used by the Docker build and application smoke test.
-
-GitHub Actions run the applicable tests and experiment checks when their workflow triggers are met. The Docker workflow builds the image, starts the demo in a container, checks its runtime identity and exercises the application and health endpoint. Some research workflows also upload aggregate results and metadata as workflow artifacts; those artifacts have workflow-specific retention periods.
+The repository also includes a dated record of an earlier neural CI run in `reports/ci-run-2026-11-02/`. Those files are retained for reproducibility and should not be treated as the latest results.
 
 ## Limitations and next steps
 
-This project is an independent machine-learning study using a small public benchmark with unstandardized source features and a separate historical hospital readmission dataset. The readmission study is a different prediction task and must not be interpreted as validating the disease-progression model. Neither study has been prospectively or independently validated for clinical use. The results do not establish clinical usefulness or support patient-care decisions.
+This is a small public benchmark with 442 observations. I have not evaluated it on an independent clinical cohort, raw hospital records or longitudinal patient data. The two coded values of the `sex` feature are not a comprehensive demographic fairness analysis. The current feature-attribution methods are model summaries and local perturbations; they are not SHAP explanations or causal analyses.
 
-Key limitations of the progression benchmark:
-
-- **Dataset size:** 442 observations and 10 source features are insufficient to establish clinical deployment or population-level generalisation.
-- **Preprocessing:** the corrected code loads `scaled=False`; scale-sensitive classical models fit their scalers inside each model-fitting pipeline and separately within cross-validation training folds. Neural models fit their scaler only on the model-fitting subset. The earlier full-dataset-scaled results remain historical.
-- **Subgroup analysis scope:** only the two coded source values (1 and 2) of the `sex` feature are examined. This encoding is not documented as a clinical demographic variable. Age-group and broader fairness evaluations are not included.
-- **Explainability scope:** the implementation covers linear coefficients, Random Forest mean-decrease-in-impurity importances, and local perturbation-style contributions. SHAP, gradient attribution, and causal inference are not implemented. Local perturbation contributions for non-linear models do not form an additive decomposition.
-- **Neural architecture and search:** the neural baselines use one fixed MLP architecture. The hyperparameter studies use compact, predeclared grids. Neither is exhaustive.
-
-Further research should evaluate the models with contemporary, independently governed cohorts, pre-specified clinical endpoints, patient- and site-aware validation, calibration, decision-curve analysis, and a more complete assessment of subgroup performance. Access to any additional hospital data requires appropriate governance, permissions, and privacy review.
+A useful next step would be to define a clinically meaningful research question and evaluate it on a larger, appropriately governed dataset, with patient-level splitting and independent validation. Any use of hospital data would require suitable access, privacy safeguards and research governance.
 
 ## References and licence
 
-**Disease-progression benchmark**
+For the disease-progression dataset, see Efron, Hastie, Johnstone and Tibshirani (2004), *Least Angle Regression*, [The Annals of Statistics, 32(2), 407–499](https://doi.org/10.1214/009053604000000067), and the scikit-learn [`load_diabetes` documentation](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_diabetes.html).
 
-- Efron, B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004). *Least Angle Regression*. The Annals of Statistics, 32(2), 407–499. [https://doi.org/10.1214/009053604000000067](https://doi.org/10.1214/009053604000000067).
-- scikit-learn developers. *`sklearn.datasets.load_diabetes` API documentation*. [https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_diabetes.html](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_diabetes.html).
-
-**External readmission dataset**
-
-- Clore, J., Cios, K., DeShazo, J., and Strack, B. (2014). *Diabetes 130-US Hospitals for Years 1999-2008* [Dataset]. UCI Machine Learning Repository. [https://doi.org/10.24432/C5230J](https://doi.org/10.24432/C5230J).
-- Strack, B., DeShazo, J. P., Gennings, C., Olmo, J. L., Ventura, S., Cios, K. J., and Clore, J. N. (2014). *Impact of HbA1c Measurement on Hospital Readmission Rates: Analysis of 70,000 Clinical Database Patient Records*. BioMed Research International, 2014, 781670. [https://doi.org/10.1155/2014/781670](https://doi.org/10.1155/2014/781670).
-
-**Split-conformal prediction**
-
-- Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R. J., and Wasserman, L. (2018). *Distribution-Free Predictive Inference for Regression*. Journal of the American Statistical Association, 113(523), 1094–1111. [https://doi.org/10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116).
-
-This project is licensed under the MIT License.
-
-
+The separate readmission study uses the UCI dataset cited in its [research brief](docs/READMISSION_STUDY_BRIEF.md). This repository is released under the [MIT License](LICENSE).

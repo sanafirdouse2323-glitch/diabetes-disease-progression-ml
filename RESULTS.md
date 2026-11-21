@@ -1,78 +1,107 @@
-# Corrected and Historical Experimental Results and Regeneration Record
+# Experimental Results: Current Runs and Historical Record
 
-## Status of the results in this file
+## How to read this file
 
-The numerical tables in Sections 1–12 below are historical results from the implementation that loaded scikit-learn's diabetes features with `scaled=True` before the repository-level splits. They are retained for traceability only and must not be represented as measurements from the corrected implementation. The corrected fold-isolated reruns and their exact workflow provenance are reported in the new section below.
+The first section reports results from the corrected implementation, which loads the diabetes dataset with `scaled=False` and fits learned preprocessing only on the appropriate training data. The older tables below are kept as a historical record. They were produced before this correction, when scikit-learn standardised all 442 feature rows before the repository created its train/test and cross-validation splits. Do not compare those historical values directly with the current results.
 
-## Historical preprocessing caveat
+## What changed in the evaluation
 
-The earlier code loaded `sklearn.datasets.load_diabetes` with `scaled=True`. scikit-learn then mean-centred and scaled the features using statistics from the complete 442-observation feature matrix before any repository train/test or cross-validation split. This was unsupervised feature-distribution information from the full dataset, not target-label leakage. However, it means the historical results were not a fully fold-isolated raw-feature evaluation. The current code uses `scaled=False`; linear estimators fit `StandardScaler` within their model-fitting pipeline, and cross-validation fits the scaler separately inside each training fold. Neural preparation also fits its scaler only on the neural model-fitting partition. The historical metrics below remain tied to the earlier pre-standardized input representation and are not directly interchangeable with results from the corrected code.
+The current loader returns the dataset's unstandardized source feature representation. Linear Regression, Ridge and Lasso use a pipeline that fits `StandardScaler` on the model-fitting observations. During cross-validation, the scaler is fitted again inside each training fold. The neural workflow fits its scaler only on the neural model-fitting subset. In the nested benchmark, each scale-sensitive model learns its scaler within the relevant inner training fold.
+
+This corrects the use of full-dataset feature statistics before splitting. It is not a correction for target-label leakage, and it does not make the small public benchmark clinically validated.
 
 ## Corrected fold-isolated results (21 November 2026)
 
-**Source commit:** `9504b686ddbdc072054356bbb295a76f7b359727`. The current runs below use
-`load_diabetes(as_frame=True, scaled=False)`. No statistics from all 442
-observations are used to scale features before splitting. Classical linear
-estimators fit `StandardScaler` only within the model-fitting pipeline, while
-the repeated CV pipeline fits a new scaler inside each training fold. Neural
-scalers are fit only on the 225-row neural fitting subset.
+The experiment artifacts were generated from commit `e134cc1eff415da6d4847f8c4918e644b41978d7`. All current results below were checked against the CSV and JSON artifacts uploaded by the corresponding GitHub Actions runs.
 
-### Matched-sample 10-seed comparison (seeds 42–51)
+### Ten-seed matched-sample classical comparison
 
-For each seed: 225 model-fitting rows, 57 reserved validation rows, 71
-conformal calibration rows, and 89 held-out test rows. The 57-row validation
-partition is reserved but not used by the classical estimators so the
-classical and neural baseline test design has matching sample counts. Values
-are mean ± sample standard deviation across ten repeated hold-outs.
+The repeated hold-out study used seeds 42–51. For each seed, the data was divided into 225 model-fitting observations, 57 reserved validation observations, 71 conformal-calibration observations and 89 test observations. The reserved validation subset was deliberately not used to fit or select the classical models; it was retained so that the classical and neural baseline studies used matching sample sizes.
 
-| Model | Test MAE | Test RMSE | Test R² |
+| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
 |---|---:|---:|---:|
-| Ridge | 42.822 ± 2.870 | 52.893 ± 3.636 | 0.493 ± 0.064 |
-| Lasso | 42.844 ± 2.845 | 52.890 ± 3.652 | 0.493 ± 0.065 |
+| Ridge | **42.822 ± 2.870** | 52.893 ± 3.636 | 0.493 ± 0.064 |
+| Lasso | 42.844 ± 2.845 | **52.890 ± 3.652** | 0.493 ± 0.065 |
 | Linear Regression | 42.899 ± 2.836 | 52.975 ± 3.632 | 0.491 ± 0.064 |
 | Random Forest | 44.851 ± 3.289 | 55.532 ± 3.580 | 0.442 ± 0.051 |
-| PyTorch MLP (fixed baseline) | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
-| TensorFlow MLP (fixed baseline) | 57.204 ± 8.404 | 73.242 ± 10.420 | 0.015 ± 0.261 |
 | Mean baseline | 64.492 ± 3.627 | 74.945 ± 3.536 | −0.014 ± 0.015 |
 
-The fixed neural baseline used a 100-epoch maximum, patience 12, batch size 32,
-learning rate 0.001 and dropout 0.10. Both frameworks reached the 100-epoch
-maximum for each seed. The fitting, validation, calibration and test
-partitions remained separate.
+These are mean values and sample standard deviations across ten repeated splits. Ridge had the lowest mean MAE, while Lasso had the lowest mean RMSE by a very small margin. The differences between the three linear estimators are small; these results do not establish that one will be best on another dataset or population.
 
-### Validation-selected PyTorch tuning study
+### Fixed neural baselines
 
-A separate ten-seed study evaluated a predeclared ten-candidate grid combining
-five learning-rate/dropout settings with and without target standardisation.
-Configuration selection used validation MSE only; calibration was used only
-after selection, and the outer test set only for final evaluation. The selected
-model achieved:
+The PyTorch and TensorFlow models used the same 225 fitting, 57 early-stopping validation, 71 calibration and 89 test observations for each seed. Both used a 100-epoch maximum, patience 12, batch size 32, learning rate 0.001 and dropout probability 0.10. Both models reached the 100-epoch limit in all ten runs.
 
-| Metric | Validation-selected PyTorch MLP (mean ± SD) |
+| Model | Test MAE (mean ± SD) | Test RMSE (mean ± SD) | Test R² (mean ± SD) |
+|---|---:|---:|---:|
+| PyTorch MLP | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
+| TensorFlow MLP | 57.204 ± 8.404 | 73.242 ± 10.420 | 0.015 ± 0.261 |
+
+Under these fixed settings, both neural baselines had higher mean errors than the classical models. This describes the models and training settings tested here; it is not a general comparison of neural networks with classical methods.
+
+### Validation-selected PyTorch study
+
+A separate ten-seed study tested a predeclared grid of ten configurations. It combined five learning-rate/dropout settings with and without target standardisation. The configuration was selected using validation MSE only. The calibration partition remained separate, and the outer test partition was used only for the final evaluation.
+
+| Metric | Selected PyTorch model (mean ± SD) | Paired default control (mean ± SD) |
+|---|---:|---:|
+| Test MAE | **43.408 ± 4.174** | 44.086 ± 3.365 |
+| Test RMSE | **54.312 ± 4.278** | 55.714 ± 4.038 |
+| Test R² | **0.464 ± 0.079** | 0.435 ± 0.086 |
+
+Target standardisation was selected in seven of the ten seeds. The mean paired change in MAE was −0.677 ± 2.523 target units. The selected model improved on its paired control, but its mean MAE remained higher than Ridge, Lasso and Linear Regression in the matched-sample comparison. The paired default control in this tuning study is not the same as the fixed 100-epoch neural baseline reported above.
+
+### Nested repeated cross-validation
+
+The nested benchmark compared seven model families and a mean baseline. It used five outer folds repeated three times, with three inner folds for tuning within each outer training partition. Each model family therefore has 15 outer-fold evaluations. The scaler for each scale-sensitive model was fitted inside its pipeline on the relevant inner training fold. This benchmark does not calculate conformal intervals.
+
+| Model family | Outer-fold test MAE (mean ± SD) |
 |---|---:|
-| Test MAE | 43.408 ± 4.174 |
-| Test RMSE | 54.312 ± 4.278 |
-| Test R² | 0.464 ± 0.079 |
+| SVR-RBF | **44.414 ± 3.270** |
+| Linear Regression | 44.483 ± 2.626 |
+| ElasticNet | 44.548 ± 2.601 |
+| Ridge | 44.565 ± 2.606 |
+| Extra Trees | 45.584 ± 3.105 |
+| Random Forest | 46.449 ± 2.798 |
+| Histogram Gradient Boosting | 46.524 ± 3.186 |
+| Mean baseline | 65.896 ± 3.771 |
 
-Its paired default-control MAE was 44.086 ± 3.365; the mean paired MAE change
-was −0.677 ± 2.523 target units. Target standardisation was selected in 7 of
-10 seeds. Under the matched-sample evaluation, this selected neural model's
-mean MAE was below Random Forest's, but remained above Ridge, Lasso and
-Linear Regression. These differences are descriptive; no inferential claim
-of model superiority is made.
+The benchmark also evaluated the procedure that selects a model family using inner-fold MAE in each outer fold. That procedure had a mean outer-fold MAE of 44.854 ± 3.105. The fixed Linear Regression strategy had a mean of 44.483 ± 2.626. Across the 15 paired outer folds, the selected-family procedure had higher MAE in seven folds, lower MAE in seven and the same MAE in one. SVR-RBF was selected in ten of the fifteen folds. It had the lowest descriptive per-family mean MAE, but its difference from Linear Regression was only 0.069. The nested results therefore do not show a clear benefit from adding a model-family selection step.
 
-### Interpretation and provenance
+The per-family results and the family-selection procedure answer different questions. The per-family table measures each tuned family on the outer folds. The selector result measures the complete process of choosing a family using inner-fold results and then evaluating that choice on the corresponding outer fold. These results should not be conflated.
 
-Across-seed standard deviations are descriptive split-sensitivity summaries,
-not confidence intervals, because repeated outer test partitions overlap.
-Observed conformal coverage is an empirical average over these test splits;
-the split-conformal procedure targets marginal coverage under exchangeability,
-not a probability statement for a particular person. The results do not
-establish clinical validity or clinical utility.
+### Split-conformal intervals
 
-- [Repeated classical validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566461)
-- [Repeated neural validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566361)
-- [Validation-selected neural tuning](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566377)
+The repeated classical study used 71 calibration observations per seed and targeted 90% marginal coverage. Across the ten test splits, mean empirical coverage was 91.8% for Lasso, 91.7% for Ridge, 91.6% for Linear Regression and 91.2% for Random Forest. These averages do not mean that every split reached 90%; observed coverage varied between seeds.
+
+Split-conformal coverage is a marginal guarantee under exchangeability assumptions. It is not a 90% probability statement about an individual observation. The nested-CV study is separate and does not produce conformal intervals.
+
+### Interpretation and limits
+
+The standard deviations in these tables describe variation across repeated splits. They are not confidence intervals: the repeated hold-out test partitions overlap, and the nested outer folds also overlap across repeats. Results from the matched-sample hold-out studies and nested cross-validation should be read separately, not combined into one ranking.
+
+The dataset has only 442 observations and is a prepared public benchmark. These experiments do not establish independent external validation, fairness, clinical validity or clinical utility.
+
+### Run provenance
+
+The following successful GitHub Actions runs produced the current artifacts. They all ran from commit `e134cc1eff415da6d4847f8c4918e644b41978d7`.
+
+- [Ten-seed classical validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212219)
+- [Ten-seed neural validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212166)
+- [Validation-selected neural study](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212238)
+- [Nested repeated cross-validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212335)
+- [Core test matrix](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212180)
+- [Neural framework checks](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212242)
+- [Notebook execution](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212168)
+- [Docker smoke test](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44891212167)
+
+## Historical results from the earlier pre-standardized implementation
+
+The sections that follow preserve earlier experiment tables and records for reference. Those runs used scikit-learn's default `scaled=True` behaviour, which calculated feature scaling statistics across all 442 observations before the repository created its splits. Their numbers are not results of the current fold-isolated implementation and should not be compared directly with the corrected results above.
+
+## Historical preprocessing note
+
+The earlier code loaded `sklearn.datasets.load_diabetes` with `scaled=True`. scikit-learn then mean-centred and scaled the features using statistics from the complete feature matrix. This was unsupervised feature information, not target-label leakage, but the validation, calibration and test partitions had already influenced those feature statistics. The current code uses `scaled=False`; learned scaling is fitted later on the relevant training partition or fold. The historical tables below remain unchanged so that the project's earlier results can still be traced.
 
 ## Historical single-seed run provenance (pre-standardized input)
 

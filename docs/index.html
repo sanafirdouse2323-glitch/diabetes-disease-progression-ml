@@ -20,11 +20,11 @@
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <span class="inline-block bg-blue-400 bg-opacity-30 text-blue-100 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2">
-                    Academic Research Benchmark
+                    Research demonstration
                 </span>
                 <h1 class="text-3xl font-extrabold tracking-tight">Diabetes Progression Benchmark: Conformal Uncertainty Estimation</h1>
                 <p class="text-blue-100 mt-1 max-w-2xl text-sm leading-relaxed">
-                    Finite-sample split-conformal prediction intervals and algorithmic model audit on quantitative diabetes disease progression.
+                    An interactive look at regression estimates, prediction intervals and model explanations on the public diabetes progression benchmark.
                 </p>
             </div>
             <div class="flex gap-3">
@@ -41,7 +41,7 @@
         <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm flex items-start gap-3">
             <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
             <div class="text-xs text-amber-800 leading-relaxed">
-                <strong>Academic & Methodological Scope:</strong> This demonstration uses scikit-learn's unstandardized source feature representation. The controls use the fitting-partition feature ranges and illustrative synthetic values, not patient records. Learned scaling is fitted on the model-fitting partition. This is not a diagnostic or clinically validated system.
+                <strong>About this example:</strong> The sliders use illustrative values from the dataset's unstandardized source feature representation. Their ranges come from the model-fitting partition. These are not patient measurements, and this dashboard is not a diagnostic or clinically validated tool.
             </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
                     <option value="linear">Linear Regression (OLS)</option>
                     <option value="ridge">Ridge (L2 regularized, α=1.0)</option>
                 </select>
-                <p class="text-[11px] text-slate-500 mt-1">This interactive snapshot uses seed 42 for model fitting and separate conformal calibration. It is an educational benchmark, not a clinical tool.</p>
+                <p class="text-[11px] text-slate-500 mt-1">This example fits each model on the seed-42 training partition and calibrates its interval on separate observations. It is for learning and exploration, not clinical use.</p>
             </div>
 
             <!-- Unstandardized source feature sliders -->
@@ -119,8 +119,8 @@
                 <!-- Sex -->
                 <div>
                     <div class="flex justify-between text-xs font-medium mb-1">
-                        <span class="text-slate-700">Sex (Encoded benchmark level)</span>
-                        <span id="val-sex" class="text-blue-600 font-mono">0.00</span>
+                        <span class="text-slate-700">Sex (dataset code: 1 or 2)</span>
+                        <span id="val-sex" class="text-blue-600 font-mono">2</span>
                     </div>
                     <input type="range" id="slider-sex" min="1" max="2" step="1" value="2" class="w-full accent-blue-600">
                 </div>
@@ -197,7 +197,7 @@
 
                 <!-- Conformal Guarantee Explanation -->
                 <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed">
-                    <strong>Split-conformal property:</strong> Calibrated on a disjoint 71-observation partition using the finite-sample order-statistic rank. Under exchangeability, the procedure targets at least 90% marginal coverage over future observations. This is not a 90% probability statement for an individual.
+                    <strong>About the interval:</strong> The model is calibrated on a separate set of 71 observations. Under the exchangeability assumption, split conformal targets at least 90% coverage across future observations. It does not mean that this particular prediction has a 90% chance of being correct.
                 </p>
             </div>
 
@@ -214,7 +214,7 @@
 
             <!-- Academic Methodology Card -->
             <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-xl shadow-sm">
-                <h3 class="text-sm font-bold uppercase tracking-wider text-blue-400 mb-2">Key Research Insights</h3>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-blue-400 mb-2">What this example shows</h3>
                 <ul class="text-xs space-y-2 text-slate-300 leading-relaxed list-disc list-inside">
                     <li><strong class="text-white">Fold-local preprocessing:</strong> Linear estimators fit their StandardScaler only on the 282-observation model-fitting partition; cross-validation pipelines learn scaling separately inside each training fold.</li>
                     <li><strong class="text-white">Interpretation:</strong> Inputs are illustrative values from the public benchmark's unstandardized source representation. The output is a research demonstration, not a diagnosis or patient-care recommendation.</li>

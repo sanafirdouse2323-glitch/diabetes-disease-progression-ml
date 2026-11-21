@@ -72,9 +72,9 @@ def predict_progression(model_name: str, *feature_values: float):
         f"### Model: {model_name}\n\n"
         f"**Predicted 1-Year Progression Score:** `{point_pred:.1f}`\n\n"
         f"**90% Split-Conformal Prediction Interval:** `[{lower:.1f}, {upper:.1f}]` (Margin: ±{margin:.1f})\n\n"
-        f"*Finite-Sample Coverage Property:* Under exchangeability between calibration and test data, "
-        f"this interval is mathematically guaranteed to contain the true unobserved target with at least 90% marginal probability. "
-        f"It is a marginal coverage guarantee, not a personal clinical probability statement."
+        f"*About the interval:* Under exchangeability between the calibration observations and future observations, "
+        f"split conformal targets at least 90% marginal coverage. This is a statement about coverage across observations, "
+        f"not a personal probability or a clinical risk estimate."
     )
 
     attr_df = explanation[["feature", "patient_value", "contribution_to_progression"]].copy()
@@ -92,8 +92,8 @@ def predict_progression(model_name: str, *feature_values: float):
 with gr.Blocks(title="Diabetes ML: Conformal Uncertainty Estimation") as demo:
     gr.Markdown(
         """
-        # Diabetes Progression Benchmark: Conformal Uncertainty & Model Audit
-        ### Research walkthrough: prediction intervals on a continuous benchmark target
+        # Diabetes Progression: Exploring Predictions and Uncertainty
+        ### A research demonstration using a continuous benchmark target
         *Based on [sanafirdouse2323-glitch/diabetes-disease-progression-ml](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml)*
         
         > **Academic note:** Inputs use the dataset's unstandardized source feature representation. The controls are synthetic examples, not patient measurements. This research demo does not provide diagnosis or treatment guidance and is not clinically validated.
