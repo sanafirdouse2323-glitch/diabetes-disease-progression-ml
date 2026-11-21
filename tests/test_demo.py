@@ -42,7 +42,7 @@ def test_demo_model_profile_and_feature_controls_can_be_changed():
         assert app.selectbox[0].value == model_name
         assert not app.exception, f"Demo failed after selecting {model_name}"
 
-    for profile in ("Illustrative Profile A", "Illustrative Profile B", "Benchmark Mean"):
+    for profile in ("Illustrative Profile A", "Illustrative Profile B", "Training-Set Reference Profile"):
         app.radio[0].set_value(profile).run(timeout=60)
         assert app.radio[0].value == profile
         assert not app.exception, f"Demo failed after selecting {profile}"

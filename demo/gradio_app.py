@@ -118,7 +118,7 @@ with gr.Blocks(title="Diabetes ML: Conformal Uncertainty Estimation") as demo:
                 if feature == "sex":
                     default = float(round(default))
                     step = 1.0
-                    label = "sex (coded source level)"
+                    label = "sex (coded source level; rounded to 1 or 2)"
                 else:
                     step = 0.001 if feature == "s5" else 0.1
                     default = float(np.clip(np.round(default / step) * step, lower, upper))

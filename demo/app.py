@@ -86,12 +86,13 @@ def main():
     st.sidebar.subheader("Synthetic Feature Profile")
     st.sidebar.caption(
         "Controls use the unstandardized source feature values and fitting-set "
-        "ranges. They are illustrative inputs, not real patient measurements."
+        "ranges. The sex feature is rounded to a valid source code (1 or 2). "
+        "These are illustrative inputs, not real patient measurements."
     )
 
     preset = st.sidebar.radio(
         "Load Preset Profile",
-        ["Benchmark Mean", "Illustrative Profile A", "Illustrative Profile B"],
+        ["Training-Set Reference Profile", "Illustrative Profile A", "Illustrative Profile B"],
         index=0,
     )
     if preset == "Illustrative Profile A":
