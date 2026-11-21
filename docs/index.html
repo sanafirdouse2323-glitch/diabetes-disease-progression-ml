@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diabetes ML Benchmark: Conformal Uncertainty & Model Audit</title>
+    <title>Diabetes Progression Benchmark: Conformal Uncertainty & Model Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,11 +20,11 @@
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <span class="inline-block bg-blue-400 bg-opacity-30 text-blue-100 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider mb-2">
-                    Academic Research Benchmark
+                    Research demonstration
                 </span>
-                <h1 class="text-3xl font-extrabold tracking-tight">Clinical ML: Conformal Uncertainty Estimation</h1>
+                <h1 class="text-3xl font-extrabold tracking-tight">Diabetes Progression Benchmark: Conformal Uncertainty Estimation</h1>
                 <p class="text-blue-100 mt-1 max-w-2xl text-sm leading-relaxed">
-                    Finite-sample split-conformal prediction intervals and algorithmic model audit on quantitative diabetes disease progression.
+                    An interactive look at regression estimates, prediction intervals and model explanations on the public diabetes progression benchmark.
                 </p>
             </div>
             <div class="flex gap-3">
@@ -41,7 +41,7 @@
         <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm flex items-start gap-3">
             <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
             <div class="text-xs text-amber-800 leading-relaxed">
-                <strong>Academic & Methodological Scope:</strong> This demonstration operates on scikit-learn's standardized 10-feature diabetes benchmark. Inputs are illustrative standardized variables, not raw medical records. It does not provide clinical diagnosis, disease risk estimation, or patient treatment advice.
+                <strong>About this example:</strong> The sliders use illustrative values from the dataset's unstandardized source feature representation. Their ranges come from the model-fitting partition. These are not patient measurements, and this dashboard is not a diagnostic or clinically validated tool.
             </div>
         </div>
     </div>
@@ -59,15 +59,16 @@
             <div class="mb-5">
                 <label class="block text-xs font-bold uppercase text-slate-600 mb-2">Selected Estimator</label>
                 <select id="model-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="lasso" selected>Lasso (L1 Regularized, α=0.1) — Test MAE: 42.70</option>
-                    <option value="linear">Linear Regression (OLS) — Test MAE: 42.90</option>
-                    <option value="ridge">Ridge (L2 Regularized, α=1.0) — Test MAE: 46.56</option>
+                    <option value="lasso" selected>Lasso (L1 regularized, α=0.1)</option>
+                    <option value="linear">Linear Regression (OLS)</option>
+                    <option value="ridge">Ridge (L2 regularized, α=1.0)</option>
                 </select>
-                <p class="text-[11px] text-slate-500 mt-1">Lasso and Linear Regression achieved lowest mean MAE across repeated outer splits.</p>
+                <p class="text-[11px] text-slate-500 mt-1">This example fits each model on the seed-42 training partition and calibrates its interval on separate observations. It is for learning and exploration, not clinical use.</p>
             </div>
 
-            <!-- Standardized Feature Sliders -->
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Standardized Benchmark Features</h3>
+            <!-- Unstandardized source feature sliders -->
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Unstandardized Source Features</h3>
+            <p class="text-[11px] text-slate-500 mb-3">Ranges are taken only from the 282-observation model-fitting partition. The coded sex feature accepts source values 1 or 2.</p>
             
             <div class="space-y-4 max-h-[460px] overflow-y-auto pr-2">
                 <!-- BMI -->
@@ -76,7 +77,7 @@
                         <span class="text-slate-700 font-semibold">Body Mass Index (BMI)</span>
                         <span id="val-bmi" class="text-blue-600 font-mono">0.04</span>
                     </div>
-                    <input type="range" id="slider-bmi" min="-0.12" max="0.15" step="0.01" value="0.04" class="w-full accent-blue-600">
+                    <input type="range" id="slider-bmi" min="18.1" max="41.3" step="0.1" value="26.5" class="w-full accent-blue-600">
                 </div>
 
                 <!-- Blood Pressure -->
@@ -85,7 +86,7 @@
                         <span class="text-slate-700 font-semibold">Average Blood Pressure (BP)</span>
                         <span id="val-bp" class="text-blue-600 font-mono">0.02</span>
                     </div>
-                    <input type="range" id="slider-bp" min="-0.12" max="0.15" step="0.01" value="0.02" class="w-full accent-blue-600">
+                    <input type="range" id="slider-bp" min="62" max="126" step="0.1" value="94.5" class="w-full accent-blue-600">
                 </div>
 
                 <!-- S5 -->
@@ -94,7 +95,7 @@
                         <span class="text-slate-700 font-semibold">Serum S5 (Log Triglycerides)</span>
                         <span id="val-s5" class="text-blue-600 font-mono">0.05</span>
                     </div>
-                    <input type="range" id="slider-s5" min="-0.12" max="0.15" step="0.01" value="0.05" class="w-full accent-blue-600">
+                    <input type="range" id="slider-s5" min="3.5835" max="6.107" step="0.001" value="4.651" class="w-full accent-blue-600">
                 </div>
 
                 <!-- S3 -->
@@ -103,7 +104,7 @@
                         <span class="text-slate-700 font-semibold">Serum S3 (HDL Cholesterol)</span>
                         <span id="val-s3" class="text-blue-600 font-mono">-0.02</span>
                     </div>
-                    <input type="range" id="slider-s3" min="-0.12" max="0.15" step="0.01" value="-0.02" class="w-full accent-blue-600">
+                    <input type="range" id="slider-s3" min="22" max="98" step="0.1" value="48.7" class="w-full accent-blue-600">
                 </div>
 
                 <!-- Age -->
@@ -112,42 +113,42 @@
                         <span class="text-slate-700">Age</span>
                         <span id="val-age" class="text-blue-600 font-mono">0.00</span>
                     </div>
-                    <input type="range" id="slider-age" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                    <input type="range" id="slider-age" min="19" max="79" step="0.1" value="48.6" class="w-full accent-blue-600">
                 </div>
 
                 <!-- Sex -->
                 <div>
                     <div class="flex justify-between text-xs font-medium mb-1">
-                        <span class="text-slate-700">Sex (Encoded benchmark level)</span>
-                        <span id="val-sex" class="text-blue-600 font-mono">0.00</span>
+                        <span class="text-slate-700">Sex (dataset code: 1 or 2)</span>
+                        <span id="val-sex" class="text-blue-600 font-mono">2</span>
                     </div>
-                    <input type="range" id="slider-sex" min="-0.05" max="0.05" step="0.01" value="0.00" class="w-full accent-blue-600">
+                    <input type="range" id="slider-sex" min="1" max="2" step="1" value="2" class="w-full accent-blue-600">
                 </div>
 
                 <!-- S1, S2, S4, S6 Collapsible or compact -->
                 <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
                     <div>
                         <span class="text-[11px] text-slate-500 block mb-1">Serum S1 (Total Chol)</span>
-                        <input type="range" id="slider-s1" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                        <input type="range" id="slider-s1" min="110" max="301" step="1" value="187" class="w-full accent-blue-600">
                     </div>
                     <div>
                         <span class="text-[11px] text-slate-500 block mb-1">Serum S2 (LDL)</span>
-                        <input type="range" id="slider-s2" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                        <input type="range" id="slider-s2" min="41.6" max="242.4" step="0.1" value="114.2" class="w-full accent-blue-600">
                     </div>
                     <div>
                         <span class="text-[11px] text-slate-500 block mb-1">Serum S4 (T/HDL ratio)</span>
-                        <input type="range" id="slider-s4" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                        <input type="range" id="slider-s4" min="2" max="9.09" step="0.01" value="4.10" class="w-full accent-blue-600">
                     </div>
                     <div>
                         <span class="text-[11px] text-slate-500 block mb-1">Serum S6 (Glucose)</span>
-                        <input type="range" id="slider-s6" min="-0.12" max="0.15" step="0.01" value="0.00" class="w-full accent-blue-600">
+                        <input type="range" id="slider-s6" min="58" max="124" step="0.1" value="92.2" class="w-full accent-blue-600">
                     </div>
                 </div>
             </div>
 
             <!-- Reset Button -->
             <button id="reset-btn" class="mt-5 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-lg text-xs font-semibold transition">
-                Reset to Baseline Mean (Zeroes)
+                Reset to Default Example Profile
             </button>
         </section>
 
@@ -159,24 +160,24 @@
                 <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center justify-between">
                     <span>Quantitative Output</span>
                     <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">
-                        90% Finite-Sample Guaranteed
+                        90% Target Marginal Coverage
                     </span>
                 </h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-blue-50/60 p-4 rounded-xl border border-blue-100">
                         <span class="text-xs text-slate-500 block mb-1">Point Prediction</span>
-                        <span id="pred-score" class="text-3xl font-black text-blue-700">152.1</span>
+                        <span id="pred-score" class="text-3xl font-black text-blue-700">—</span>
                         <span class="text-[11px] text-slate-500 block mt-1">1-year progression target</span>
                     </div>
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span class="text-xs text-slate-500 block mb-1">90% Lower Bound</span>
-                        <span id="lower-bound" class="text-2xl font-bold text-slate-700">110.8</span>
+                        <span id="lower-bound" class="text-2xl font-bold text-slate-700">—</span>
                         <span class="text-[11px] text-slate-500 block mt-1">Conformal calibrated</span>
                     </div>
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span class="text-xs text-slate-500 block mb-1">90% Upper Bound</span>
-                        <span id="upper-bound" class="text-2xl font-bold text-slate-700">193.4</span>
+                        <span id="upper-bound" class="text-2xl font-bold text-slate-700">—</span>
                         <span class="text-[11px] text-slate-500 block mt-1">Conformal calibrated</span>
                     </div>
                 </div>
@@ -185,7 +186,7 @@
                 <div class="mb-4">
                     <div class="flex justify-between text-xs text-slate-500 mb-1">
                         <span>Range: 25.0</span>
-                        <span id="interval-label" class="font-semibold text-blue-700 font-mono">Interval Width: 82.6 units (Margin: ±41.3)</span>
+                        <span id="interval-label" class="font-semibold text-blue-700 font-mono">Interval will be calculated from the seed-42 calibration partition</span>
                         <span>346.0</span>
                     </div>
                     <div class="w-full bg-slate-200 h-3 rounded-full relative overflow-hidden">
@@ -196,14 +197,14 @@
 
                 <!-- Conformal Guarantee Explanation -->
                 <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed">
-                    <strong>Split-Conformal Property:</strong> Calibrated on a held-out partition ($n_{\text{cal}}=71$) using the exact order-statistic rank $k = \lceil(n_{\text{cal}}+1)(1-\alpha)\rceil$. Under exchangeability, this interval guarantees $\ge 90\%$ marginal coverage on future test queries.
+                    <strong>About the interval:</strong> The model is calibrated on a separate set of 71 observations. Under the exchangeability assumption, split conformal targets at least 90% coverage across future observations. It does not mean that this particular prediction has a 90% chance of being correct.
                 </p>
             </div>
 
             <!-- Feature Attribution Chart -->
             <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3 flex justify-between items-center">
-                    <span>Local Feature Attribution (Deviation from Mean)</span>
+                    <span>Local Feature Attribution (Deviation from Fitting-Set Mean)</span>
                     <span class="text-xs text-slate-400 font-normal">Additive linear contributions</span>
                 </h3>
                 <div class="h-64">
@@ -213,10 +214,10 @@
 
             <!-- Academic Methodology Card -->
             <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-xl shadow-sm">
-                <h3 class="text-sm font-bold uppercase tracking-wider text-blue-400 mb-2">Key Research Insights</h3>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-blue-400 mb-2">What this example shows</h3>
                 <ul class="text-xs space-y-2 text-slate-300 leading-relaxed list-disc list-inside">
-                    <li><strong class="text-white">Sample-to-Parameter Ratio:</strong> Linear models (Lasso $\text{MAE } 42.70$) outperformed MLPs ($\text{MAE } 53.96$) because the 321-parameter network suffered an overparameterization bottleneck on 225 training observations ($P > N$).</li>
-                    <li><strong class="text-white">Leakage-Free Validation:</strong> Preprocessing pipelines, calibration sets, and nested hyperparameter folds are strictly isolated to ensure reproducible generalization.</li>
+                    <li><strong class="text-white">Fold-local preprocessing:</strong> Linear estimators fit their StandardScaler only on the 282-observation model-fitting partition; cross-validation pipelines learn scaling separately inside each training fold.</li>
+                    <li><strong class="text-white">Interpretation:</strong> Inputs are illustrative values from the public benchmark's unstandardized source representation. The output is a research demonstration, not a diagnosis or patient-care recommendation.</li>
                 </ul>
             </div>
 
@@ -231,62 +232,79 @@
 
     <!-- Interactive Computation Script -->
     <script>
-        // Calibrated Model Parameters from Benchmark Seed 42
+        // Seed-42 fitted pipelines: coefficients are expressed in the
+        // unstandardized input feature units. Calibration rows are disjoint.
         const MODEL_DATA = {
             lasso: {
                 name: "Lasso (α=0.1)",
-                intercept: 152.09,
-                margin: 41.31,
+                intercept: -303.25687719278096,
+                margin: 85.55087361073498,
                 weights: {
-                    age: 0.0,
-                    sex: -54.21,
-                    bmi: 278.43,
-                    bp: 152.88,
-                    s1: -22.14,
-                    s2: -0.0,
-                    s3: -145.89,
-                    s4: 43.12,
-                    s5: 236.78,
-                    s6: 98.45
+                    age: 0.03194880080538427,
+                    sex: -23.187457904171747,
+                    bmi: 5.950758470068823,
+                    bp: 1.1070467022013013,
+                    s1: -0.7679548627731713,
+                    s2: 0.3009226741901981,
+                    s3: 0.008374021393194158,
+                    s4: 8.557120781702823,
+                    s5: 57.3018842064305,
+                    s6: 0.34232140997478766
                 }
             },
             linear: {
                 name: "Linear Regression (OLS)",
-                intercept: 152.12,
-                margin: 40.85,
+                intercept: -356.27102468825876,
+                margin: 82.29979632686815,
                 weights: {
-                    age: 18.23,
-                    sex: -72.45,
-                    bmi: 284.12,
-                    bp: 172.91,
-                    s1: -120.34,
-                    s2: 68.12,
-                    s3: -112.56,
-                    s4: 82.45,
-                    s5: 276.12,
-                    s6: 86.34
+                    age: 0.02556095726172331,
+                    sex: -23.523794741467192,
+                    bmi: 5.898314513394541,
+                    bp: 1.1182206559608967,
+                    s1: -1.2685868798069797,
+                    s2: 0.7393413191409066,
+                    s3: 0.6351759462517017,
+                    s4: 10.807239095531981,
+                    s5: 69.70179908518942,
+                    s6: 0.3447669277740809
                 }
             },
             ridge: {
                 name: "Ridge (α=1.0)",
-                intercept: 152.05,
-                margin: 44.82,
+                intercept: -318.7022981936944,
+                margin: 84.42533665053907,
                 weights: {
-                    age: 39.55,
-                    sex: -71.52,
-                    bmi: 269.73,
-                    bp: 174.60,
-                    s1: -0.45,
-                    s2: -33.81,
-                    s3: -133.18,
-                    s4: 112.45,
-                    s5: 217.83,
-                    s6: 118.83
+                    age: 0.036855401000626016,
+                    sex: -23.419309065120455,
+                    bmi: 5.930798544857454,
+                    bp: 1.1118748818264896,
+                    s1: -0.9058121452461483,
+                    s2: 0.4132689288196001,
+                    s3: 0.20826831453584693,
+                    s4: 9.613804367290024,
+                    s5: 60.245089332206916,
+                    s6: 0.3510447534067903
                 }
             }
         };
 
         const features = ['bmi', 'bp', 's5', 's3', 'age', 'sex', 's1', 's2', 's4', 's6'];
+        const REFERENCE_MEAN = {
+            age: 48.57801418439716,
+            sex: 1.50354609929078,
+            bmi: 26.45602836879433,
+            bp: 94.4704255319149,
+            s1: 186.95035460992906,
+            s2: 114.24219858156029,
+            s3: 48.74645390070922,
+            s4: 4.0958510638297865,
+            s5: 4.651120921985815,
+            s6: 92.17021276595744
+        };
+        const BASELINE_VALUES = {
+            age: 48.6, sex: 2, bmi: 26.5, bp: 94.5, s1: 187,
+            s2: 114.2, s3: 48.7, s4: 4.10, s5: 4.651, s6: 92.2
+        };
         let chartInstance = null;
 
         function updatePrediction() {
@@ -301,9 +319,9 @@
                 const displayElem = document.getElementById(`val-${f}`);
                 if (displayElem) displayElem.textContent = val.toFixed(2);
 
-                const contrib = val * (model.weights[f] || 0.0);
-                contributions[f] = contrib;
-                score += contrib;
+                const weight = model.weights[f] || 0.0;
+                contributions[f] = (val - REFERENCE_MEAN[f]) * weight;
+                score += val * weight;
             });
 
             const lower = score - model.margin;
@@ -382,7 +400,7 @@
 
         document.getElementById('reset-btn').addEventListener('click', () => {
             features.forEach(f => {
-                document.getElementById(`slider-${f}`).value = 0.0;
+                document.getElementById(`slider-${f}`).value = BASELINE_VALUES[f];
             });
             updatePrediction();
         });

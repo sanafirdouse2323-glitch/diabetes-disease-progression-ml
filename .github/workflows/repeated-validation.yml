@@ -10,6 +10,14 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/repeated-validation.yml"
+  pull_request:
+    paths:
+      - "src/diabetes_ml/repeated_validation.py"
+      - "src/diabetes_ml/data.py"
+      - "src/diabetes_ml/models.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/repeated-validation.yml"
   workflow_dispatch:
 
 permissions:

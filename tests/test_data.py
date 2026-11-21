@@ -1,6 +1,7 @@
 """Unit tests for dataset loading, validation, and split integrity."""
 
 import pandas as pd
+from sklearn.datasets import load_diabetes
 from sklearn.model_selection import train_test_split
 
 from diabetes_ml.data import create_experiment_splits, load_diabetes_data
@@ -12,6 +13,20 @@ def test_load_diabetes_data_dimensions():
     assert len(y) == 442
     assert not X.isna().any().any()
     assert not y.isna().any()
+
+
+def test_loader_returns_unstandardized_source_features():
+    X, y = load_diabetes_data()
+    source = load_diabetes(as_frame=True, scaled=False)
+
+    pd.testing.assert_frame_equal(X, source.data)
+    pd.testing.assert_series_equal(y, source.target)
+    assert set(X["sex"].unique()) == {1.0, 2.0}
+    # Source features retain different magnitudes; they have not all been
+    # standardized against the complete 442-observation dataset.
+    assert X["age"].std() > 1.0
+    assert X["sex"].std() > 0.0
+    assert X["s1"].std() > 1.0
 
 
 def test_create_experiment_splits_shapes():

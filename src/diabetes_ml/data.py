@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 from sklearn.datasets import load_diabetes
 from sklearn.model_selection import train_test_split
@@ -31,15 +30,16 @@ class DatasetSplits:
 
 
 def load_diabetes_data() -> Tuple[pd.DataFrame, pd.Series]:
-    """Load the scikit-learn diabetes benchmark as pandas objects.
+    """Load the diabetes benchmark in its unstandardized source representation.
 
     Returns:
-        X: Feature DataFrame (442 samples, 10 preprocessed baseline features).
-        y: Continuous quantitative disease progression target measured one year post-baseline.
+        X: DataFrame with 442 observations and 10 unstandardized source features.
+        y: Continuous quantitative disease-progression target measured one year post-baseline.
+
+    Scaling is deliberately not performed here. Every learned transformation
+    must be fitted later on the applicable model-fitting partition or CV fold.
     """
-    # Preserve the benchmark's documented pre-standardised feature representation.
-    # This scaling is performed by scikit-learn before repository-level splits.
-    data = load_diabetes(as_frame=True, scaled=True)
+    data = load_diabetes(as_frame=True, scaled=False)
     X = data.data
     y = data.target
     return X, y

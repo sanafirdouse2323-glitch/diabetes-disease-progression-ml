@@ -1,59 +1,45 @@
-# Research Brief: Diabetes Disease Progression
+# Research brief: diabetes disease progression
 
-## Project aim
+## Why I built this project
 
-I built this project to compare machine-learning methods for estimating a measure of diabetes disease progression. I wanted to see whether more complex models improve on simpler regression methods and how carefully the results can be evaluated.
+I wanted to compare a range of machine-learning methods on a public diabetes disease-progression dataset. My main question was whether more complex models would improve on simpler regression methods, and how much the results changed when I evaluated the models across different data splits.
 
-This is a regression study. It does not diagnose diabetes or predict whether a person has the condition.
+This is a regression study. It estimates a continuous benchmark target; it does not diagnose diabetes or predict whether someone has the condition.
 
 ## Dataset
 
-The project uses scikit-learn's public `load_diabetes` dataset:
+I use scikit-learn's `load_diabetes` dataset. It contains 442 observations, 10 baseline features and a continuous measure of disease progression one year after baseline. In the current implementation, I load the unstandardized source feature representation with `scaled=False`. The dataset is small and prepared for research use; it is not a set of raw hospital records.
 
-- 442 observations.
-- 10 preprocessed baseline features.
-- A continuous disease-progression measure recorded one year after baseline.
+The demonstrations use synthetic feature profiles drawn from the benchmark's source representation. They are examples for exploring the model interface, not measurements from real people.
 
-The dataset is small and is not raw hospital data. The interactive demo uses synthetic standardised values.
+## Models and experiments
 
-## Models
+I compared Linear Regression, Ridge, Lasso, ElasticNet, Support Vector Regression, Random Forest, Extra Trees and Histogram Gradient Boosting. I also trained small multilayer perceptrons with PyTorch and TensorFlow/Keras.
 
-I compare:
+I evaluated the models with held-out test data, repeated train/test splits and nested cross-validation. For scale-sensitive classical models, the `StandardScaler` is part of the estimator pipeline. It is fitted only on the model-fitting data and is re-fitted separately inside each cross-validation training fold. The neural workflow follows the same principle: it learns its scaler from the neural model-fitting subset and applies it unchanged to the validation, calibration and test subsets.
 
-- Linear Regression, Ridge, Lasso and ElasticNet.
-- Support Vector Regression.
-- Random Forest, Extra Trees and Histogram Gradient Boosting.
-- Small neural networks built with PyTorch and TensorFlow/Keras.
+For prediction uncertainty, I implemented split-conformal intervals and kept the calibration data separate from model fitting. I also compared errors across the dataset's two coded values of the `sex` feature and examined model coefficients and feature importance. The subgroup comparison is exploratory, and the feature summaries do not show cause and effect.
 
-The purpose is to compare these approaches, not to assume that a neural network or a more complex model will perform best.
+## What the corrected results show
 
-## How I evaluated them
+In the corrected ten-seed matched-sample comparison, Ridge, Lasso and Linear Regression had mean test MAE values of 42.822, 42.844 and 42.899, respectively. The fixed PyTorch and TensorFlow baselines had higher mean errors under the training settings used in that experiment.
 
-I used held-out test data, repeated train/test splits and nested cross-validation. Where needed, fitting, validation, conformal calibration and final testing were kept separate. Scaling was fitted within the training folds in the nested benchmark to reduce data leakage.
+A separate validation-selected PyTorch study improved on its paired default control and reached a mean test MAE of 43.408. It remained behind the three linear estimators in the matched-sample comparison.
 
-I also used split-conformal prediction to form prediction intervals, compared errors across the two encoded values of the standardised `sex` feature, and examined model coefficients and feature importance.
+I also ran nested cross-validation with five outer folds repeated three times and three inner folds for model tuning. SVR-RBF had the lowest descriptive per-family mean MAE at 44.414, closely followed by Linear Regression at 44.483. The procedure that selected a model family from inner-fold results had a mean outer-fold MAE of 44.854, so this experiment did not show a clear benefit from adding a model-selection step.
 
-These extra analyses have limits: conformal coverage is marginal and relies on exchangeability; the subgroup check is not a full fairness assessment; and feature importance does not show cause and effect.
+The exact metrics, split designs and workflow links are in [RESULTS.md](../RESULTS.md). The older tables in that file are kept as historical records from the earlier full-dataset-standardized implementation. They should not be quoted as results from the corrected code.
 
-## Main findings
+## What I learned
 
-- Lasso had the lowest MAE (42.703) in the single held-out test run.
-- In the ten-seed matched-sample experiment, Linear Regression and Lasso had mean MAE values of 42.899 and 42.927. The default PyTorch and TensorFlow networks had higher mean MAE values.
-- Validation-based tuning improved the PyTorch network compared with its default control, but did not establish that it was better than the simpler models.
-- The nested model-family selection procedure did not improve on the fixed Linear Regression strategy in that experiment.
+This project gave me practical experience with data preparation, classical regression, neural-network training, cross-validation, model selection, conformal prediction and model interpretation. It also reinforced the importance of keeping preprocessing, fitting, calibration and testing separate.
 
-The experiments use different split designs. Their scores should not be combined into one direct ranking. The full metrics and experiment records are in [RESULTS.md](../RESULTS.md).
+## A separate readmission experiment
 
-## What the project demonstrates
+The repository includes a second, independent project: a 30-day hospital readmission classification study using the UCI *Diabetes 130-US Hospitals for Years 1999–2008* dataset. It has a different cohort, unit of observation and target. It is not external validation of the one-year disease-progression regression experiment. The design and limitations are described in [READMISSION_STUDY_BRIEF.md](READMISSION_STUDY_BRIEF.md).
 
-This work gave me practice in preparing data, training and comparing models, setting up evaluation, checking for data leakage, estimating prediction uncertainty, examining model behaviour and recording experiments so they can be repeated.
+## Limitations and next steps
 
-## Separate repository experiment: 30-day readmission
+The progression dataset contains only 442 observations, and no independent clinical validation has been performed. The subgroup audit is limited to two dataset codes and is not a full fairness assessment. The demos are educational and should not be used for patient care.
 
-The repository also contains a distinct UCI hospital readmission classification experiment. It predicts readmission within 30 days after discharge from a different historical dataset and uses encounters rather than the 442 baseline observations in this progression study. It is **not external validation** of the one-year disease-progression regression model. Its methods and limitations are documented in [READMISSION_STUDY_BRIEF.md](READMISSION_STUDY_BRIEF.md).
-
-## Limitations
-
-The dataset is small and preprocessed. There is no independent clinical validation, no raw medical imaging, no longitudinal health-record data and no evidence of clinical benefit. The demo is for demonstration only and must not be used for patient care.
-
-A next step would be to define a clinically meaningful task and evaluate it on a larger, properly governed dataset with patient-level splitting and independent validation.
+A sensible next step would be to define a clinically meaningful research question and evaluate it on a larger, appropriately governed dataset, with patient-level splitting and independent validation. Any use of hospital data would also require the relevant permissions, privacy safeguards and research approvals.

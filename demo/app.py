@@ -63,9 +63,10 @@ def main():
     st.title("🩺 Diabetes Disease Progression: Educational ML Research Demo")
     st.markdown(
         """
-        An educational machine learning demonstration of **Split Conformal Prediction**
-        and **local feature attribution** on a public, preprocessed benchmark dataset.
-        This is not a diagnostic tool or a validated clinical decision system.
+        An educational machine-learning demonstration of **split-conformal prediction**
+        and **local feature attribution** on a public benchmark. Inputs use the
+        dataset's unstandardized source feature representation. This is not a
+        diagnostic tool or a validated clinical decision system.
         """
     )
 
@@ -79,36 +80,54 @@ def main():
         "Select Model",
         ["Ridge", "Linear Regression", "Lasso", "Random Forest"],
         index=2,
-        help="Select a regression model. Linear Regression and Lasso were closely matched across repeated splits.",
+        help="Select a regression estimator for this educational benchmark demonstration.",
     )
 
     st.sidebar.subheader("Synthetic Feature Profile")
-    st.sidebar.caption("Illustrative standardized benchmark inputs only; these are not real patient measurements.")
-
-    # Synthetic benchmark feature presets
-    preset = st.sidebar.radio(
-        "Load Preset Profile",
-        ["Benchmark Mean", "Illustrative Profile A", "Illustrative Profile B"],
-        index=0,
+    st.sidebar.caption(
+        "Controls use the unstandardized source feature values and fitting-set "
+        "ranges. The sex feature is rounded to a valid source code (1 or 2). "
+        "These are illustrative inputs, not real patient measurements."
     )
 
+    preset = st.sidebar.radio(
+        "Load Preset Profile",
+        ["Training-Set Reference Profile", "Illustrative Profile A", "Illustrative Profile B"],
+        index=0,
+    )
     if preset == "Illustrative Profile A":
-        default_vals = [0.05, 0.05, 0.08, 0.06, 0.04, 0.02, -0.04, 0.05, 0.08, 0.06]
+        profile_values = X_fit.quantile(0.25)
     elif preset == "Illustrative Profile B":
-        default_vals = [-0.04, -0.04, -0.06, -0.05, -0.03, -0.02, 0.06, -0.04, -0.07, -0.05]
+        profile_values = X_fit.quantile(0.75)
     else:
-        default_vals = [0.0] * 10
+        profile_values = X_fit.mean()
 
     feature_inputs = {}
     cols = st.sidebar.columns(2)
     for i, feat in enumerate(feature_names):
         col = cols[i % 2]
+        lower = float(X_fit[feat].min())
+        upper = float(X_fit[feat].max())
+        value = float(profile_values[feat])
+        if feat == "sex":
+            # The source feature is encoded as 1 or 2; do not create an
+            # intermediate sex code when using this illustrative control.
+            value = float(round(value))
+            step = 1.0
+            label = "sex (coded source level)"
+            display_format = "%.0f"
+        else:
+            step = 0.001 if feat == "s5" else 0.1
+            value = float(np.clip(np.round(value / step) * step, lower, upper))
+            label = feat
+            display_format = "%.3f"
         feature_inputs[feat] = col.slider(
-            feat,
-            min_value=-0.15,
-            max_value=0.15,
-            value=float(default_vals[i]),
-            step=0.01,
+            label,
+            min_value=lower,
+            max_value=upper,
+            value=value,
+            step=step,
+            format=display_format,
         )
 
     feature_vector = np.array([feature_inputs[f] for f in feature_names], dtype=np.float64)
@@ -188,8 +207,10 @@ def main():
         st.subheader("⚖️ Held-out Benchmark Subgroup Error Audit")
         st.markdown(
             """
-            This exploratory audit compares errors across the two encoded values of the benchmark's standardized `sex` feature.
-            These feature levels are not literal demographic group labels, and this small-sample audit does not establish fairness.
+            This exploratory audit compares errors across the two coded values of
+            the benchmark's unstandardized `sex` source feature. These are dataset
+            encodings, not a comprehensive demographic fairness assessment. The
+            small-sample audit does not establish fairness.
             """
         )
 
@@ -198,7 +219,7 @@ def main():
             splits.y_test,
             test_preds,
             splits.X_test["sex"],
-            subgroup_name="Standardized sex-feature level",
+            subgroup_name="Coded source sex-feature level",
         )
 
         fc1, fc2 = st.columns(2)

@@ -149,6 +149,9 @@ def run_repeated_neural_tuning(
     pd.DataFrame(history_rows).to_csv(out / "candidate_training_history.csv", index=False)
     metadata = {
         "dataset": "sklearn.datasets.load_diabetes", "observations": 442, "features": 10,
+        "feature_representation": "Unstandardized source features loaded with scaled=False.",
+        "preprocessing": "StandardScaler is fitted only on the neural model-fitting subset for each outer seed; validation, calibration, and test subsets are transformed without refitting.",
+
         "seeds": list(seed_values), "n_seeds": len(seed_values),
         "outer_test_fraction": 0.20, "calibration_fraction_of_outer_training": 0.20,
         "validation_fraction_of_non_calibration_development_data": 0.20,
