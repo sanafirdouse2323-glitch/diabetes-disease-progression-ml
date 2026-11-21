@@ -41,16 +41,16 @@ between the profile prediction and the reference-profile prediction.
 Non-linear perturbation explanations retain their existing limitations and are
 not causal explanations or SHAP values.
 
-## Historical results
+## Results and provenance
 
-The numerical tables in the current `RESULTS.md` were generated before this
-correction, from the full-dataset standardized feature representation. They
-remain in the file for historical traceability but are not results of the
-current implementation. The single-split, repeated classical, repeated
-neural, neural tuning, nested-CV, and demo outputs that depend on this loader
-must be regenerated from the corrected branch and published with the exact
-commit and workflow run. No updated performance figure should be inferred
-from the old tables.
+The corrected ten-seed classical, neural-baseline and validation-selected
+neural results are now reported in the current-results section of
+`RESULTS.md`, with exact workflow links and the source commit. The older
+numerical tables later in that file remain historical records from the
+full-dataset-standardized implementation and must not be quoted as current
+results. The nested-CV comparison is a separate experiment and is reported
+only after its dedicated workflow completes. No unmeasured performance figure
+should be inferred from the historical tables.
 
 ## Scope
 

@@ -29,11 +29,11 @@ You do not need to explain every model in detail unless asked.
 
 ### 4. Explain how you checked the results
 
-Show the experiment design in the research brief and [the fold-isolated preprocessing note](FOLD_ISOLATED_PREPROCESSING.md). Explain that linear-model scaling is learned only from model-fitting rows and separately within each cross-validation training fold. Mention that calibration and test data have separate roles. The numerical tables in RESULTS.md are historical and must not be quoted as results of the corrected implementation until the new workflows complete.
+Show the experiment design in the research brief and [the fold-isolated preprocessing note](FOLD_ISOLATED_PREPROCESSING.md). Explain that linear-model scaling is learned only from model-fitting rows and separately within each cross-validation training fold. Mention that calibration and test data have separate roles. Use the corrected fold-isolated results section at the top of RESULTS.md for current metrics; the later historical tables must not be quoted as results from the corrected implementation.
 
 ### 5. Discuss what you found
 
-The previous experiment found that simpler regression models performed strongly and that a limited validation-selected PyTorch configuration improved on its default control. Those numerical findings belong to the earlier globally standardized input implementation. Do not quote them as current findings. Explain that the corrected experiment is being rerun and that results from different experiment designs are not directly comparable.
+In the corrected ten-seed matched-sample runs, the three linear estimators had mean MAE values around 42.8–42.9. The fixed PyTorch and TensorFlow baselines had higher mean errors. A separate validation-selected PyTorch model improved on its default control and reached 43.408 mean MAE, but remained behind Ridge, Lasso and Linear Regression. These results are descriptive repeated-holdout summaries, not clinical validation or inferential evidence of model superiority. Keep the separate nested-CV results distinct.
 
 ### 6. Show the demo and code
 
@@ -41,7 +41,7 @@ Run `streamlit run demo/app.py` after installing the demo extra. Use only the sy
 
 ## A short interview explanation
 
-"I independently built a machine-learning project using a public diabetes disease-progression dataset. I compared regression models, tree-based methods and small neural networks. I also worked on data splitting, model evaluation, prediction intervals and feature analysis. The results showed me that more complex models do not always perform better. This is a research demonstration, not a clinical tool, and I would like to apply the same methods to larger medical datasets with independent validation."
+"I independently built a machine-learning project using the public scikit-learn diabetes disease-progression benchmark. I compared regression models and small neural networks, implemented fit-only preprocessing, repeated and nested evaluation, prediction intervals and feature analysis. In the corrected ten-seed matched-sample runs, Ridge, Lasso and Linear Regression had mean MAE values of about 42.8, while the fixed neural baselines had higher errors. A validation-selected PyTorch configuration improved on its default control but did not outperform those three linear estimators. These are benchmark results, not clinical validation."
 
 ## Questions you may be asked
 
@@ -55,7 +55,7 @@ No. The target is a continuous disease-progression measure. It is not a diagnosi
 
 **Why include neural networks?**
 
-I wanted to test whether they improved the results rather than assume they would. On this small dataset, the simpler models remained strong.
+I wanted to test whether they improved the results rather than assume they would. In the corrected repeated-seed matched-sample benchmark, the fixed PyTorch and TensorFlow baselines had higher mean errors than the classical models; a separate validation-selected PyTorch study improved on its control but remained behind the three linear estimators on mean MAE.
 
 **Can this be used in a hospital?**
 

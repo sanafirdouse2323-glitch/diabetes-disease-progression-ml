@@ -35,11 +35,11 @@ I also use split-conformal prediction to form prediction intervals, compare erro
 
 These extra analyses have limits: conformal coverage is marginal and relies on exchangeability; the subgroup check is not a full fairness assessment; and feature importance does not show cause and effect.
 
-## Earlier findings and current status
+## Corrected fold-isolated results
 
-The numerical comparisons currently retained in [RESULTS.md](../RESULTS.md) were produced before the fold-isolated preprocessing correction, using scikit-learn's full-dataset standardized feature representation. They are historical findings, not current performance estimates for the corrected implementation. The affected single-split, repeated-seed, neural and nested experiments must be rerun before quoting model rankings or MAE values from this project.
+The corrected ten-seed matched-sample classical and neural results are reported in the current-results section of [RESULTS.md](../RESULTS.md), with exact workflow links and commit provenance. In this evaluation, Ridge, Lasso and Linear Regression achieved mean test MAE values of approximately 42.82–42.90, while the fixed PyTorch and TensorFlow baselines had higher mean errors. A separate validation-selected PyTorch study improved on its default control but did not outperform those three linear estimators on mean MAE.
 
-The experiments use different split designs. Their scores should not be combined into one direct ranking. New results will be reported separately with exact workflow and commit provenance.
+The older result tables later in RESULTS.md are retained as historical records from the pre-standardized implementation. Standard deviations across repeated hold-outs are descriptive, not confidence intervals. Do not combine results from different split designs into one ranking.
 
 ## What the project demonstrates
 

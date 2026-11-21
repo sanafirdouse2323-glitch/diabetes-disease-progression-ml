@@ -62,9 +62,35 @@ I tried to keep the different stages of the experiments separate so that the tes
 
 ## Results
 
-The following results come from several separate experiments. They use different split designs and should not be combined into a single model ranking.
-> **Historical-results notice:** The numerical tables below are retained from the earlier implementation that loaded the dataset with `scaled=True` before splitting. That preprocessing used the complete feature matrix, so these values are not results of the current fold-isolated, unstandardized-input implementation. They are preserved for traceability only. The affected experiments must be rerun; do not use the historical metrics as current performance claims. New results will be reported separately with their workflow run and commit provenance.
+The corrected fold-isolated experiments and their provenance are presented first. The older numerical tables that follow are retained only as a historical record; they were generated using the earlier `scaled=True` implementation and must not be cited as results from the corrected protocol.
 
+### Corrected fold-isolated results (10 seeds: 42–51; 21 November 2026)
+
+The corrected runs use `scaled=False`; no feature scaling is computed on the full 442-observation dataset. The matched-sample design uses 225 model-fitting, 57 reserved validation, 71 conformal-calibration, and 89 held-out test observations per seed. The 57-row classical validation reservation is deliberately unused for fitting or selection so the classical and neural baseline partitions have matching sizes. Linear Regression, Ridge and Lasso use a StandardScaler fitted only inside the model pipeline; neural scaling is fitted only on its model-fitting subset.
+
+**Matched-sample classical results and fixed neural baselines (mean ± sample SD over ten repeated splits):**
+
+| Model | Test MAE | Test RMSE | Test R² |
+|---|---:|---:|---:|
+| Ridge | 42.822 ± 2.870 | 52.893 ± 3.636 | 0.493 ± 0.064 |
+| Lasso | 42.844 ± 2.845 | 52.890 ± 3.652 | 0.493 ± 0.065 |
+| Linear Regression | 42.899 ± 2.836 | 52.975 ± 3.632 | 0.491 ± 0.064 |
+| Random Forest | 44.851 ± 3.289 | 55.532 ± 3.580 | 0.442 ± 0.051 |
+| PyTorch MLP (fixed baseline) | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
+| TensorFlow MLP (fixed baseline) | 57.204 ± 8.404 | 73.242 ± 10.420 | 0.015 ± 0.261 |
+| Mean baseline | 64.492 ± 3.627 | 74.945 ± 3.536 | −0.014 ± 0.015 |
+
+The neural baseline used a 100-epoch maximum, patience 12, batch size 32, learning rate 0.001 and dropout 0.10. Both framework models reached the 100-epoch maximum in every seed; the validation partition remained separate from the 71-row conformal calibration set.
+
+**Validation-selected PyTorch tuning study (same outer seed and partition sizes):** a predeclared ten-candidate grid was selected using validation MSE only; calibration data was used after selection, and test data only for final evaluation. The selected model achieved MAE **43.408 ± 4.174**, RMSE **54.312 ± 4.278** and R² **0.464 ± 0.079**. Target standardisation was selected in 7 of 10 seeds. Its paired default-control MAE was 44.086 ± 3.365; the mean paired change was −0.677 ± 2.523 target units. This tuned model remained behind the three linear estimators on mean MAE, although it was below Random Forest's mean MAE. These are descriptive repeated-split comparisons, not proof of statistical superiority.
+
+Across-seed standard deviations are **descriptive split-sensitivity summaries, not confidence intervals**: repeated random hold-out test partitions overlap. The conformal results target marginal coverage under exchangeability; they are not per-person probability statements. None of these results establishes clinical validity or utility.
+
+**Run provenance:** [classical ten-seed run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566461), [neural ten-seed run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566361), [validation-selected tuning run](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566377). Source commit: `9504b686ddbdc072054356bbb295a76f7b359727`. The nested-CV workflow is still running and will be reported separately when complete.
+
+---
+
+### Historical results from the earlier pre-standardized protocol
 
 
 ### Single held-out test run (seed 42)
@@ -303,8 +329,8 @@ The scope, prediction-time assumption, grouped evaluation, threshold-selection m
 - `src/diabetes_ml/`: the Python package for loading the progression dataset, classical and neural regression experiments, repeated-seed validation, nested cross-validation, conformal prediction, subgroup error analysis and feature explanations. It also contains the separate UCI hospital-readmission classification experiment.
 - `tests/`: automated tests for the data, models, evaluation methods, demo and experiment workflows.
 - `notebooks/`: three notebooks covering exploration, model comparison and neural-network experiments.
-- `demo/app.py`: the Streamlit research demonstration, using illustrative standardised inputs rather than real patient measurements.
-- `docs/`: the research brief, PhD demonstration guide and separate readmission-study brief.
+- `demo/app.py`: the Streamlit research demonstration, using synthetic inputs in the unstandardized source feature representation rather than real patient measurements.
+- `docs/`: the research brief, PhD demonstration guide, fold-isolated preprocessing note and separate readmission-study brief.
 - `reports/ci-run-2026-11-02/`: a dated snapshot of outputs from an earlier successful neural CI run. These are historical reproducibility records, not the latest experiment results.
 - `.github/workflows/`: workflows for tests, neural checks, notebook execution, repeated validation, the nested benchmark, the optional external readmission study and the Docker smoke test.
 - `Dockerfile`: the container definition used by the Docker build and application smoke test.
@@ -313,13 +339,13 @@ GitHub Actions run the applicable tests and experiment checks when their workflo
 
 ## Limitations and next steps
 
-This project is an independent machine-learning study using a small, preprocessed public dataset and a separate historical hospital readmission dataset. The readmission study is a different prediction task and must not be interpreted as validating the disease-progression model. Neither study has been prospectively or independently validated for clinical use. The results do not establish clinical usefulness or support patient-care decisions.
+This project is an independent machine-learning study using a small public benchmark with unstandardized source features and a separate historical hospital readmission dataset. The readmission study is a different prediction task and must not be interpreted as validating the disease-progression model. Neither study has been prospectively or independently validated for clinical use. The results do not establish clinical usefulness or support patient-care decisions.
 
 Key limitations of the progression benchmark:
 
-- **Dataset size:** 442 observations and 10 pre-standardised features are insufficient for clinical deployment or population-level generalisation.
-- **Pre-split standardisation:** features are scaled before the repository creates splits. Results are specific to scikit-learn's pre-processed benchmark form.
-- **Subgroup analysis scope:** only the two encoded values of the standardised `sex` feature are examined. This encoding is not documented as a clinical demographic variable. Age-group and broader fairness evaluations are not included.
+- **Dataset size:** 442 observations and 10 source features are insufficient to establish clinical deployment or population-level generalisation.
+- **Preprocessing:** the corrected code loads `scaled=False`; scale-sensitive classical models fit their scalers inside each model-fitting pipeline and separately within cross-validation training folds. Neural models fit their scaler only on the model-fitting subset. The earlier full-dataset-scaled results remain historical.
+- **Subgroup analysis scope:** only the two coded source values (1 and 2) of the `sex` feature are examined. This encoding is not documented as a clinical demographic variable. Age-group and broader fairness evaluations are not included.
 - **Explainability scope:** the implementation covers linear coefficients, Random Forest mean-decrease-in-impurity importances, and local perturbation-style contributions. SHAP, gradient attribution, and causal inference are not implemented. Local perturbation contributions for non-linear models do not form an additive decomposition.
 - **Neural architecture and search:** the neural baselines use one fixed MLP architecture. The hyperparameter studies use compact, predeclared grids. Neither is exhaustive.
 

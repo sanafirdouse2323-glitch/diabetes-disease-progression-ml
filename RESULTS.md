@@ -1,14 +1,80 @@
-# Historical Experimental Results and Regeneration Record
+# Corrected and Historical Experimental Results and Regeneration Record
 
 ## Status of the results in this file
 
-**All numerical tables currently retained below are historical results from the implementation that loaded scikit-learn's diabetes features with `scaled=True` before the repository-level splits.** They must not be represented as measurements from the corrected fold-isolated implementation. They are retained so that the change in methodology is auditable and so that earlier workflow artifacts remain traceable. New experiments must be run after the preprocessing correction and published in a separate, clearly labelled section with exact commit and workflow provenance. Do not replace the historical numbers with estimates or carry them forward as if they were rerun.
+The numerical tables in Sections 1–12 below are historical results from the implementation that loaded scikit-learn's diabetes features with `scaled=True` before the repository-level splits. They are retained for traceability only and must not be represented as measurements from the corrected implementation. The corrected fold-isolated reruns and their exact workflow provenance are reported in the new section below.
 
 ## Historical preprocessing caveat
 
 The earlier code loaded `sklearn.datasets.load_diabetes` with `scaled=True`. scikit-learn then mean-centred and scaled the features using statistics from the complete 442-observation feature matrix before any repository train/test or cross-validation split. This was unsupervised feature-distribution information from the full dataset, not target-label leakage. However, it means the historical results were not a fully fold-isolated raw-feature evaluation. The current code uses `scaled=False`; linear estimators fit `StandardScaler` within their model-fitting pipeline, and cross-validation fits the scaler separately inside each training fold. Neural preparation also fits its scaler only on the neural model-fitting partition. The historical metrics below remain tied to the earlier pre-standardized input representation and are not directly interchangeable with results from the corrected code.
 
-## Original single-seed run provenance
+## Corrected fold-isolated results (21 November 2026)
+
+**Source commit:** `9504b686ddbdc072054356bbb295a76f7b359727`. The current runs below use
+`load_diabetes(as_frame=True, scaled=False)`. No statistics from all 442
+observations are used to scale features before splitting. Classical linear
+estimators fit `StandardScaler` only within the model-fitting pipeline, while
+the repeated CV pipeline fits a new scaler inside each training fold. Neural
+scalers are fit only on the 225-row neural fitting subset.
+
+### Matched-sample 10-seed comparison (seeds 42–51)
+
+For each seed: 225 model-fitting rows, 57 reserved validation rows, 71
+conformal calibration rows, and 89 held-out test rows. The 57-row validation
+partition is reserved but not used by the classical estimators so the
+classical and neural baseline test design has matching sample counts. Values
+are mean ± sample standard deviation across ten repeated hold-outs.
+
+| Model | Test MAE | Test RMSE | Test R² |
+|---|---:|---:|---:|
+| Ridge | 42.822 ± 2.870 | 52.893 ± 3.636 | 0.493 ± 0.064 |
+| Lasso | 42.844 ± 2.845 | 52.890 ± 3.652 | 0.493 ± 0.065 |
+| Linear Regression | 42.899 ± 2.836 | 52.975 ± 3.632 | 0.491 ± 0.064 |
+| Random Forest | 44.851 ± 3.289 | 55.532 ± 3.580 | 0.442 ± 0.051 |
+| PyTorch MLP (fixed baseline) | 53.963 ± 3.984 | 69.300 ± 4.493 | 0.127 ± 0.124 |
+| TensorFlow MLP (fixed baseline) | 57.204 ± 8.404 | 73.242 ± 10.420 | 0.015 ± 0.261 |
+| Mean baseline | 64.492 ± 3.627 | 74.945 ± 3.536 | −0.014 ± 0.015 |
+
+The fixed neural baseline used a 100-epoch maximum, patience 12, batch size 32,
+learning rate 0.001 and dropout 0.10. Both frameworks reached the 100-epoch
+maximum for each seed. The fitting, validation, calibration and test
+partitions remained separate.
+
+### Validation-selected PyTorch tuning study
+
+A separate ten-seed study evaluated a predeclared ten-candidate grid combining
+five learning-rate/dropout settings with and without target standardisation.
+Configuration selection used validation MSE only; calibration was used only
+after selection, and the outer test set only for final evaluation. The selected
+model achieved:
+
+| Metric | Validation-selected PyTorch MLP (mean ± SD) |
+|---|---:|
+| Test MAE | 43.408 ± 4.174 |
+| Test RMSE | 54.312 ± 4.278 |
+| Test R² | 0.464 ± 0.079 |
+
+Its paired default-control MAE was 44.086 ± 3.365; the mean paired MAE change
+was −0.677 ± 2.523 target units. Target standardisation was selected in 7 of
+10 seeds. Under the matched-sample evaluation, this selected neural model's
+mean MAE was below Random Forest's, but remained above Ridge, Lasso and
+Linear Regression. These differences are descriptive; no inferential claim
+of model superiority is made.
+
+### Interpretation and provenance
+
+Across-seed standard deviations are descriptive split-sensitivity summaries,
+not confidence intervals, because repeated outer test partitions overlap.
+Observed conformal coverage is an empirical average over these test splits;
+the split-conformal procedure targets marginal coverage under exchangeability,
+not a probability statement for a particular person. The results do not
+establish clinical validity or clinical utility.
+
+- [Repeated classical validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566461)
+- [Repeated neural validation](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566361)
+- [Validation-selected neural tuning](https://github.com/sanafirdouse2323-glitch/diabetes-disease-progression-ml/actions/runs/44890566377)
+
+## Historical single-seed run provenance (pre-standardized input)
 
 These historical results were generated by the earlier experiment pipeline after separating model-fitting, early-stopping validation, conformal calibration, and held-out test data. The later-discovered dataset-wide feature standardisation caveat is documented above; these values are not results of the corrected raw-input pipeline.
 
