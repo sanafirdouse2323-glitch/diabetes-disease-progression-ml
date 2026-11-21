@@ -214,6 +214,11 @@ def run_repeated_seed_validation(
         "dataset": "sklearn.datasets.load_diabetes",
         "observations": 442,
         "features": 10,
+        "feature_representation": "Unstandardized source features loaded with scaled=False; no full-dataset scaling is performed.",
+        "preprocessing": {
+            "linear_estimators": "StandardScaler is fitted inside each estimator pipeline on the model-fitting partition; during cross-validation each fold fits its own scaler on that fold's training observations.",
+            "tree_and_baseline_estimators": "No feature scaling is applied.",
+        },
         "seeds": list(seed_values),
         "n_seeds": len(seed_values),
         "outer_test_fraction": test_fraction,

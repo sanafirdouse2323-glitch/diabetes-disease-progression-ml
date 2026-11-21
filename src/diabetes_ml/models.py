@@ -1,29 +1,40 @@
-"""Classical regression model definitions and cross-validation utilities."""
+"""Classical regression estimators and fold-local preprocessing utilities."""
 
 from __future__ import annotations
 
 from typing import Dict
+
 from sklearn.base import RegressorMixin
 from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso, LinearRegression, Ridge
 from sklearn.model_selection import KFold, cross_validate
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+
+def _scaled_model(estimator: RegressorMixin) -> Pipeline:
+    """Scale features within each estimator fit, never before data splitting."""
+    return Pipeline([
+        ("scale", StandardScaler()),
+        ("model", estimator),
+    ])
 
 
 def get_classical_models(random_state: int = 42) -> Dict[str, RegressorMixin]:
-    """Instantiate the suite of classical regression models.
+    """Instantiate the classical model suite.
 
-    Args:
-        random_state: Random seed for stochastic models.
-
-    Returns:
-        Mapping of model names to instantiated estimators.
+    Scale-sensitive linear estimators are wrapped in a pipeline so the scaler
+    is fitted only on the data passed to that pipeline's fit call. During
+    cross-validation, scikit-learn clones and fits the complete pipeline
+    separately inside each training fold. Tree and mean-baseline estimators do
+    not require feature scaling and are left unwrapped.
     """
     return {
         "Mean Baseline": DummyRegressor(strategy="mean"),
-        "Linear Regression": LinearRegression(),
-        "Ridge": Ridge(alpha=1.0, random_state=random_state),
-        "Lasso": Lasso(alpha=0.1, random_state=random_state),
+        "Linear Regression": _scaled_model(LinearRegression()),
+        "Ridge": _scaled_model(Ridge(alpha=1.0, random_state=random_state)),
+        "Lasso": _scaled_model(Lasso(alpha=0.1, random_state=random_state)),
         "Random Forest": RandomForestRegressor(
             n_estimators=100,
             max_depth=5,
@@ -40,17 +51,11 @@ def evaluate_cv(
     cv_folds: int = 5,
     random_state: int = 42,
 ) -> Dict[str, float]:
-    """Perform k-fold cross-validation inside the training partition only.
+    """Perform k-fold cross-validation inside the model-fitting partition.
 
-    Args:
-        model: Regressor to evaluate.
-        X: Training features.
-        y: Training targets.
-        cv_folds: Number of cross-validation folds.
-        random_state: Seed for cross-validation shuffle.
-
-    Returns:
-        Dictionary with mean and std for MAE, RMSE, and R2.
+    For pipeline estimators, each fold's scaler is fitted only on that fold's
+    training observations because preprocessing and estimation are evaluated
+    as one scikit-learn pipeline.
     """
     cv = KFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
     scoring = {

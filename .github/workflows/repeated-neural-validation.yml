@@ -5,6 +5,15 @@ on:
     branches: [main]
     paths:
       - "src/diabetes_ml/repeated_neural_validation.py"
+      - "src/diabetes_ml/data.py"
+      - "src/diabetes_ml/neural/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/repeated-neural-validation.yml"
+  pull_request:
+    paths:
+      - "src/diabetes_ml/repeated_neural_validation.py"
+      - "src/diabetes_ml/data.py"
       - "src/diabetes_ml/neural/**"
       - "pyproject.toml"
       - "uv.lock"

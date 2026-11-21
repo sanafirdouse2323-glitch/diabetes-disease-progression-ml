@@ -8,7 +8,7 @@ The project uses a continuous disease-progression target. It does not predict wh
 
 The model predicts a single continuous score — a quantitative measure of how much a patient's diabetes-related blood markers worsened one year after their baseline measurements. This score originates from Efron et al. (2004) and is derived from serum measurements. It is not a blood glucose level, HbA1c reading, insulin dose, or a diagnosis. The raw score ranges from approximately 25 to 346; a higher score indicates greater disease progression.
 
-This is an abstract benchmark quantity. The scikit-learn version of the dataset does not disclose which specific serum measurements constitute the composite score. The demo included in this repository uses illustrative standardised inputs; they are synthetic examples and must not be treated as measurements from real patients or as a clinically validated prediction tool.
+This is an abstract benchmark quantity. The scikit-learn version of the dataset does not disclose which specific serum measurements constitute the composite score. The demos use illustrative synthetic values in the dataset's unstandardized source feature representation. They are not measurements from real patients and the demos are not clinically validated prediction tools.
 
 
 ## Interactive Demos & Quick Access
@@ -27,9 +27,9 @@ Choose how you want to inspect or execute the benchmark:
 The repository includes a locally runnable Streamlit application that demonstrates selected parts of the progression-regression workflow. The interface lets you:
 
 - Select one of the implemented regression models (Ridge, Linear Regression, Lasso or Random Forest).
-- Adjust illustrative, standardised benchmark feature values and view a point prediction with a 90% split-conformal prediction interval.
+- Adjust illustrative values in the dataset's unstandardized source feature representation and view a point prediction with a 90% split-conformal prediction interval.
 - Inspect local feature-attribution output relative to the model-fitting reference baseline.
-- Explore a held-out benchmark subgroup error audit across the two encoded levels of the standardised `sex` feature.
+- Explore a held-out benchmark subgroup error audit across the two coded source levels of the `sex` feature.
 
 **Important:** the controls use illustrative synthetic benchmark inputs, not real patient measurements. The displayed prediction is a benchmark regression output, not a diagnosis, personal disease-risk estimate, treatment recommendation or clinically validated decision. The conformal interval targets marginal coverage under its assumptions; it is not a 90% probability statement about an individual. The subgroup audit is exploratory and does not establish fairness.
 
@@ -46,23 +46,26 @@ This documents a local application included in the repository; it does not imply
 
 ## Dataset
 
-I used the diabetes dataset provided by scikit-learn. It contains 442 observations and 10 preprocessed baseline features. The target is a continuous measure of disease progression one year after the baseline measurements.
+I use the diabetes dataset provided by scikit-learn. It contains 442 observations and 10 unstandardized source features. The target is a continuous measure of disease progression one year after the baseline measurements.
 
-**Preprocessing detail:** the current experiments call `load_diabetes` explicitly with `scaled=True` (the scikit-learn default). scikit-learn therefore returns features mean-centred and scaled using statistics calculated across all 442 observations before the repository creates its train/test or cross-validation splits. Later fold-local scaling (where used) is an additional transformation; it does not undo that dataset-level preprocessing. This is unsupervised use of the full feature matrix, not target-label leakage, but it means the experiments are not a fully raw-data, fold-isolated preprocessing evaluation. Reported results should be understood as results on scikit-learn's pre-standardised benchmark. A raw-feature sensitivity analysis using `scaled=False` would require rerunning and separately reporting all affected experiments.
+**Preprocessing in the current code:** the loader calls `load_diabetes(as_frame=True, scaled=False)`, so no dataset-wide scaling is performed before splitting. Linear Regression, Ridge and Lasso are evaluated as pipelines containing a `StandardScaler`; each scaler is fitted only on its applicable model-fitting data, and cross-validation fits a separate scaler inside each training fold. The neural-network preparation code fits its scaler only on the neural model-fitting partition. The nested benchmark also fits scaling inside each inner-fold training pipeline. Tree-based and mean-baseline estimators do not require feature scaling. See [the fold-isolated preprocessing note](docs/FOLD_ISOLATED_PREPROCESSING.md).
 
-This is a small public benchmark dataset, not a collection of raw hospital records. The demo included in this repository uses illustrative standardised inputs. They are synthetic examples and should not be treated as measurements from real patients.
+This is a small public benchmark dataset, not a collection of raw hospital records. The demos use synthetic examples in the unstandardized source feature representation. They are not measurements from real patients.
 
 ## What I worked on
 
 I prepared the data and compared several regression approaches: Linear Regression, Ridge, Lasso, ElasticNet, Support Vector Regression, Random Forest, Extra Trees and Histogram Gradient Boosting. I also implemented small neural networks using PyTorch and TensorFlow/Keras.
 
-I evaluated the models using held-out test data and repeated train/test splits. I added nested cross-validation to examine whether selecting between model families improved performance. For prediction uncertainty, I implemented split-conformal prediction intervals, keeping the calibration data separate from the data used to fit the models. I also looked at prediction errors across the two encoded values of the dataset's standardised `sex` feature and examined model coefficients and feature importance.
+I evaluated the models using held-out test data and repeated train/test splits. I added nested cross-validation to examine whether selecting between model families improved performance. For prediction uncertainty, I implemented split-conformal prediction intervals, keeping the calibration data separate from the data used to fit the models. I also looked at prediction errors across the two coded values of the dataset's unstandardized `sex` source feature and examined model coefficients and feature importance.
 
 I tried to keep the different stages of the experiments separate so that the test data was not used to fit the models or make tuning decisions. The detailed split sizes and experiment settings are recorded in [RESULTS.md](RESULTS.md).
 
 ## Results
 
 The following results come from several separate experiments. They use different split designs and should not be combined into a single model ranking.
+> **Historical-results notice:** The numerical tables below are retained from the earlier implementation that loaded the dataset with `scaled=True` before splitting. That preprocessing used the complete feature matrix, so these values are not results of the current fold-isolated, unstandardized-input implementation. They are preserved for traceability only. The affected experiments must be rerun; do not use the historical metrics as current performance claims. New results will be reported separately with their workflow run and commit provenance.
+
+
 
 ### Single held-out test run (seed 42)
 

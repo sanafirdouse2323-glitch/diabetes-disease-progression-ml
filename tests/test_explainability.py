@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from diabetes_ml.data import create_experiment_splits
 from diabetes_ml.evaluation.explainability import (
@@ -28,6 +30,35 @@ def test_linear_attribution_is_finite_and_normalized():
     assert np.isfinite(attribution[["coefficient", "abs_coefficient", "relative_importance"]]).all().all()
     assert np.isclose(attribution["relative_importance"].sum(), 1.0)
     assert attribution["abs_coefficient"].is_monotonic_decreasing
+
+
+def test_pipeline_linear_attribution_is_converted_to_original_input_units():
+    splits = create_experiment_splits(random_state=42)
+    model = Pipeline([
+        ("scale", StandardScaler()),
+        ("model", Ridge(alpha=1.0)),
+    ]).fit(splits.X_train, splits.y_train)
+
+    attribution = get_linear_attribution(model, splits.feature_names)
+    expected_coefficients = (
+        model.named_steps["model"].coef_ / model.named_steps["scale"].scale_
+    )
+    observed = attribution.set_index("feature").loc[
+        splits.feature_names, "coefficient"
+    ].to_numpy()
+    np.testing.assert_allclose(observed, expected_coefficients)
+
+    profile = splits.X_test.iloc[0].to_numpy(dtype=float)
+    reference = splits.X_train.mean().to_numpy(dtype=float)
+    explanation = compute_patient_explanation(
+        model, profile, splits.feature_names, reference
+    )
+    expected_delta = float(model.predict(profile.reshape(1, -1))[0]) - float(
+        model.predict(reference.reshape(1, -1))[0]
+    )
+    assert explanation["contribution_to_progression"].sum() == pytest.approx(
+        expected_delta, rel=1e-10, abs=1e-10
+    )
 
 
 def test_zero_linear_coefficients_have_zero_relative_importance():

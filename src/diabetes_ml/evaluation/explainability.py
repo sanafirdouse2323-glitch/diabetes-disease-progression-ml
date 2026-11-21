@@ -14,6 +14,7 @@ from typing import Any, Sequence
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 
 def _feature_names(values: Sequence[str], expected_size: int) -> list[str]:
@@ -68,17 +69,77 @@ def _single_prediction(model: Any, vector: np.ndarray, name: str) -> float:
     return float(prediction.reshape(-1)[0])
 
 
+
+
+def _linear_coefficients_in_input_space(model: Any) -> np.ndarray:
+    """Return linear coefficients expressed per unit of the original input.
+
+    A fitted Pipeline with StandardScaler steps stores coefficients in
+    transformed coordinates. Dividing by the product of fitted feature scales
+    converts the slopes back to the pipeline's input feature units. Other
+    intermediate transformations are rejected because a general inverse
+    coefficient mapping would not be valid for them.
+    """
+    estimator = model
+    input_scale: np.ndarray | None = None
+    steps = getattr(model, "steps", None)
+    if steps is not None:
+        if not steps:
+            raise ValueError("A linear model pipeline must contain at least one step.")
+        for step_name, transformer in steps[:-1]:
+            if isinstance(transformer, StandardScaler):
+                if transformer.with_std:
+                    if not hasattr(transformer, "scale_") or transformer.scale_ is None:
+                        raise ValueError(
+                            f"Pipeline transformer {step_name!r} has not been fitted."
+                        )
+                    current_scale = np.asarray(transformer.scale_, dtype=np.float64)
+                else:
+                    current_scale = np.ones(
+                        int(transformer.n_features_in_), dtype=np.float64
+                    )
+                if input_scale is None:
+                    input_scale = current_scale
+                else:
+                    if input_scale.shape != current_scale.shape:
+                        raise ValueError("Pipeline scaler dimensions do not match.")
+                    input_scale = input_scale * current_scale
+            elif transformer is None or (
+                isinstance(transformer, str) and transformer == "passthrough"
+            ):
+                continue
+            else:
+                raise ValueError(
+                    "Linear coefficient conversion supports only StandardScaler "
+                    "or passthrough pipeline steps before the final estimator."
+                )
+        estimator = steps[-1][1]
+
+    coefficients = _fitted_vector_attribute(
+        estimator, "coef_", "linear coefficients"
+    )
+    if input_scale is not None:
+        if input_scale.shape != coefficients.shape:
+            raise ValueError("Pipeline scaler and linear coefficient dimensions do not match.")
+        if not np.isfinite(input_scale).all() or np.any(input_scale <= 0.0):
+            raise ValueError("Pipeline feature scales must be finite and positive.")
+        coefficients = coefficients / input_scale
+    return coefficients
+
+
 def get_linear_attribution(
     linear_model: Any,
     feature_names: Sequence[str],
 ) -> pd.DataFrame:
     """Return signed coefficients and normalized absolute coefficient magnitudes.
 
-    This is a model-parameter summary, not a causal effect or a SHAP explanation.
-    If all coefficients are zero, relative importance is defined as zero for
-    every feature rather than producing NaN values.
+    For a StandardScaler pipeline, coefficients are converted back to the
+    original input feature units before being reported. This is a model-
+    parameter summary, not a causal effect or a SHAP explanation. If all
+    coefficients are zero, relative importance is defined as zero for every
+    feature rather than producing NaN values.
     """
-    coefficients = _fitted_vector_attribute(linear_model, "coef_", "linear coefficients")
+    coefficients = _linear_coefficients_in_input_space(linear_model)
     names = _feature_names(feature_names, coefficients.size)
     absolute = np.abs(coefficients)
     total_absolute = float(absolute.sum())
@@ -155,8 +216,13 @@ def compute_patient_explanation(
 
     difference = vector - baseline
 
-    if hasattr(model, "coef_"):
-        coefficients = _fitted_vector_attribute(model, "coef_", "linear coefficients")
+    final_estimator = (
+        model.steps[-1][1]
+        if getattr(model, "steps", None)
+        else model
+    )
+    if hasattr(final_estimator, "coef_"):
+        coefficients = _linear_coefficients_in_input_space(model)
         if coefficients.shape != vector.shape:
             raise ValueError("linear coefficient count must match the feature count.")
         contributions = coefficients * difference

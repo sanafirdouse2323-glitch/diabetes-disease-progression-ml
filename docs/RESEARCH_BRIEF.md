@@ -11,10 +11,10 @@ This is a regression study. It does not diagnose diabetes or predict whether a p
 The project uses scikit-learn's public `load_diabetes` dataset:
 
 - 442 observations.
-- 10 preprocessed baseline features.
+- 10 unstandardized source features (loaded with `scaled=False`).
 - A continuous disease-progression measure recorded one year after baseline.
 
-The dataset is small and is not raw hospital data. The interactive demo uses synthetic standardised values.
+The dataset is small and is not raw hospital data. The demos use synthetic examples in the unstandardized source feature representation.
 
 ## Models
 
@@ -29,20 +29,17 @@ The purpose is to compare these approaches, not to assume that a neural network 
 
 ## How I evaluated them
 
-I used held-out test data, repeated train/test splits and nested cross-validation. Where needed, fitting, validation, conformal calibration and final testing were kept separate. Scaling was fitted within the training folds in the nested benchmark to reduce data leakage.
+I use held-out test data, repeated train/test splits and nested cross-validation. Linear-estimator scaling is fitted only inside the relevant model-fitting pipeline; during cross-validation, each fold fits its own scaler on that fold's training observations. Neural scaling is fitted only on the neural model-fitting partition. Conformal calibration and final testing remain separate.
 
-I also used split-conformal prediction to form prediction intervals, compared errors across the two encoded values of the standardised `sex` feature, and examined model coefficients and feature importance.
+I also use split-conformal prediction to form prediction intervals, compare errors across the two coded values of the unstandardized `sex` source feature, and examine model coefficients and feature importance.
 
 These extra analyses have limits: conformal coverage is marginal and relies on exchangeability; the subgroup check is not a full fairness assessment; and feature importance does not show cause and effect.
 
-## Main findings
+## Earlier findings and current status
 
-- Lasso had the lowest MAE (42.703) in the single held-out test run.
-- In the ten-seed matched-sample experiment, Linear Regression and Lasso had mean MAE values of 42.899 and 42.927. The default PyTorch and TensorFlow networks had higher mean MAE values.
-- Validation-based tuning improved the PyTorch network compared with its default control, but did not establish that it was better than the simpler models.
-- The nested model-family selection procedure did not improve on the fixed Linear Regression strategy in that experiment.
+The numerical comparisons currently retained in [RESULTS.md](../RESULTS.md) were produced before the fold-isolated preprocessing correction, using scikit-learn's full-dataset standardized feature representation. They are historical findings, not current performance estimates for the corrected implementation. The affected single-split, repeated-seed, neural and nested experiments must be rerun before quoting model rankings or MAE values from this project.
 
-The experiments use different split designs. Their scores should not be combined into one direct ranking. The full metrics and experiment records are in [RESULTS.md](../RESULTS.md).
+The experiments use different split designs. Their scores should not be combined into one direct ranking. New results will be reported separately with exact workflow and commit provenance.
 
 ## What the project demonstrates
 
@@ -54,6 +51,6 @@ The repository also contains a distinct UCI hospital readmission classification 
 
 ## Limitations
 
-The dataset is small and preprocessed. There is no independent clinical validation, no raw medical imaging, no longitudinal health-record data and no evidence of clinical benefit. The demo is for demonstration only and must not be used for patient care.
+The dataset is small and uses a public benchmark feature representation. There is no independent clinical validation, no raw medical imaging, no longitudinal health-record data and no evidence of clinical benefit. The demo is for demonstration only and must not be used for patient care.
 
 A next step would be to define a clinically meaningful task and evaluate it on a larger, properly governed dataset with patient-level splitting and independent validation.

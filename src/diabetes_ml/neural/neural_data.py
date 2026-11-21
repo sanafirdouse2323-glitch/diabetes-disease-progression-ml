@@ -39,8 +39,10 @@ def prepare_neural_datasets(
     The outer test set is passed through untouched. A calibration subset is
     first removed from the outer training partition. The remaining development
     subset is divided into model-fitting and early-stopping validation subsets.
-    The scaler is fitted only on model-fitting features, then applied unchanged
-    to validation, calibration, and outer test features.
+    The caller supplies the unstandardized source features. The scaler is fitted
+    only on model-fitting features, then applied unchanged to validation,
+    calibration, and outer test features. No statistics from the full dataset
+    are used to standardize features before this partitioning step.
 
     Args:
         X_train_df: Features from the outer training partition.

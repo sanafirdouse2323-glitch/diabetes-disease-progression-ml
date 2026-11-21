@@ -47,6 +47,6 @@ def test_demo_model_profile_and_feature_controls_can_be_changed():
         assert app.radio[0].value == profile
         assert not app.exception, f"Demo failed after selecting {profile}"
 
-    app.slider[0].set_value(0.10).run(timeout=60)
-    assert app.slider[0].value == pytest.approx(0.10)
+    app.slider[0].set_value(50.0).run(timeout=60)
+    assert app.slider[0].value == pytest.approx(50.0)
     assert not app.exception, "Demo failed after changing a synthetic feature input"

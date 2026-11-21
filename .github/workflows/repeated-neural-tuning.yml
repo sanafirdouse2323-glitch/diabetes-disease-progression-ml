@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "src/diabetes_ml/repeated_neural_tuning.py"
+      - "src/diabetes_ml/data.py"
       - "src/diabetes_ml/neural/**"
       - "pyproject.toml"
       - "uv.lock"

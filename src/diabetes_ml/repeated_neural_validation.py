@@ -207,6 +207,9 @@ def run_repeated_neural_validation(
         "dataset": "sklearn.datasets.load_diabetes",
         "observations": 442,
         "features": 10,
+        "feature_representation": "Unstandardized source features loaded with scaled=False.",
+        "preprocessing": "StandardScaler is fitted only on the neural model-fitting subset and applied unchanged to validation, calibration, and outer-test subsets.",
+
         "seeds": list(seed_values),
         "n_seeds": len(seed_values),
         "outer_test_fraction": test_fraction,
