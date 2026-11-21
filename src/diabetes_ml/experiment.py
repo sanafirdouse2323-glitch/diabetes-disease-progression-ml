@@ -69,8 +69,8 @@ def run_classical_experiment(
         reg_metrics = calculate_regression_metrics(splits.y_test.values, y_test_pred)
         conf_metrics = evaluate_conformal_coverage(intervals, splits.y_test.values)
 
-        # 4. Exploratory subgroup error analysis (standardized sex feature only)
-        # Note: In standard sklearn diabetes, sex is standardized into two discrete float values
+        # 4. Exploratory subgroup error analysis across the two coded source
+        # levels of the sex feature (values 1 and 2 in this dataset).
         sex_disparity = evaluate_subgroup_disparity(
             splits.y_test.values,
             y_test_pred,

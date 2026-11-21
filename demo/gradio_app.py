@@ -146,7 +146,7 @@ with gr.Blocks(title="Diabetes ML: Conformal Uncertainty Estimation") as demo:
                 1. Linear, regularized, tree-based and neural methods are compared as benchmark estimators; no model family is assumed to be best.
                 2. Split-conformal intervals target marginal coverage under exchangeability, not a personal probability statement.
                 3. Learned preprocessing is fitted only within the model-fitting partition or the relevant cross-validation training fold.
-                4. Historical benchmark metrics are documented separately in RESULTS.md and must not be confused with new runs.
+                4. RESULTS.md separates the corrected fold-isolated experiments from the earlier pre-standardized results.
                 """
             )
 
